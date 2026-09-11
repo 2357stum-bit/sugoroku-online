@@ -35,7 +35,12 @@ function ScoreBoard({ players, currentIdx }) {
   );
 }
 
-function Board({ players }) {
+function Board({ players, walking }) {
+  const displayPlayers = useMemo(() => {
+    if (!walking) return players;
+    return players.map((p) => (p.id === walking.playerId ? { ...p, pos: walking.pos } : p));
+  }, [players, walking]);
+
   const cells = useMemo(() => {
     const list = [];
     for (let idx = 0; idx < BOARD_SIZE; idx++) {
@@ -63,7 +68,7 @@ function Board({ players }) {
 
   const tokensByCell = useMemo(() => {
     const map = {};
-    players.forEach((p) => {
+    displayPlayers.forEach((p) => {
       const sq = SQUARES[p.pos];
       let key;
       if (sq.type === "branch") {
@@ -77,16 +82,16 @@ function Board({ players }) {
       map[key].push(p);
     });
     return map;
-  }, [players]);
+  }, [displayPlayers]);
 
   const totalRows = Math.ceil(BOARD_SIZE / GRID_COLS);
   const totalHeight = totalRows * ROW_HEIGHT + 34;
 
   const activeCellRef = useRef(null);
   const activeKey = useMemo(() => {
-    const p = players.find((pl) => !pl.finished);
+    const p = walking ? displayPlayers.find((pl) => pl.id === walking.playerId) : displayPlayers.find((pl) => !pl.finished);
     return p ? (SQUARES[p.pos].type === "branch" ? `${p.pos}:${(p.routeChoice && p.routeChoice[BRANCH_MAP[p.pos].forkIdx]) || "safe"}` : `${p.pos}:none`) : null;
-  }, [players]);
+  }, [displayPlayers, walking]);
 
   useEffect(() => {
     if (activeCellRef.current) {
@@ -382,26 +387,55 @@ export default function PlayingScreen({ room, code, uid, onLeaveRoom }) {
   const [rolling, setRolling] = useState(false);
   const [diceFace, setDiceFace] = useState("🎲");
   const [showcase, setShowcase] = useState(null);
+  const [walking, setWalking] = useState(null);
   const seenAt = useRef(null);
+  const seenTurnKey = useRef(null);
   const [submitting, setSubmitting] = useState(false);
+
+  // turn.roll/fromPos/toPos/path はターンが確定した瞬間から次のプレイヤーの番になるまで
+  // 変わらないので、これをキーにして「新しいロールが起きた」ことを検出する。
+  // (lastEvent はターン内で何度も上書きされるので、ロール自体の検出には使えない)
+  useEffect(() => {
+    if (turn.roll == null || !turn.path) return;
+    const key = `${turn.actorId}:${turn.roll}:${turn.fromPos}:${turn.toPos}`;
+    if (key === seenTurnKey.current) return;
+    seenTurnKey.current = key;
+
+    const fromPos = turn.fromPos;
+    const path = turn.path;
+    const actorId = turn.actorId;
+    const finalRoll = turn.roll;
+
+    setRolling(true);
+    let n = 0;
+    const diceTimer = setInterval(() => {
+      setDiceFace(String(1 + Math.floor(Math.random() * 6)));
+      n++;
+      if (n > 8) {
+        clearInterval(diceTimer);
+        setDiceFace(String(finalRoll));
+        setRolling(false);
+
+        // コマをスタート地点から1マスずつ、ゆっくり歩かせる
+        setWalking({ playerId: actorId, pos: fromPos });
+        let i = 0;
+        const stepTimer = setInterval(() => {
+          if (i >= path.length) {
+            clearInterval(stepTimer);
+            setWalking(null);
+            return;
+          }
+          setWalking({ playerId: actorId, pos: path[i] });
+          i++;
+        }, 550);
+      }
+    }, 70);
+    return () => clearInterval(diceTimer);
+  }, [turn.actorId, turn.roll, turn.fromPos, turn.toPos]);
 
   useEffect(() => {
     if (!lastEvent || lastEvent.at === seenAt.current) return;
     seenAt.current = lastEvent.at;
-    if (lastEvent.kind === "roll") {
-      let n = 0;
-      const timer = setInterval(() => {
-        setDiceFace(String(1 + Math.floor(Math.random() * 6)));
-        n++;
-        if (n > 8) {
-          clearInterval(timer);
-          setDiceFace(String(lastEvent.roll));
-          setRolling(false);
-        }
-      }, 70);
-      setRolling(true);
-      return () => clearInterval(timer);
-    }
     if (lastEvent.kind === "job" || lastEvent.kind === "lifeevent" || lastEvent.kind === "childevent") {
       setShowcase(lastEvent);
       const t = setTimeout(() => setShowcase(null), 2200);
@@ -446,7 +480,7 @@ export default function PlayingScreen({ room, code, uid, onLeaveRoom }) {
         </div>
       </div>
 
-      <Board players={players} />
+      <Board players={players} walking={walking} />
 
       <Toast event={lastEvent} players={players} />
 
