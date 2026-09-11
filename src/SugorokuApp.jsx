@@ -2,10 +2,12 @@ import { useEffect, useMemo, useState } from "react";
 import "./sugoroku.css";
 import { authReady } from "./firebase.js";
 import { createRoom, joinRoom } from "./roomEngine.js";
+import { THEME_LIST, DEFAULT_THEME_ID, getTheme } from "./boardData.js";
 import GameRoom from "./GameRoom.jsx";
 
 const NAME_KEY = "sgr_name";
 const ROOM_KEY = "sgr_room";
+const THEME_KEY = "sgr_theme";
 
 function readQuery() {
   try {
@@ -26,11 +28,36 @@ function setUrlRoom(code) {
   }
 }
 
+function MapPicker({ themeId, onSelect }) {
+  return (
+    <div className="sgr-field">
+      <label>マップを選ぶ</label>
+      <div className="sgr-choice-list">
+        {THEME_LIST.map((t) => (
+          <button
+            key={t.id}
+            className={"sgr-choice-btn" + (themeId === t.id ? " sgr-choice-active" : "")}
+            onClick={() => onSelect(t.id)}
+            type="button"
+          >
+            <span className="sgr-c-icon">{t.eyebrowIcon}</span>
+            <span className="sgr-c-txt">
+              <span className="sgr-c-name">{t.name}</span>
+              <span className="sgr-c-desc">{t.tagline}</span>
+            </span>
+          </button>
+        ))}
+      </div>
+    </div>
+  );
+}
+
 export default function SugorokuApp() {
   const [uid, setUid] = useState(null);
   const [authError, setAuthError] = useState(null);
   const [name, setName] = useState(() => localStorage.getItem(NAME_KEY) || "");
   const [tab, setTab] = useState("create");
+  const [themeId, setThemeId] = useState(() => localStorage.getItem(THEME_KEY) || DEFAULT_THEME_ID);
   const [joinCode, setJoinCode] = useState(() => readQuery().get("room") || "");
   const [roomCode, setRoomCode] = useState(() => readQuery().get("room") || localStorage.getItem(ROOM_KEY) || "");
   const [error, setError] = useState("");
@@ -41,14 +68,19 @@ export default function SugorokuApp() {
   }, []);
 
   useEffect(() => {
-    document.title = "マネー双六 オンライン";
+    document.title = "すごろく オンライン";
   }, []);
 
   useEffect(() => {
     localStorage.setItem(NAME_KEY, name);
   }, [name]);
 
+  useEffect(() => {
+    localStorage.setItem(THEME_KEY, themeId);
+  }, [themeId]);
+
   const trimmedName = name.trim() || "プレイヤー";
+  const theme = getTheme(themeId);
 
   const canSubmit = useMemo(() => !!uid && !busy, [uid, busy]);
 
@@ -57,7 +89,7 @@ export default function SugorokuApp() {
     setBusy(true);
     setError("");
     try {
-      const code = await createRoom(uid, trimmedName);
+      const code = await createRoom(uid, trimmedName, themeId);
       localStorage.setItem(ROOM_KEY, code);
       setUrlRoom(code);
       setRoomCode(code);
@@ -97,7 +129,7 @@ export default function SugorokuApp() {
 
   if (authError) {
     return (
-      <div className="sgr-root">
+      <div className="sgr-root" data-theme={theme.css}>
         <div className="sgr-app">
           <div className="sgr-screen">
             <div className="sgr-title-block">
@@ -112,20 +144,20 @@ export default function SugorokuApp() {
 
   if (roomCode) {
     return (
-      <div className="sgr-root">
-        <GameRoom code={roomCode} uid={uid} myName={trimmedName} onLeaveRoom={handleLeaveRoom} />
+      <div className="sgr-root" data-theme={theme.css}>
+        <GameRoom code={roomCode} uid={uid} myName={trimmedName} onLeaveRoom={handleLeaveRoom} onThemeId={setThemeId} />
       </div>
     );
   }
 
   return (
-    <div className="sgr-root">
+    <div className="sgr-root" data-theme={theme.css}>
       <div className="sgr-app">
         <div className="sgr-screen">
           <div className="sgr-title-block">
-            <span className="sgr-eyebrow">💰</span>
-            <h1>マネー双六 オンライン</h1>
-            <p>友達とルームを作って、リアルタイムで100マスの人生ゲームを遊ぼう。</p>
+            <span className="sgr-eyebrow">{theme.eyebrowIcon}</span>
+            <h1>{theme.name} オンライン</h1>
+            <p>友達とルームを作って、リアルタイムで100マスのすごろくを遊ぼう。</p>
           </div>
 
           <div className="sgr-card">
@@ -150,9 +182,12 @@ export default function SugorokuApp() {
             </div>
 
             {tab === "create" ? (
-              <button className="sgr-btn" disabled={!canSubmit} onClick={handleCreate}>
-                {busy ? "作成中…" : "新しいルームを作る"}
-              </button>
+              <>
+                <MapPicker themeId={themeId} onSelect={setThemeId} />
+                <button className="sgr-btn" disabled={!canSubmit} onClick={handleCreate}>
+                  {busy ? "作成中…" : "新しいルームを作る"}
+                </button>
+              </>
             ) : (
               <>
                 <div className="sgr-field">
@@ -164,6 +199,9 @@ export default function SugorokuApp() {
                     placeholder="ABCD"
                   />
                 </div>
+                <p style={{ fontSize: 12, color: "var(--sgr-muted)", margin: "0 0 4px" }}>
+                  マップはルームを作った人が選んだものに合わせて参加します。
+                </p>
                 <button className="sgr-btn" disabled={!canSubmit} onClick={handleJoin}>
                   {busy ? "参加中…" : "このルームに参加"}
                 </button>
@@ -173,14 +211,10 @@ export default function SugorokuApp() {
           </div>
 
           <div className="sgr-rules-list">
-            <div>🏢 <b>就職マス</b>：サイコロで職業がランダムに決定</div>
-            <div>💴 <b>給料日マス</b>：全員が同時に投資額を決める（他のプレイヤーの決定を待ちます）</div>
-            <div>💍 <b>人生の一大イベントマス</b>：結婚・転職・独立など、出目で家計が変わる</div>
-            <div>👶 <b>子作りマス</b>：五分五分の運。成功すると他の全員からお祝い金がもらえる</div>
-            <div>🔀 <b>分かれ道マス</b>：一攫千金コースか堅実コースを選べる</div>
-            <div>🏘️ <b>マイホームマス</b>：ゴール後に売却して精算</div>
-            <div>🎫 <b>宝くじマス</b>／💎 <b>お宝マス</b>：ゴール後の抽選・換金でお楽しみ</div>
-            <div>2〜4人でプレイ可能。はじめの所持金は全員 <b>500万円</b></div>
+            {theme.rules.map((r) => (
+              <div key={r.label}>{r.icon} <b>{r.label}</b>：{r.text}</div>
+            ))}
+            <div>2〜4人でプレイ可能。はじめの所持{theme.currencyUnit === "G" ? "ゴールド" : "金"}は全員 <b>500{theme.currencyUnit}</b></div>
           </div>
         </div>
       </div>

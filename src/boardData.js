@@ -1,7 +1,9 @@
 // マネー双六 - ボード・ルールの定義（フレームワーク非依存の純粋なデータ/関数群）
-// 各クライアントが同じ入力から同じ盤面を再現できるよう、決定論的に構築する。
+// 複数の「マップ(テーマ)」に対応するため、盤面の構造(マス数・イベントの位置・分岐など)は
+// 全テーマ共通の定数として持ち、見た目・フレーバーテキスト(職業・拠点・ニュース・アイコン等)
+// だけをテーマごとに切り替える。各クライアントが同じ入力から同じ盤面を再現できるよう、
+// 全て決定論的に構築する。
 
-export const TOKENS = ["🐰", "🦊", "🐢", "🐸"];
 export const MAX_PLAYERS = 4;
 export const START_MONEY = 500;
 export const BOARD_SIZE = 100;
@@ -10,47 +12,8 @@ export const GRID_COLS = 7;
 export const ROW_HEIGHT = 38;
 export const LANE_OFFSET = 9.5;
 
-export const JOBS = [
-  { id: "company", name: "会社員", icon: "💼", desc: "安定した収入でコツコツ堅実に", mult: { income: 1.0, bonus: 1.0, accident: 1.0, salary: 1.0 } },
-  { id: "doctor", name: "医者", icon: "🩺", desc: "高収入だがハードワーク", mult: { income: 1.6, bonus: 1.0, accident: 1.2, salary: 1.7 } },
-  { id: "civil", name: "公務員", icon: "🏛️", desc: "収入控えめだが安定重視", mult: { income: 0.85, bonus: 0.8, accident: 0.7, salary: 0.9 } },
-  { id: "freelance", name: "フリーランス", icon: "🎨", desc: "当たれば大きいが波がある", mult: { income: 0.9, bonus: 1.6, accident: 1.3, salary: 0.8 } },
-  { id: "entrepreneur", name: "起業家", icon: "🚀", desc: "ハイリスク・ハイリターン", mult: { income: 1.2, bonus: 1.8, accident: 1.8, salary: 1.3 } },
-  { id: "celebrity", name: "芸能人", icon: "🎤", desc: "人気次第で収入が乱高下", mult: { income: 0.8, bonus: 2.0, accident: 1.6, salary: 1.1 } },
-];
 export const BASE_SALARY = 90;
 export const PART_TIME_RATE = 0.4;
-
-export const HOME_OPTIONS = [
-  { id: "mansion", label: "大豪邸", icon: "🏰", cost: -700, baseValue: 700, desc: "憧れの大豪邸。値は張るが資産価値も大きい" },
-  { id: "house", label: "一戸建て", icon: "🏡", cost: -380, baseValue: 380, desc: "庭付きの一戸建て。堅実な資産に" },
-  { id: "condo", label: "マンション", icon: "🏢", cost: -250, baseValue: 250, desc: "利便性の高いマンション暮らし" },
-  { id: "rent", label: "賃貸アパート", icon: "🏠", cost: -30, baseValue: 0, desc: "身軽な賃貸暮らし。資産にはならない" },
-];
-
-export const NEWS = [
-  { text: "景気拡大のニュースが流れ、株価が大きく上昇", pct: 12 },
-  { text: "世界的な株安で市場に激震が走る", pct: -10 },
-  { text: "好決算ラッシュで相場が堅調に推移", pct: 7 },
-  { text: "金利上昇への懸念から株価が下落", pct: -8 },
-  { text: "新技術への期待から株価が急騰", pct: 15 },
-  { text: "大手企業の不祥事発覚で市場が急落", pct: -14 },
-  { text: "為替の影響で輸出関連株が上昇", pct: 6 },
-  { text: "中央銀行の利下げ観測で市場が活気づく", pct: 9 },
-  { text: "地政学リスクの高まりで様子見ムードが広がる", pct: -5 },
-  { text: "景気後退懸念がじわじわと広がる", pct: -6 },
-  { text: "消費が上向き小売関連株が買われる", pct: 5 },
-  { text: "原油高でエネルギー関連株が急伸", pct: 8 },
-];
-
-export const DESC = {
-  income: ["査定で高評価を受け賞与が上乗せされた", "在宅勤務手当がついた", "資格試験に合格し資格手当がついた", "深夜残業が続き残業代がしっかりついた", "担当プロジェクトが成功しインセンティブが出た", "出張先での成果が認められ特別手当が出た", "人事評価で昇給が決まった", "会社の業績好調で決算賞与が出た", "後輩の指導が評価され手当がついた"],
-  expense: ["別荘の固定資産税を払う", "愛車の車検代を支払う", "親族の結婚式のご祝儀を包む", "冷蔵庫が故障し買い替えた", "確定申告で追加の納税が発生した", "火災保険の更新料を支払う", "ペットの手術費用がかかった", "実家の屋根の修理費を負担した", "マンションの管理費が値上がりした"],
-  bonus: ["フリマアプリでブランド品が高値で売れた", "副業のライティングで臨時収入", "懸賞でギフト券が当たった", "昔貸したお金が友人から返ってきた", "ポイント還元キャンペーンで得をした", "仮想通貨の含み益を確定させた", "空き部屋を民泊で貸して収入を得た", "実家の蔵から骨董品が見つかり売却できた", "株主優待の商品券を換金した"],
-  accident: ["財布を落として現金ごと紛失した", "仕手株に手を出して大きく損をした", "架空請求に騙されて支払ってしまった", "駅で傘を忘れて新しいものを買った", "スピード違反で反則金を取られた", "スマホの画面を割って修理に出した", "衝動買いでブランドバッグを購入した", "飲み会で盛り上がりすぎて散財した", "友人の結婚祝いで予想外の出費"],
-  rest: ["繁忙期で休日出勤が続き一回休み", "風邪をこじらせて自宅療養、一回休み", "海外出張が長引き一回休み", "大事なプレゼン準備で一回休み", "引っ越し作業に追われて一回休み"],
-  treasure: ["ダイヤの指輪", "金の延べ棒", "年代物のアンティーク時計", "幻の宝石", "骨董品の壺", "海賊の秘宝", "希少な記念コイン", "美術館級の絵画", "蔵から出てきた掛け軸"],
-};
 
 export const RANGE_ENDPOINTS = {
   income: { early: [20, 40], late: [200, 400] },
@@ -60,31 +23,10 @@ export const RANGE_ENDPOINTS = {
   treasure: { early: [30, 80], late: [300, 800] },
 };
 
-export const ICON = {
-  income: "💰", expense: "💸", bonus: "🎁", accident: "⚡", rest: "💤",
-  treasure: "💎", job: "🏢", salary: "💴", lifeevent: "💍",
-  childevent: "👶", homepurchase: "🏘️", lottery: "🎫",
-};
-
 export const PATTERN = ["income", "bonus", "expense", "treasure", "rest", "accident",
   "income", "expense", "bonus", "treasure", "accident", "income"];
 
-export const LIFEEVENTS = [
-  { idx: 14, icon: "💍", label: "婚約", desc: "恋人と婚約した！指輪や式場の準備で家計が動く", base: 120 },
-  { idx: 26, icon: "💒", label: "結婚式", desc: "結婚式を挙げた！費用とご祝儀、差し引きはいかに", base: 220 },
-  { idx: 78, icon: "🔁", label: "転職", desc: "転職に挑戦した！新しい職場での評価は…", base: 550 },
-  { idx: 92, icon: "🚀", label: "独立", desc: "独立して起業した！滑り出しの調子は…", base: 850 },
-];
-export const LIFEEVENT_MAP = {};
-LIFEEVENTS.forEach((ev) => (LIFEEVENT_MAP[ev.idx] = ev));
 export const LIFEEVENT_ROLL_MULT = { 1: -1.5, 2: -1.0, 3: -0.4, 4: 0.4, 5: 1.0, 6: 1.5 };
-
-export const CHILDEVENTS = [
-  { idx: 40, label: "第一子", cost: -150 },
-  { idx: 84, label: "第二子", cost: -130 },
-];
-export const CHILDEVENT_MAP = {};
-CHILDEVENTS.forEach((ev) => (CHILDEVENT_MAP[ev.idx] = ev));
 export const CHILD_GIFT_TOTAL = 300;
 
 export const HOME_IDX = 52;
@@ -95,55 +37,12 @@ export const SALARY_SET = new Set(SALARY_IDX);
 
 export const FINISH_BONUS = [500, 300, 150, 80];
 export const LOTTERY_REWARD = { 4: 2000, 3: 500, 2: 100, 1: 20, 0: 0 };
-export const LOTTERY_RANK_LABEL = { 4: "特等", 3: "1等", 2: "2等", 1: "3等", 0: "ハズレ" };
 
 export const FORK_LEN = 15;
 export const FORKS = [55];
-const RISK_TEMPLATE = [
-  { type: "bonus", desc: "一攫千金を狙って大勝負に出た", amount: [100, 300] },
-  { type: "accident", desc: "危険な近道で痛い目にあった", amount: [-200, -60] },
-  { type: "bonus", desc: "裏路地で怪しい大取引がまとまった", amount: [80, 250] },
-  { type: "accident", desc: "一か八かの賭けに敗れた", amount: [-180, -50] },
-  { type: "bonus", desc: "闇市場で掘り出し物を安く仕入れた", amount: [90, 280] },
-  { type: "accident", desc: "危険な賭場ですってしまった", amount: [-220, -70] },
-  { type: "bonus", desc: "裏で聞いた儲け話に賭けて的中させた", amount: [110, 320] },
-  { type: "accident", desc: "調子に乗って大きく踏み外した", amount: [-240, -80] },
-];
-const SAFE_TEMPLATE = [
-  { type: "income", desc: "安全な道を選び着実に依頼をこなした", amount: [50, 90] },
-  { type: "income", desc: "堅実に荷運びの仕事をこなした", amount: [40, 80] },
-  { type: "income", desc: "地道な依頼で確実な報酬を得た", amount: [50, 90] },
-  { type: "income", desc: "安全第一で慎重に旅を進めた", amount: [40, 80] },
-  { type: "income", desc: "信頼できる商人と手堅い取引をした", amount: [50, 90] },
-  { type: "income", desc: "コツコツ働いて確実に貯金を増やした", amount: [40, 80] },
-  { type: "income", desc: "評判のいい仕事をきっちりこなした", amount: [50, 90] },
-  { type: "income", desc: "無理せず着実に歩を進めた", amount: [40, 80] },
-];
-
-export const FORK_OPTIONS = [
-  { id: "risk", label: "一攫千金コース", icon: "💀", desc: "荒れた道。大勝ちも大負けもある波乱の数マス" },
-  { id: "safe", label: "堅実コース", icon: "🛡️", desc: "落ち着いた道。少しずつ確実にお金が増える" },
-];
-
-export const BRANCH_MAP = {};
-FORKS.forEach((forkIdx) => {
-  for (let k = 0; k < FORK_LEN; k++) {
-    const idx = forkIdx + 1 + k;
-    const riskT = RISK_TEMPLATE[k % RISK_TEMPLATE.length];
-    const safeT = SAFE_TEMPLATE[k % SAFE_TEMPLATE.length];
-    BRANCH_MAP[idx] = {
-      forkIdx,
-      risk: { type: "bonus_or_accident", realType: riskT.type, icon: ICON[riskT.type], desc: riskT.desc, amount: riskT.amount },
-      safe: { type: "income", icon: ICON.income, desc: safeT.desc, amount: safeT.amount },
-    };
-  }
-});
 
 export function isForkIdx(idx) {
   return FORKS.indexOf(idx) !== -1;
-}
-export function isBranchIdx(idx) {
-  return !!BRANCH_MAP[idx];
 }
 
 export function scaleRange(type, idx) {
@@ -167,23 +66,288 @@ export function randomTicket(rng = Math.random) {
   return String(Math.floor(rng() * 10000)).padStart(4, "0");
 }
 
-// ---- 100マスの盤面を一度だけ生成する（全クライアント共通・決定論的） ----
-function buildSquares() {
+// ============================================================
+// テーマ定義: 「マネー双六」(money) と「冒険者双六」(adventure)
+// ============================================================
+
+const MONEY_THEME_CFG = {
+  id: "money",
+  name: "マネー双六",
+  tagline: "100マスの人生を歩みながら、お金を稼いで、増やして、使おう。",
+  eyebrowIcon: "💰",
+  css: "money",
+  tokens: ["🐰", "🦊", "🐢", "🐸"],
+  currencyUnit: "万円",
+  startLabel: "スタート",
+  startIcon: "🏠",
+  goalLabel: "ゴール",
+  goalIcon: "🏁",
+  labels: {
+    jobSquareName: "職業",
+    jobGachaTitle: "就職ガチャ！",
+    salaryName: "給料日",
+    investVerb: "投資",
+    homeSquareName: "マイホーム",
+    homeVerb: "購入",
+    lotteryItemName: "宝くじ",
+    lotteryFinaleName: "宝くじ抽選会",
+    lotteryFinaleVerb: "抽選",
+    childEventVerb: "子作り",
+    childGiftLabel: "お祝い金",
+    goalName: "ゴール",
+    winningLabel: "当選番号",
+  },
+  jobs: [
+    { id: "company", name: "会社員", icon: "💼", desc: "安定した収入でコツコツ堅実に", mult: { income: 1.0, bonus: 1.0, accident: 1.0, salary: 1.0 } },
+    { id: "doctor", name: "医者", icon: "🩺", desc: "高収入だがハードワーク", mult: { income: 1.6, bonus: 1.0, accident: 1.2, salary: 1.7 } },
+    { id: "civil", name: "公務員", icon: "🏛️", desc: "収入控えめだが安定重視", mult: { income: 0.85, bonus: 0.8, accident: 0.7, salary: 0.9 } },
+    { id: "freelance", name: "フリーランス", icon: "🎨", desc: "当たれば大きいが波がある", mult: { income: 0.9, bonus: 1.6, accident: 1.3, salary: 0.8 } },
+    { id: "entrepreneur", name: "起業家", icon: "🚀", desc: "ハイリスク・ハイリターン", mult: { income: 1.2, bonus: 1.8, accident: 1.8, salary: 1.3 } },
+    { id: "celebrity", name: "芸能人", icon: "🎤", desc: "人気次第で収入が乱高下", mult: { income: 0.8, bonus: 2.0, accident: 1.6, salary: 1.1 } },
+  ],
+  homeOptions: [
+    { id: "mansion", label: "大豪邸", icon: "🏰", cost: -700, baseValue: 700, desc: "憧れの大豪邸。値は張るが資産価値も大きい" },
+    { id: "house", label: "一戸建て", icon: "🏡", cost: -380, baseValue: 380, desc: "庭付きの一戸建て。堅実な資産に" },
+    { id: "condo", label: "マンション", icon: "🏢", cost: -250, baseValue: 250, desc: "利便性の高いマンション暮らし" },
+    { id: "rent", label: "賃貸アパート", icon: "🏠", cost: -30, baseValue: 0, desc: "身軽な賃貸暮らし。資産にはならない" },
+  ],
+  news: [
+    { text: "景気拡大のニュースが流れ、株価が大きく上昇", pct: 12 },
+    { text: "世界的な株安で市場に激震が走る", pct: -10 },
+    { text: "好決算ラッシュで相場が堅調に推移", pct: 7 },
+    { text: "金利上昇への懸念から株価が下落", pct: -8 },
+    { text: "新技術への期待から株価が急騰", pct: 15 },
+    { text: "大手企業の不祥事発覚で市場が急落", pct: -14 },
+    { text: "為替の影響で輸出関連株が上昇", pct: 6 },
+    { text: "中央銀行の利下げ観測で市場が活気づく", pct: 9 },
+    { text: "地政学リスクの高まりで様子見ムードが広がる", pct: -5 },
+    { text: "景気後退懸念がじわじわと広がる", pct: -6 },
+    { text: "消費が上向き小売関連株が買われる", pct: 5 },
+    { text: "原油高でエネルギー関連株が急伸", pct: 8 },
+  ],
+  desc: {
+    income: ["査定で高評価を受け賞与が上乗せされた", "在宅勤務手当がついた", "資格試験に合格し資格手当がついた", "深夜残業が続き残業代がしっかりついた", "担当プロジェクトが成功しインセンティブが出た", "出張先での成果が認められ特別手当が出た", "人事評価で昇給が決まった", "会社の業績好調で決算賞与が出た", "後輩の指導が評価され手当がついた"],
+    expense: ["別荘の固定資産税を払う", "愛車の車検代を支払う", "親族の結婚式のご祝儀を包む", "冷蔵庫が故障し買い替えた", "確定申告で追加の納税が発生した", "火災保険の更新料を支払う", "ペットの手術費用がかかった", "実家の屋根の修理費を負担した", "マンションの管理費が値上がりした"],
+    bonus: ["フリマアプリでブランド品が高値で売れた", "副業のライティングで臨時収入", "懸賞でギフト券が当たった", "昔貸したお金が友人から返ってきた", "ポイント還元キャンペーンで得をした", "仮想通貨の含み益を確定させた", "空き部屋を民泊で貸して収入を得た", "実家の蔵から骨董品が見つかり売却できた", "株主優待の商品券を換金した"],
+    accident: ["財布を落として現金ごと紛失した", "仕手株に手を出して大きく損をした", "架空請求に騙されて支払ってしまった", "駅で傘を忘れて新しいものを買った", "スピード違反で反則金を取られた", "スマホの画面を割って修理に出した", "衝動買いでブランドバッグを購入した", "飲み会で盛り上がりすぎて散財した", "友人の結婚祝いで予想外の出費"],
+    rest: ["繁忙期で休日出勤が続き一回休み", "風邪をこじらせて自宅療養、一回休み", "海外出張が長引き一回休み", "大事なプレゼン準備で一回休み", "引っ越し作業に追われて一回休み"],
+    treasure: ["ダイヤの指輪", "金の延べ棒", "年代物のアンティーク時計", "幻の宝石", "骨董品の壺", "海賊の秘宝", "希少な記念コイン", "美術館級の絵画", "蔵から出てきた掛け軸"],
+  },
+  icon: {
+    income: "💰", expense: "💸", bonus: "🎁", accident: "⚡", rest: "💤",
+    treasure: "💎", job: "🏢", salary: "💴", lifeevent: "💍",
+    childevent: "👶", homepurchase: "🏘️", lottery: "🎫",
+  },
+  squareDesc: {
+    job: "就職先を選ぼう",
+    home: "マイホームを選ぼう",
+    fork: "進む道を選ぼう",
+    lottery: "宝くじをゲット",
+    salary: "給料日がやってきた",
+  },
+  lifeEvents: [
+    { idx: 14, icon: "💍", label: "婚約", desc: "恋人と婚約した！指輪や式場の準備で家計が動く", base: 120 },
+    { idx: 26, icon: "💒", label: "結婚式", desc: "結婚式を挙げた！費用とご祝儀、差し引きはいかに", base: 220 },
+    { idx: 78, icon: "🔁", label: "転職", desc: "転職に挑戦した！新しい職場での評価は…", base: 550 },
+    { idx: 92, icon: "🚀", label: "独立", desc: "独立して起業した！滑り出しの調子は…", base: 850 },
+  ],
+  childEvents: [
+    { idx: 40, label: "第一子", cost: -150 },
+    { idx: 84, label: "第二子", cost: -130 },
+  ],
+  forkOptions: [
+    { id: "risk", label: "一攫千金コース", icon: "💀", desc: "荒れた道。大勝ちも大負けもある波乱の数マス" },
+    { id: "safe", label: "堅実コース", icon: "🛡️", desc: "落ち着いた道。少しずつ確実にお金が増える" },
+  ],
+  riskTemplate: [
+    { type: "bonus", desc: "一攫千金を狙って大勝負に出た", amount: [100, 300] },
+    { type: "accident", desc: "危険な近道で痛い目にあった", amount: [-200, -60] },
+    { type: "bonus", desc: "裏路地で怪しい大取引がまとまった", amount: [80, 250] },
+    { type: "accident", desc: "一か八かの賭けに敗れた", amount: [-180, -50] },
+    { type: "bonus", desc: "闇市場で掘り出し物を安く仕入れた", amount: [90, 280] },
+    { type: "accident", desc: "危険な賭場ですってしまった", amount: [-220, -70] },
+    { type: "bonus", desc: "裏で聞いた儲け話に賭けて的中させた", amount: [110, 320] },
+    { type: "accident", desc: "調子に乗って大きく踏み外した", amount: [-240, -80] },
+  ],
+  safeTemplate: [
+    { type: "income", desc: "安全な道を選び着実に依頼をこなした", amount: [50, 90] },
+    { type: "income", desc: "堅実に荷運びの仕事をこなした", amount: [40, 80] },
+    { type: "income", desc: "地道な依頼で確実な報酬を得た", amount: [50, 90] },
+    { type: "income", desc: "安全第一で慎重に旅を進めた", amount: [40, 80] },
+    { type: "income", desc: "信頼できる商人と手堅い取引をした", amount: [50, 90] },
+    { type: "income", desc: "コツコツ働いて確実に貯金を増やした", amount: [40, 80] },
+    { type: "income", desc: "評判のいい仕事をきっちりこなした", amount: [50, 90] },
+    { type: "income", desc: "無理せず着実に歩を進めた", amount: [40, 80] },
+  ],
+  rules: [
+    { icon: "🏢", label: "就職マス", text: "サイコロで職業がランダムに決定" },
+    { icon: "💴", label: "給料日マス", text: "全員が同時に投資額を決める（他のプレイヤーの決定を待ちます）" },
+    { icon: "💍", label: "人生の一大イベントマス", text: "結婚・転職・独立など、出目で家計が変わる" },
+    { icon: "👶", label: "子作りマス", text: "五分五分の運。成功すると他の全員からお祝い金がもらえる" },
+    { icon: "🔀", label: "分かれ道マス", text: "一攫千金コースか堅実コースを選べる" },
+    { icon: "🏘️", label: "マイホームマス", text: "ゴール後に売却して精算" },
+    { icon: "🎫💎", label: "宝くじマス／お宝マス", text: "ゴール後の抽選・換金でお楽しみ" },
+  ],
+};
+
+const ADVENTURE_THEME_CFG = {
+  id: "adventure",
+  name: "冒険者双六",
+  tagline: "100マスの冒険路を進み、クラスを選び、仲間を集めて王城を目指そう。",
+  eyebrowIcon: "⚔️",
+  css: "adventure",
+  tokens: ["🗡️", "🛡️", "🏹", "🔮"],
+  currencyUnit: "G",
+  startLabel: "出発の村",
+  startIcon: "🏕️",
+  goalLabel: "王城",
+  goalIcon: "🏰",
+  labels: {
+    jobSquareName: "クラス",
+    jobGachaTitle: "クラス選択ガチャ！",
+    salaryName: "ギルド報酬日",
+    investVerb: "強化",
+    homeSquareName: "拠点",
+    homeVerb: "選択",
+    lotteryItemName: "地図の欠片",
+    lotteryFinaleName: "隠し財宝の扉",
+    lotteryFinaleVerb: "扉を開く",
+    childEventVerb: "仲間の勧誘",
+    childGiftLabel: "歓迎の宴費用",
+    goalName: "王城",
+    winningLabel: "扉の暗号",
+  },
+  jobs: [
+    { id: "warrior", name: "戦士", icon: "⚔️", desc: "バランス型。堅実に戦果を積み上げる", mult: { income: 1.0, bonus: 1.0, accident: 1.0, salary: 1.0 } },
+    { id: "hunter", name: "狩人", icon: "🏹", desc: "高い成功報酬だが気の抜けない毎日", mult: { income: 1.6, bonus: 1.0, accident: 1.2, salary: 1.7 } },
+    { id: "cleric", name: "僧侶", icon: "✨", desc: "報酬は控えめだが危険を避けて手堅い", mult: { income: 0.85, bonus: 0.8, accident: 0.7, salary: 0.9 } },
+    { id: "rogue", name: "盗賊", icon: "🗡️", desc: "当たれば大きいが波が激しい", mult: { income: 0.9, bonus: 1.6, accident: 1.3, salary: 0.8 } },
+    { id: "mage", name: "魔法使い", icon: "🔮", desc: "ハイリスク・ハイリターンな一撃", mult: { income: 1.2, bonus: 1.8, accident: 1.8, salary: 1.3 } },
+    { id: "sage", name: "賢者", icon: "📜", desc: "幸運を引き寄せるが浮き沈みが激しい", mult: { income: 0.8, bonus: 2.0, accident: 1.6, salary: 1.1 } },
+  ],
+  homeOptions: [
+    { id: "fortress", label: "大要塞", icon: "🏯", cost: -700, baseValue: 700, desc: "圧倒的な防御力を誇る要塞。資産価値も抜群" },
+    { id: "cabin", label: "山小屋", icon: "🏔️", cost: -380, baseValue: 380, desc: "静かな山あいの拠点。堅実な資産に" },
+    { id: "inn", label: "宿屋の一室", icon: "🏨", cost: -250, baseValue: 250, desc: "便利な街なかの拠点暮らし" },
+    { id: "tent", label: "野営テント", icon: "⛺", cost: -30, baseValue: 0, desc: "身軽なテント暮らし。資産にはならない" },
+  ],
+  news: [
+    { text: "伝説の鍛冶師が現れ、強化効果が跳ね上がっている", pct: 12 },
+    { text: "魔力の嵐で素材価格が高騰し、強化が思うように進まない", pct: -10 },
+    { text: "豊漁ならぬ豊鉱で鉱石が安定供給され相場が堅調", pct: 7 },
+    { text: "王国の増税で武具の値段が下落している", pct: -8 },
+    { text: "新素材「星屑鋼」の噂で相場が急騰", pct: 15 },
+    { text: "大手工房の不正が発覚し信用が急落", pct: -14 },
+    { text: "隣国との交易で希少素材が流入し相場が上昇", pct: 6 },
+    { text: "ギルド本部の後押しで市場が活気づく", pct: 9 },
+    { text: "魔物の大量発生で流通が滞り様子見ムード", pct: -5 },
+    { text: "不況の噂がじわじわ広がっている", pct: -6 },
+    { text: "冒険者の需要が高まり武具がよく売れている", pct: 5 },
+    { text: "魔石の高騰でエンチャント関連が急伸", pct: 8 },
+  ],
+  desc: {
+    income: ["町の依頼を達成し報酬を受け取った", "魔物退治の懸賞金を回収した", "商人の護衛任務が成功し謝礼をもらった", "迷宮の宝箱を見つけ換金した", "ギルドランクが上がり特別報酬が出た", "貴族から感謝の金一封を受け取った", "薬草採取の依頼で報酬を得た", "古い地図を売却できた", "討伐部隊への協力金が出た"],
+    expense: ["鍛冶屋で剣の刃こぼれを修理した", "宿屋で少し良い部屋に泊まった", "毒消し草を大量に購入した", "馬車の車輪が壊れ修理費がかかった", "盗賊にわずかな路銀を奪われた", "教会でパーティ全員の祝福を受けた", "防具の手入れ代を支払った", "渡し船の高額な渡航料を払った", "関所の通行税を取られた"],
+    bonus: ["道端で落とし物の財布を拾った", "商人と交渉して掘り出し物を安く買えた", "古代コインの収集品が高く売れた", "賭け事で思わぬ大勝ちをした", "旅人から餞別をもらった", "隠し部屋で金貨の山を発見した", "魔法の泉が願いを叶え金貨をくれた", "廃墟の宝物庫を発見した", "行商人から掘り出し物を譲られた"],
+    accident: ["モンスターの奇襲を受け荷物を落とした", "毒沼にはまり薬代がかさんだ", "詐欺師に高額な魔法薬を売りつけられた", "崖から滑落し装備が壊れた", "呪いの罠にかかり出費がかさんだ", "酒場の喧嘩に巻き込まれ弁償させられた", "ならず者に因縁をつけられ金を渡した", "嵐で野営道具が流された", "霧に巻かれ遠回りして路銀を使った"],
+    rest: ["長旅の疲れで一回休み", "モンスターの毒で一回休み", "吹雪に閉じ込められ一回休み", "馬が脚を痛め一回休み", "仲間の看病で一回休み"],
+    treasure: ["伝説の聖剣", "古代竜のうろこ", "賢者の石", "呪われた指輪", "失われた王家の秘宝", "不死鳥の羽根", "古の魔導書", "妖精の涙の宝石", "巨人の財宝"],
+  },
+  icon: {
+    income: "💰", expense: "💸", bonus: "🎁", accident: "⚡", rest: "🏕️",
+    treasure: "💎", job: "⚔️", salary: "🛡️", lifeevent: "🔥",
+    childevent: "🤝", homepurchase: "🏯", lottery: "🗺️",
+  },
+  squareDesc: {
+    job: "クラスを選ぼう",
+    home: "拠点を選ぼう",
+    fork: "進む道を選ぼう",
+    lottery: "地図の欠片を発見",
+    salary: "ギルド報酬日がやってきた",
+  },
+  lifeEvents: [
+    { idx: 14, icon: "🗡️", label: "盗賊団との戦い", desc: "森で盗賊団に襲われた！応戦の結果は…", base: 120 },
+    { idx: 26, icon: "🏛️", label: "古代遺跡の発見", desc: "古代遺跡を発見した！探索の成果はいかに…", base: 220 },
+    { idx: 78, icon: "🐲", label: "竜の巣への迷い込み", desc: "ドラゴンの巣に迷い込んだ！運命の分かれ道…", base: 550 },
+    { idx: 92, icon: "👹", label: "魔王軍幹部との一騎打ち", desc: "魔王軍の幹部と一騎打ちになった！勝敗のゆくえは…", base: 850 },
+  ],
+  childEvents: [
+    { idx: 40, label: "第一の仲間", cost: -150 },
+    { idx: 84, label: "第二の仲間", cost: -130 },
+  ],
+  forkOptions: [
+    { id: "risk", label: "一攫千金コース", icon: "💀", desc: "荒れた道。大勝ちも大負けもある波乱の数マス" },
+    { id: "safe", label: "堅実コース", icon: "🛡️", desc: "落ち着いた道。少しずつ確実にゴールドが増える" },
+  ],
+  riskTemplate: [
+    { type: "bonus", desc: "危険な近道で財宝の隠し部屋を見つけた", amount: [100, 300] },
+    { type: "accident", desc: "モンスターの巣に迷い込み大怪我をした", amount: [-200, -60] },
+    { type: "bonus", desc: "裏路地で怪しい大取引がまとまった", amount: [80, 250] },
+    { type: "accident", desc: "一か八かの近道で罠にかかった", amount: [-180, -50] },
+    { type: "bonus", desc: "廃坑で埋もれた財宝を掘り当てた", amount: [90, 280] },
+    { type: "accident", desc: "野盗の待ち伏せに遭い身包み剥がされた", amount: [-220, -70] },
+    { type: "bonus", desc: "古い地図を頼りに秘密の宝物庫を突き止めた", amount: [110, 320] },
+    { type: "accident", desc: "調子に乗って危険な深部まで踏み込んだ", amount: [-240, -80] },
+  ],
+  safeTemplate: [
+    { type: "income", desc: "安全な街道で着実に依頼をこなした", amount: [50, 90] },
+    { type: "income", desc: "堅実に荷運びの仕事をこなした", amount: [40, 80] },
+    { type: "income", desc: "地道な依頼で確実な報酬を得た", amount: [50, 90] },
+    { type: "income", desc: "安全第一で慎重に旅を進めた", amount: [40, 80] },
+    { type: "income", desc: "村人に頼まれた見回りで謝礼を得た", amount: [50, 90] },
+    { type: "income", desc: "コツコツ薬草を集めて売りさばいた", amount: [40, 80] },
+    { type: "income", desc: "安定した護衛依頼をきっちりこなした", amount: [50, 90] },
+    { type: "income", desc: "無理せず着実に旅を進めた", amount: [40, 80] },
+  ],
+  rules: [
+    { icon: "⚔️", label: "クラス選択マス", text: "サイコロでクラスがランダムに決定" },
+    { icon: "🛡️", label: "ギルド報酬マス", text: "全員が同時に装備強化額を決める（他のプレイヤーの決定を待ちます）" },
+    { icon: "🔥", label: "冒険のハプニングマス", text: "モンスター討伐や遺跡発見など、出目で財産が変わる" },
+    { icon: "🤝", label: "仲間加入マス", text: "五分五分の運。成功すると他の全員から歓迎の宴費用がもらえる" },
+    { icon: "🔀", label: "分かれ道マス", text: "一攫千金コースか堅実コースを選べる" },
+    { icon: "🏯", label: "拠点選択マス", text: "ゴール後に売却して精算" },
+    { icon: "🗺️💎", label: "地図の欠片マス／秘宝マス", text: "ゴール後の隠し財宝の扉・換金でお楽しみ" },
+  ],
+};
+
+function buildTheme(cfg) {
+  const LIFEEVENT_MAP = {};
+  cfg.lifeEvents.forEach((ev) => (LIFEEVENT_MAP[ev.idx] = ev));
+  const CHILDEVENT_MAP = {};
+  cfg.childEvents.forEach((ev) => (CHILDEVENT_MAP[ev.idx] = ev));
+
+  const BRANCH_MAP = {};
+  FORKS.forEach((forkIdx) => {
+    for (let k = 0; k < FORK_LEN; k++) {
+      const idx = forkIdx + 1 + k;
+      const riskT = cfg.riskTemplate[k % cfg.riskTemplate.length];
+      const safeT = cfg.safeTemplate[k % cfg.safeTemplate.length];
+      BRANCH_MAP[idx] = {
+        forkIdx,
+        risk: { type: "bonus_or_accident", realType: riskT.type, icon: cfg.icon[riskT.type], desc: riskT.desc, amount: riskT.amount },
+        safe: { type: "income", icon: cfg.icon.income, desc: safeT.desc, amount: safeT.amount },
+      };
+    }
+  });
+  function isBranchIdx(idx) {
+    return !!BRANCH_MAP[idx];
+  }
+
   const SQUARES = [];
   const descCounter = {};
   function nextDesc(type) {
     descCounter[type] = (descCounter[type] || 0) + 1;
-    const pool = DESC[type];
+    const pool = cfg.desc[type];
     return pool[(descCounter[type] - 1) % pool.length];
   }
 
-  SQUARES[0] = { type: "start", label: "スタート", icon: "🏠" };
-  SQUARES[4] = { type: "job", icon: ICON.job, desc: "就職先を選ぼう", forcedStop: true };
+  SQUARES[0] = { type: "start", label: cfg.startLabel, icon: cfg.startIcon };
+  SQUARES[4] = { type: "job", icon: cfg.icon.job, desc: cfg.squareDesc.job, forcedStop: true };
   let patternIdx = 0;
   for (let i = 1; i < LAST; i++) {
     if (i === 4) continue;
     if (isForkIdx(i)) {
-      SQUARES[i] = { type: "fork", icon: "🔀", desc: "進む道を選ぼう", forcedStop: true };
+      SQUARES[i] = { type: "fork", icon: "🔀", desc: cfg.squareDesc.fork, forcedStop: true };
       continue;
     }
     if (isBranchIdx(i)) {
@@ -197,52 +361,60 @@ function buildSquares() {
     }
     if (CHILDEVENT_MAP[i]) {
       const ev = CHILDEVENT_MAP[i];
-      SQUARES[i] = { type: "childevent", icon: ICON.childevent, label: ev.label, childCost: ev.cost, forcedStop: true };
+      SQUARES[i] = { type: "childevent", icon: cfg.icon.childevent, label: ev.label, childCost: ev.cost, forcedStop: true };
       continue;
     }
     if (i === HOME_IDX) {
-      SQUARES[i] = { type: "homepurchase", icon: ICON.homepurchase, desc: "マイホームを選ぼう", forcedStop: true };
+      SQUARES[i] = { type: "homepurchase", icon: cfg.icon.homepurchase, desc: cfg.squareDesc.home, forcedStop: true };
       continue;
     }
     if (LOTTERY_SET.has(i)) {
-      SQUARES[i] = { type: "lottery", icon: ICON.lottery, desc: "宝くじをゲット" };
+      SQUARES[i] = { type: "lottery", icon: cfg.icon.lottery, desc: cfg.squareDesc.lottery };
       continue;
     }
     if (SALARY_SET.has(i)) {
-      SQUARES[i] = { type: "salary", icon: ICON.salary, desc: "給料日がやってきた" };
+      SQUARES[i] = { type: "salary", icon: cfg.icon.salary, desc: cfg.squareDesc.salary };
       continue;
     }
     const type = PATTERN[patternIdx % PATTERN.length];
     patternIdx++;
-    const sq = { type, icon: ICON[type], desc: nextDesc(type) };
+    const sq = { type, icon: cfg.icon[type], desc: nextDesc(type) };
     if (type === "income" || type === "expense" || type === "bonus" || type === "accident" || type === "treasure") {
       sq.amount = scaleRange(type, i);
     }
     SQUARES[i] = sq;
   }
-  SQUARES[LAST] = { type: "goal", label: "ゴール", icon: "🏁" };
-  return SQUARES;
-}
+  SQUARES[LAST] = { type: "goal", label: cfg.goalLabel, icon: cfg.goalIcon };
 
-export const SQUARES = buildSquares();
-
-// player: プレイヤーごとの分岐選択(routeChoice)に応じて実際に止まるマス内容を解決する
-export function getSquare(player, idx) {
-  const sq = SQUARES[idx];
-  if (sq.type === "branch") {
-    const bd = BRANCH_MAP[idx];
-    const choice = (player.routeChoice && player.routeChoice[bd.forkIdx]) || "safe";
-    const picked = choice === "risk" ? bd.risk : bd.safe;
-    return { type: picked.realType || picked.type, icon: picked.icon, desc: picked.desc, amount: picked.amount };
+  function getSquare(player, idx) {
+    const sq = SQUARES[idx];
+    if (sq.type === "branch") {
+      const bd = BRANCH_MAP[idx];
+      const choice = (player.routeChoice && player.routeChoice[bd.forkIdx]) || "safe";
+      const picked = choice === "risk" ? bd.risk : bd.safe;
+      return { type: picked.realType || picked.type, icon: picked.icon, desc: picked.desc, amount: picked.amount };
+    }
+    return sq;
   }
-  return sq;
+  function isForcedStop(player, idx) {
+    return !!(getSquare(player, idx).forcedStop || SQUARES[idx].forcedStop);
+  }
+
+  return { ...cfg, SQUARES, BRANCH_MAP, LIFEEVENT_MAP, CHILDEVENT_MAP, getSquare, isForcedStop };
 }
 
-export function isForcedStop(player, idx) {
-  return !!(getSquare(player, idx).forcedStop || SQUARES[idx].forcedStop);
+export const THEMES = {
+  money: buildTheme(MONEY_THEME_CFG),
+  adventure: buildTheme(ADVENTURE_THEME_CFG),
+};
+export const DEFAULT_THEME_ID = "money";
+export const THEME_LIST = Object.values(THEMES);
+
+export function getTheme(themeId) {
+  return THEMES[themeId] || THEMES[DEFAULT_THEME_ID];
 }
 
-// ---- 盤面レイアウト（曲がり道のグリッド + ジッター） ----
+// ---- 盤面レイアウト（曲がり道のグリッド + ジッター）。全テーマ共通の構造。 ----
 export function basePoint(idx) {
   const row = Math.floor(idx / GRID_COLS);
   const colInRow = idx % GRID_COLS;
@@ -259,10 +431,11 @@ export function basePoint(idx) {
   return { xPct: x, y: slotY + jy };
 }
 
-export function createPlayer(id, idx, name) {
+export function createPlayer(id, idx, name, themeId) {
+  const theme = getTheme(themeId);
   return {
     id,
-    token: TOKENS[idx],
+    token: theme.tokens[idx],
     name: name || `プレイヤー${idx + 1}`,
     pos: 0,
     rest: 0,

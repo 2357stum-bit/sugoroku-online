@@ -6,11 +6,12 @@ import {
   advanceToFinal,
   resetToLobby,
 } from "./roomEngine.js";
+import { getTheme } from "./boardData.js";
 import PlayingScreen from "./PlayingScreen.jsx";
 import { getRanking } from "./gameLogic.js";
 import GameTopBar from "./ui/TopBar.jsx";
 
-function LobbyScreen({ room, code, uid, onLeaveRoom }) {
+function LobbyScreen({ room, code, uid, theme, onLeaveRoom }) {
   const isHost = room.hostUid === uid;
   const [busy, setBusy] = useState(false);
   const [error, setError] = useState("");
@@ -31,8 +32,9 @@ function LobbyScreen({ room, code, uid, onLeaveRoom }) {
     <div className="sgr-app">
       <div className="sgr-screen">
         <div className="sgr-title-block">
-          <span className="sgr-eyebrow">💰</span>
+          <span className="sgr-eyebrow">{theme.eyebrowIcon}</span>
           <h1>ルームで待機中</h1>
+          <p>{theme.name}</p>
         </div>
         <div className="sgr-room-code">
           このコードを友達に共有してね
@@ -69,38 +71,39 @@ function LobbyScreen({ room, code, uid, onLeaveRoom }) {
   );
 }
 
-function SettlementScreen({ room, code, uid, onLeaveRoom }) {
+function SettlementScreen({ room, code, uid, theme, onLeaveRoom }) {
   const [busy, setBusy] = useState(false);
+  const unit = theme.currencyUnit;
   return (
     <div className="sgr-app">
-      <GameTopBar title="マネー双六" code={code} uid={uid} hostUid={room.hostUid} onLeaveRoom={onLeaveRoom} />
+      <GameTopBar title={theme.name} code={code} uid={uid} hostUid={room.hostUid} onLeaveRoom={onLeaveRoom} />
       <div className="sgr-screen">
         <div className="sgr-title-block">
           <span className="sgr-eyebrow">📋</span>
           <h1>最終精算</h1>
-          <p>投資・不動産・お宝カードを精算したよ</p>
+          <p>{theme.labels.investVerb}・{theme.labels.homeSquareName}・お宝カードを精算したよ</p>
         </div>
         <div>
           {room.players.map((p) => {
             const investLine = p.invested > 0
-              ? `投資 ${p.invested}万円 → ${p.investPayout}万円（${p.investGain >= 0 ? "+" : ""}${p.investGain}万円）`
-              : "投資はしなかった";
+              ? `${theme.labels.investVerb} ${p.invested}${unit} → ${p.investPayout}${unit}（${p.investGain >= 0 ? "+" : ""}${p.investGain}${unit}）`
+              : `${theme.labels.investVerb}はしなかった`;
             const homeLine = p.home
               ? p.home.baseValue > 0
-                ? `${p.home.label}を売却 → +${p.homeSaleValue}万円`
+                ? `${p.home.label}を売却 → +${p.homeSaleValue}${unit}`
                 : `${p.home.label}（売却益なし）`
-              : "マイホームは購入しなかった";
-            const treasureLine = p.cards.length ? `お宝${p.cards.length}個換金 → +${p.treasureSum}万円` : "お宝カードはなし";
+              : `${theme.labels.homeSquareName}は選ばなかった`;
+            const treasureLine = p.cards.length ? `お宝${p.cards.length}個換金 → +${p.treasureSum}${unit}` : "お宝カードはなし";
             return (
               <div key={p.id} className="sgr-settle-row">
                 <div className="sgr-settle-head"><span>{p.token}</span><span>{p.name}</span></div>
                 <div className="sgr-settle-line">💹 {investLine}</div>
-                <div className="sgr-settle-line">🏘️ {homeLine}</div>
+                <div className="sgr-settle-line">{theme.icon.homepurchase} {homeLine}</div>
                 <div className="sgr-settle-line">💎 {treasureLine}</div>
                 {p.cards.length > 0 && (
-                  <div className="sgr-settle-detail">{p.cards.map((c) => `${c.name} ${c.value}万円`).join("　/　")}</div>
+                  <div className="sgr-settle-detail">{p.cards.map((c) => `${c.name} ${c.value}${unit}`).join("　/　")}</div>
                 )}
-                <div className="sgr-settle-money">現在の所持金 {p.money}万円</div>
+                <div className="sgr-settle-money">現在の所持{unit === "G" ? "ゴールド" : "金"} {p.money}{unit}</div>
               </div>
             );
           })}
@@ -117,30 +120,31 @@ function SettlementScreen({ room, code, uid, onLeaveRoom }) {
             }
           }}
         >
-          宝くじ抽選会へ
+          {theme.labels.lotteryFinaleName}へ
         </button>
       </div>
     </div>
   );
 }
 
-function LotteryScreen({ room, code, uid, onLeaveRoom }) {
+function LotteryScreen({ room, code, uid, theme, onLeaveRoom }) {
   const [busy, setBusy] = useState(false);
+  const unit = theme.currencyUnit;
   const winningNumber = room.lottery?.winningNumber || "----";
   return (
     <div className="sgr-app">
-      <GameTopBar title="マネー双六" code={code} uid={uid} hostUid={room.hostUid} onLeaveRoom={onLeaveRoom} />
+      <GameTopBar title={theme.name} code={code} uid={uid} hostUid={room.hostUid} onLeaveRoom={onLeaveRoom} />
       <div className="sgr-screen">
         <div className="sgr-title-block">
           <span className="sgr-eyebrow">🎰</span>
-          <h1>宝くじ抽選会</h1>
+          <h1>{theme.labels.lotteryFinaleName}</h1>
         </div>
-        <div className="sgr-winning-number">当選番号：{winningNumber}</div>
+        <div className="sgr-winning-number">{theme.labels.winningLabel}：{winningNumber}</div>
         <div className="sgr-lottery-summary">
           {room.players.map((p) => (
             <div key={p.id} className="sgr-lot-line">
               <span>{p.token} {p.name}</span>
-              <span>{p.lotteryTickets.length}枚 → +{p.lotteryReward}万円</span>
+              <span>{p.lotteryTickets.length}枚 → +{p.lotteryReward}{unit}</span>
             </div>
           ))}
         </div>
@@ -165,10 +169,11 @@ function LotteryScreen({ room, code, uid, onLeaveRoom }) {
 
 const MEDALS = ["🥇", "🥈", "🥉", "🎗️"];
 
-function FinalScreen({ room, code, uid, onLeaveRoom }) {
+function FinalScreen({ room, code, uid, theme, onLeaveRoom }) {
   const sorted = getRanking(room.players);
   const isHost = room.hostUid === uid;
   const [busy, setBusy] = useState(false);
+  const unit = theme.currencyUnit;
   return (
     <div className="sgr-app">
       <div className="sgr-screen">
@@ -181,12 +186,12 @@ function FinalScreen({ room, code, uid, onLeaveRoom }) {
                 <div className="sgr-medal">{MEDALS[i] || "・"}</div>
                 <div className="sgr-tok">{p.token}</div>
                 <div className="sgr-nm">{p.name}{p.job ? `（${p.job.name}）` : ""}</div>
-                <div className={"sgr-total " + (p.money >= 0 ? "sgr-pos" : "sgr-neg")}>{p.money}万円</div>
+                <div className={"sgr-total " + (p.money >= 0 ? "sgr-pos" : "sgr-neg")}>{p.money}{unit}</div>
               </div>
               <div className="sgr-breakdown">
-                🏁ゴールボーナス +{p.finishBonus}万円　／　💹投資 {p.investGain >= 0 ? "+" : ""}{p.investGain}万円　／　🏘️不動産 +{p.homeSaleValue}万円
+                🏁ゴールボーナス +{p.finishBonus}{unit}　／　💹{theme.labels.investVerb} {p.investGain >= 0 ? "+" : ""}{p.investGain}{unit}　／　{theme.icon.homepurchase}{theme.labels.homeSquareName} +{p.homeSaleValue}{unit}
                 <br />
-                💎お宝 +{p.treasureSum}万円　／　🎫宝くじ +{p.lotteryReward}万円
+                💎お宝 +{p.treasureSum}{unit}　／　{theme.icon.lottery}{theme.labels.lotteryItemName} +{p.lotteryReward}{unit}
               </div>
             </div>
           ))}
@@ -215,7 +220,7 @@ function FinalScreen({ room, code, uid, onLeaveRoom }) {
   );
 }
 
-export default function GameRoom({ code, uid, onLeaveRoom }) {
+export default function GameRoom({ code, uid, onLeaveRoom, onThemeId }) {
   const [room, setRoom] = useState(null);
   const [error, setError] = useState("");
 
@@ -227,6 +232,10 @@ export default function GameRoom({ code, uid, onLeaveRoom }) {
     );
     return unsub;
   }, [code]);
+
+  useEffect(() => {
+    if (room?.themeId && onThemeId) onThemeId(room.themeId);
+  }, [room?.themeId, onThemeId]);
 
   if (error) {
     return (
@@ -268,17 +277,19 @@ export default function GameRoom({ code, uid, onLeaveRoom }) {
     );
   }
 
+  const theme = getTheme(room.themeId);
+
   switch (room.status) {
     case "lobby":
-      return <LobbyScreen room={room} code={code} uid={uid} onLeaveRoom={onLeaveRoom} />;
+      return <LobbyScreen room={room} code={code} uid={uid} theme={theme} onLeaveRoom={onLeaveRoom} />;
     case "playing":
       return <PlayingScreen room={room} code={code} uid={uid} onLeaveRoom={onLeaveRoom} />;
     case "settlement":
-      return <SettlementScreen room={room} code={code} uid={uid} onLeaveRoom={onLeaveRoom} />;
+      return <SettlementScreen room={room} code={code} uid={uid} theme={theme} onLeaveRoom={onLeaveRoom} />;
     case "lottery":
-      return <LotteryScreen room={room} code={code} uid={uid} onLeaveRoom={onLeaveRoom} />;
+      return <LotteryScreen room={room} code={code} uid={uid} theme={theme} onLeaveRoom={onLeaveRoom} />;
     case "finished":
-      return <FinalScreen room={room} code={code} uid={uid} onLeaveRoom={onLeaveRoom} />;
+      return <FinalScreen room={room} code={code} uid={uid} theme={theme} onLeaveRoom={onLeaveRoom} />;
     default:
       return null;
   }

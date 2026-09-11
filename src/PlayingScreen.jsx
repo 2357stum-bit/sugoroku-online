@@ -1,27 +1,18 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import {
-  SQUARES,
-  BRANCH_MAP,
-  BOARD_SIZE,
-  GRID_COLS,
-  ROW_HEIGHT,
-  LANE_OFFSET,
-  basePoint,
-  HOME_OPTIONS,
-  FORK_OPTIONS,
-  JOBS,
-} from "./boardData.js";
+import { BOARD_SIZE, GRID_COLS, ROW_HEIGHT, LANE_OFFSET, basePoint, getTheme } from "./boardData.js";
 import { rollDice, chooseFork, chooseHome, submitInvest } from "./roomEngine.js";
 import { describeToast, signed, amtClass } from "./ui/helpers.js";
 import GameTopBar from "./ui/TopBar.jsx";
 
-function ScoreBoard({ players, currentIdx }) {
+const DIE_FACE = { 1: "⚀", 2: "⚁", 3: "⚂", 4: "⚃", 5: "⚄", 6: "⚅" };
+
+function ScoreBoard({ players, currentIdx, unit }) {
   return (
     <div className="sgr-scoreboard">
       {players.map((p, i) => (
         <div key={p.id} className={"sgr-score-item" + (i === currentIdx && !p.finished ? " sgr-active" : "") + (p.finished ? " sgr-finished" : "")}>
           <div className="sgr-tok">{p.finished ? "🏁" : p.token}</div>
-          <div className={"sgr-amt " + (p.money >= 0 ? "sgr-pos" : "sgr-neg")}>{p.money}万円</div>
+          <div className={"sgr-amt " + (p.money >= 0 ? "sgr-pos" : "sgr-neg")}>{p.money}{unit}</div>
           {p.job && <div className="sgr-jobtag">{p.job.icon}{p.job.name}</div>}
           {(p.cards.length > 0 || p.lotteryTickets.length > 0) && (
             <div className="sgr-cards">
@@ -35,19 +26,59 @@ function ScoreBoard({ players, currentIdx }) {
   );
 }
 
-function Board({ players, walking }) {
+// player の現在マスの座標(%,px)。分かれ道マスなら本人の選択に応じたレーン側に立つ。
+function tokenCoord(theme, player, pos) {
+  const sq = theme.SQUARES[pos];
+  const pt = basePoint(pos);
+  if (sq.type === "branch") {
+    const bd = theme.BRANCH_MAP[pos];
+    const choice = (player.routeChoice && player.routeChoice[bd.forkIdx]) || "safe";
+    return { x: choice === "risk" ? pt.xPct - LANE_OFFSET : pt.xPct + LANE_OFFSET, y: pt.y, laneKey: `${pos}:${choice}` };
+  }
+  return { x: pt.xPct, y: pt.y, laneKey: `${pos}:none` };
+}
+
+// コマを盤面の上に独立したレイヤーとして重ね、left/topをCSSトランジションで
+// 滑らかに動かす。同じマスに複数コマがいる場合は少し横にファンアウトする。
+function TokenLayer({ theme, players, walking }) {
   const displayPlayers = useMemo(() => {
     if (!walking) return players;
     return players.map((p) => (p.id === walking.playerId ? { ...p, pos: walking.pos } : p));
   }, [players, walking]);
 
+  const items = useMemo(() => {
+    const groups = {};
+    displayPlayers.forEach((p) => {
+      const c = tokenCoord(theme, p, p.pos);
+      if (!groups[c.laneKey]) groups[c.laneKey] = [];
+      groups[c.laneKey].push({ p, c });
+    });
+    const list = [];
+    Object.values(groups).forEach((group) => {
+      const n = group.length;
+      group.forEach(({ p, c }, i) => {
+        const fan = (i - (n - 1) / 2) * 7;
+        list.push({ id: p.id, token: p.token, x: c.x, y: c.y, fan });
+      });
+    });
+    return list;
+  }, [displayPlayers, theme]);
+
+  return items.map((it) => (
+    <span key={it.id} className="sgr-token-float" style={{ left: `calc(${it.x}% + ${it.fan}px)`, top: it.y + 15 }}>
+      {it.token}
+    </span>
+  ));
+}
+
+function Board({ theme, players, walking }) {
   const cells = useMemo(() => {
     const list = [];
     for (let idx = 0; idx < BOARD_SIZE; idx++) {
-      const sq = SQUARES[idx];
+      const sq = theme.SQUARES[idx];
       const pt = basePoint(idx);
       if (sq.type === "branch") {
-        const bd = BRANCH_MAP[idx];
+        const bd = theme.BRANCH_MAP[idx];
         list.push({ key: `${idx}:risk`, idx, lane: "risk", sq: bd.risk, x: pt.xPct - LANE_OFFSET, y: pt.y });
         list.push({ key: `${idx}:safe`, idx, lane: "safe", sq: bd.safe, x: pt.xPct + LANE_OFFSET, y: pt.y });
       } else {
@@ -55,7 +86,7 @@ function Board({ players, walking }) {
       }
     }
     return list;
-  }, []);
+  }, [theme]);
 
   const roadPoints = useMemo(() => {
     const pts = [];
@@ -66,32 +97,15 @@ function Board({ players, walking }) {
     return pts.join(" ");
   }, []);
 
-  const tokensByCell = useMemo(() => {
-    const map = {};
-    displayPlayers.forEach((p) => {
-      const sq = SQUARES[p.pos];
-      let key;
-      if (sq.type === "branch") {
-        const bd = BRANCH_MAP[p.pos];
-        const choice = (p.routeChoice && p.routeChoice[bd.forkIdx]) || "safe";
-        key = `${p.pos}:${choice}`;
-      } else {
-        key = `${p.pos}:none`;
-      }
-      if (!map[key]) map[key] = [];
-      map[key].push(p);
-    });
-    return map;
-  }, [displayPlayers]);
-
   const totalRows = Math.ceil(BOARD_SIZE / GRID_COLS);
   const totalHeight = totalRows * ROW_HEIGHT + 34;
 
   const activeCellRef = useRef(null);
   const activeKey = useMemo(() => {
-    const p = walking ? displayPlayers.find((pl) => pl.id === walking.playerId) : displayPlayers.find((pl) => !pl.finished);
-    return p ? (SQUARES[p.pos].type === "branch" ? `${p.pos}:${(p.routeChoice && p.routeChoice[BRANCH_MAP[p.pos].forkIdx]) || "safe"}` : `${p.pos}:none`) : null;
-  }, [displayPlayers, walking]);
+    if (walking) return tokenCoord(theme, players.find((pl) => pl.id === walking.playerId) || players[0], walking.pos).laneKey;
+    const p = players.find((pl) => !pl.finished);
+    return p ? tokenCoord(theme, p, p.pos).laneKey : null;
+  }, [players, walking, theme]);
 
   useEffect(() => {
     if (activeCellRef.current) {
@@ -105,32 +119,25 @@ function Board({ players, walking }) {
         <svg className="sgr-road-svg" viewBox={`0 0 100 ${totalHeight}`} preserveAspectRatio="none">
           <polyline points={roadPoints} className="sgr-road-line" vectorEffect="non-scaling-stroke" />
         </svg>
-        {cells.map((c) => {
-          const toks = tokensByCell[c.key] || [];
-          return (
-            <div
-              key={c.key}
-              ref={c.key === activeKey ? activeCellRef : null}
-              className={"sgr-sq sgr-" + c.sq.type + (c.lane ? " sgr-lane-" + c.lane : "")}
-              style={{ left: c.x + "%", top: c.y }}
-            >
-              <div className="sgr-num">{c.idx}</div>
-              <div className="sgr-icon">{c.sq.icon || "・"}</div>
-              <div className="sgr-tokens-on-sq">
-                {toks.map((p) => (
-                  <span key={p.id}>{p.token}</span>
-                ))}
-              </div>
-            </div>
-          );
-        })}
+        {cells.map((c) => (
+          <div
+            key={c.key}
+            ref={c.key === activeKey ? activeCellRef : null}
+            className={"sgr-sq sgr-" + c.sq.type + (c.lane ? " sgr-lane-" + c.lane : "")}
+            style={{ left: c.x + "%", top: c.y }}
+          >
+            <div className="sgr-num">{c.idx}</div>
+            <div className="sgr-icon">{c.sq.icon || "・"}</div>
+          </div>
+        ))}
+        <TokenLayer theme={theme} players={players} walking={walking} />
       </div>
     </div>
   );
 }
 
-function Toast({ event, players }) {
-  const d = describeToast(event, players);
+function Toast({ event, players, theme }) {
+  const d = describeToast(event, players, theme);
   if (!d) return null;
   return (
     <div className="sgr-msg-toast">
@@ -142,7 +149,7 @@ function Toast({ event, players }) {
         {d.amount != null && (
           <>
             <br />
-            <span className={"sgr-amt " + amtClass(d.amount)}>{signed(d.amount)}</span>
+            <span className={"sgr-amt " + amtClass(d.amount)}>{signed(d.amount, d.unit)}</span>
           </>
         )}
         {d.sub && <span className="sgr-sub2">{d.sub}</span>}
@@ -151,7 +158,7 @@ function Toast({ event, players }) {
   );
 }
 
-function ShowcaseOverlay({ event }) {
+function ShowcaseOverlay({ event, theme }) {
   const [tick, setTick] = useState(0);
   useEffect(() => {
     const id = setInterval(() => setTick((t) => t + 1), 90);
@@ -163,15 +170,16 @@ function ShowcaseOverlay({ event }) {
   }, [event.at]);
 
   const settled = tick > 11;
+  const unit = theme.currencyUnit;
 
   if (event.kind === "job") {
-    const spinJob = JOBS[tick % JOBS.length];
+    const spinJob = theme.jobs[tick % theme.jobs.length];
     const shown = settled ? event.job : spinJob;
     return (
       <div className="sgr-ovl sgr-show">
         <div className="sgr-ovl-card">
-          <h2>{"就職ガチャ！"}</h2>
-          <p className="sgr-ovl-lead">サイコロを振って、この先の人生を左右する職業を決めよう</p>
+          <h2>{theme.labels.jobGachaTitle}</h2>
+          <p className="sgr-ovl-lead">サイコロを振って、この先を左右する{theme.labels.jobSquareName}を決めよう</p>
           <div className="sgr-job-roll">
             <span className="sgr-job-icon-big">{shown.icon}</span>
             <div className="sgr-job-name-big">{shown.name}</div>
@@ -190,12 +198,12 @@ function ShowcaseOverlay({ event }) {
         <div className="sgr-ovl-card">
           <h2>{event.icon} {event.label}</h2>
           <p className="sgr-ovl-lead">{event.desc}</p>
-          <div className="sgr-dice-face">{shown}</div>
+          <div className="sgr-dice-face">{DIE_FACE[shown]}</div>
           {settled && (
             <div className="sgr-child-result">
               {event.amt >= 0 ? "🎉 いい流れが来た！" : "😅 出費がかさんでしまった…"}
               <br />
-              <span className={"sgr-amt " + amtClass(event.amt)}>{signed(event.amt)}</span>
+              <span className={"sgr-amt " + amtClass(event.amt)}>{signed(event.amt, unit)}</span>
             </div>
           )}
         </div>
@@ -209,18 +217,18 @@ function ShowcaseOverlay({ event }) {
   return (
     <div className="sgr-ovl sgr-show">
       <div className="sgr-ovl-card">
-        <h2>👶 {event.label}に挑戦！</h2>
+        <h2>{theme.icon.childevent} {event.label}に挑戦！</h2>
         <p className="sgr-ovl-lead">サイコロで五分五分。4以上で成功！</p>
-        <div className="sgr-dice-face">{shown}</div>
+        <div className="sgr-dice-face">{DIE_FACE[shown]}</div>
         {settled && (
           <div className="sgr-child-result">
-            {event.success ? "🎉 元気な赤ちゃんが誕生した！おめでとう！" : "😢 残念、今回は授からなかった…また挑戦しよう"}
+            {event.success ? `🎉 ${event.label}がパーティに加わった！` : "😢 残念、今回は失敗した…また挑戦しよう"}
             <br />
-            <span className="sgr-amt sgr-neg">{signed(event.amt)}</span>
+            <span className="sgr-amt sgr-neg">{signed(event.amt, unit)}</span>
             {event.giftTotal > 0 && (
               <>
                 <br />
-                🎁 他のプレイヤーからお祝い金 <span className="sgr-amt sgr-pos">{signed(event.giftTotal)}</span>
+                🎁 他のプレイヤーから{theme.labels.childGiftLabel} <span className="sgr-amt sgr-pos">{signed(event.giftTotal, unit)}</span>
               </>
             )}
           </div>
@@ -230,7 +238,7 @@ function ShowcaseOverlay({ event }) {
   );
 }
 
-function ForkChoiceOverlay({ code, uid }) {
+function ForkChoiceOverlay({ code, uid, theme }) {
   const [busy, setBusy] = useState(false);
   return (
     <div className="sgr-ovl sgr-show">
@@ -238,7 +246,7 @@ function ForkChoiceOverlay({ code, uid }) {
         <h2>🔀 道を選ぼう</h2>
         <p className="sgr-ovl-lead">この先しばらく、選んだコースの出来事が待っている</p>
         <div className="sgr-choice-list">
-          {FORK_OPTIONS.map((opt) => (
+          {theme.forkOptions.map((opt) => (
             <button
               key={opt.id}
               className="sgr-choice-btn"
@@ -265,18 +273,18 @@ function ForkChoiceOverlay({ code, uid }) {
   );
 }
 
-function HomeChoiceOverlay({ code, uid }) {
+function HomeChoiceOverlay({ code, uid, theme }) {
   const [busy, setBusy] = useState(false);
   return (
     <div className="sgr-ovl sgr-show">
       <div className="sgr-ovl-card">
         <div className="sgr-ovl-illust" style={{ background: "var(--sgr-sq-home)" }}>
-          <span style={{ fontSize: 28 }}>🏘️</span>
+          <span style={{ fontSize: 28 }}>{theme.icon.homepurchase}</span>
         </div>
-        <h2>マイホームを購入しよう！</h2>
-        <p className="sgr-ovl-lead">予算に合わせて住まいを選ぼう（ゴール後に売却できるよ）</p>
+        <h2>{theme.labels.homeSquareName}を{theme.labels.homeVerb}しよう！</h2>
+        <p className="sgr-ovl-lead">予算に合わせて選ぼう（ゴール後に売却できるよ）</p>
         <div className="sgr-choice-list">
-          {HOME_OPTIONS.map((opt) => (
+          {theme.homeOptions.map((opt) => (
             <button
               key={opt.id}
               className="sgr-choice-btn"
@@ -294,7 +302,7 @@ function HomeChoiceOverlay({ code, uid }) {
               <span className="sgr-c-txt">
                 <span className="sgr-c-name">{opt.label}</span>
                 <span className="sgr-c-desc">{opt.desc}</span>
-                <span className="sgr-c-cost">初期費用 {opt.cost}万円</span>
+                <span className="sgr-c-cost">初期費用 {opt.cost}{theme.currencyUnit}</span>
               </span>
             </button>
           ))}
@@ -304,18 +312,19 @@ function HomeChoiceOverlay({ code, uid }) {
   );
 }
 
-function InvestOverlay({ code, uid, invest, players, myMoney }) {
+function InvestOverlay({ code, uid, invest, players, myMoney, theme }) {
   const decided = invest.decisions[uid] !== undefined;
   const [amount, setAmount] = useState(0);
   const [busy, setBusy] = useState(false);
   const maxAmt = Math.max(0, Math.floor(myMoney / 10) * 10);
+  const unit = theme.currencyUnit;
 
   if (decided) {
     return (
       <div className="sgr-ovl sgr-show">
         <div className="sgr-ovl-card">
-          <h2>💴 給料日</h2>
-          <p className="sgr-ovl-lead">他のプレイヤーの投資判断を待っています…</p>
+          <h2>{theme.icon.salary} {theme.labels.salaryName}</h2>
+          <p className="sgr-ovl-lead">他のプレイヤーの{theme.labels.investVerb}判断を待っています…</p>
           <div className="sgr-invest-wait-list">
             {invest.pending.map((id) => {
               const p = players.find((pl) => pl.id === id);
@@ -339,26 +348,26 @@ function InvestOverlay({ code, uid, invest, players, myMoney }) {
   return (
     <div className="sgr-ovl sgr-show">
       <div className="sgr-ovl-card">
-        <h2>💴 給料日</h2>
+        <h2>{theme.icon.salary} {theme.labels.salaryName}</h2>
         <div className="sgr-salary-pay">
-          {payerName}が{invest.jobLabel} <span className="sgr-amt sgr-pos">{signed(invest.salaryAmt)}</span>
+          {payerName}が{invest.jobLabel} <span className="sgr-amt sgr-pos">{signed(invest.salaryAmt, unit)}</span>
         </div>
         <div className="sgr-news-box">
           <div className="sgr-news-headline">{arrow} {invest.news.text}</div>
-          <div className="sgr-news-index">株価指数 {invest.before} → <b>{invest.after}</b></div>
+          <div className="sgr-news-index">指数 {invest.before} → <b>{invest.after}</b></div>
         </div>
-        <div className="sgr-invest-title">投資する金額（10万円単位・あなたの手持ち: {myMoney}万円）</div>
+        <div className="sgr-invest-title">{theme.labels.investVerb}する金額（10{unit}単位・あなたの手持ち: {myMoney}{unit}）</div>
         <div className="sgr-invest-row">
           <button className="sgr-step-btn" onClick={() => setAmount((a) => Math.max(0, a - 10))}>−10</button>
-          <div className="sgr-invest-amt">{amount}万円</div>
+          <div className="sgr-invest-amt">{amount}{unit}</div>
           <button className="sgr-step-btn" onClick={() => setAmount((a) => Math.min(maxAmt, a + 10))}>+10</button>
         </div>
         <div className="sgr-invest-quick">
-          <button className="sgr-invest-quick-btn" onClick={() => setAmount(0)}>投資しない</button>
-          <button className="sgr-invest-quick-btn" onClick={() => setAmount(Math.floor(maxAmt / 2 / 10) * 10)}>半額</button>
-          <button className="sgr-invest-quick-btn" onClick={() => setAmount(maxAmt)}>全額</button>
+          <button className="sgr-invest-quick-btn" onClick={() => setAmount(0)}>{theme.labels.investVerb}しない</button>
+          <button className="sgr-invest-quick-btn" onClick={() => setAmount(Math.floor(maxAmt / 2 / 10) * 10)}>半分</button>
+          <button className="sgr-invest-quick-btn" onClick={() => setAmount(maxAmt)}>全部</button>
         </div>
-        <div className="sgr-invest-note">投資後の手持ち: {myMoney - amount}万円</div>
+        <div className="sgr-invest-note">{theme.labels.investVerb}後の手持ち: {myMoney - amount}{unit}</div>
         <button
           className="sgr-btn"
           disabled={busy}
@@ -379,6 +388,7 @@ function InvestOverlay({ code, uid, invest, players, myMoney }) {
 }
 
 export default function PlayingScreen({ room, code, uid, onLeaveRoom }) {
+  const theme = getTheme(room.themeId);
   const { players, currentIdx, turn, lastEvent } = room;
   const me = players.find((p) => p.id === uid);
   const actor = players[currentIdx];
@@ -408,12 +418,13 @@ export default function PlayingScreen({ room, code, uid, onLeaveRoom }) {
 
     setRolling(true);
     let n = 0;
+    const totalTicks = 16; // サイコロを振っている感覚が出るよう、少し長めに転がす
     const diceTimer = setInterval(() => {
-      setDiceFace(String(1 + Math.floor(Math.random() * 6)));
+      setDiceFace(DIE_FACE[1 + Math.floor(Math.random() * 6)]);
       n++;
-      if (n > 8) {
+      if (n > totalTicks) {
         clearInterval(diceTimer);
-        setDiceFace(String(finalRoll));
+        setDiceFace(DIE_FACE[finalRoll]);
         setRolling(false);
 
         // コマをスタート地点から1マスずつ、ゆっくり歩かせる
@@ -427,9 +438,9 @@ export default function PlayingScreen({ room, code, uid, onLeaveRoom }) {
           }
           setWalking({ playerId: actorId, pos: path[i] });
           i++;
-        }, 550);
+        }, 850);
       }
-    }, 70);
+    }, 110);
     return () => clearInterval(diceTimer);
   }, [turn.actorId, turn.roll, turn.fromPos, turn.toPos]);
 
@@ -459,7 +470,7 @@ export default function PlayingScreen({ room, code, uid, onLeaveRoom }) {
   if (turn.status === "idle") {
     turnSub = actor.id === uid ? "サイコロを振ってね" : "サイコロを待っています…";
   } else if (turn.status === "awaiting_choice") {
-    turnSub = turn.choice?.type === "fork" ? "分かれ道を選んでいます…" : "マイホームを選んでいます…";
+    turnSub = turn.choice?.type === "fork" ? "分かれ道を選んでいます…" : `${theme.labels.homeSquareName}を選んでいます…`;
   } else if (turn.status === "awaiting_invest") {
     turnSub = "全員の投資判断を待っています…";
   } else {
@@ -468,9 +479,9 @@ export default function PlayingScreen({ room, code, uid, onLeaveRoom }) {
 
   return (
     <div className="sgr-app">
-      <GameTopBar title="マネー双六" code={code} uid={uid} hostUid={room.hostUid} onLeaveRoom={onLeaveRoom} />
+      <GameTopBar title={theme.name} code={code} uid={uid} hostUid={room.hostUid} onLeaveRoom={onLeaveRoom} />
 
-      <ScoreBoard players={players} currentIdx={currentIdx} />
+      <ScoreBoard players={players} currentIdx={currentIdx} unit={theme.currencyUnit} />
 
       <div className="sgr-turn-banner">
         <div className="sgr-tok">{actor.token}</div>
@@ -480,27 +491,27 @@ export default function PlayingScreen({ room, code, uid, onLeaveRoom }) {
         </div>
       </div>
 
-      <Board players={players} walking={walking} />
+      <Board theme={theme} players={players} walking={walking} />
 
-      <Toast event={lastEvent} players={players} />
+      <Toast event={lastEvent} players={players} theme={theme} />
 
       <div className="sgr-controls">
-        <button className="sgr-dice" disabled={!isMyTurn || submitting} onClick={handleRoll}>
+        <button className={"sgr-dice" + (rolling ? " sgr-rolling" : "")} disabled={!isMyTurn || submitting} onClick={handleRoll}>
           {rolling ? diceFace : isMyTurn ? "🎲" : diceFace}
         </button>
         <div className="sgr-dice-label">{isMyTurn ? "タップしてサイコロを振る" : ""}</div>
       </div>
 
       {turn.status === "awaiting_choice" && turn.choice?.type === "fork" && turn.actorId === uid && (
-        <ForkChoiceOverlay code={code} uid={uid} />
+        <ForkChoiceOverlay code={code} uid={uid} theme={theme} />
       )}
       {turn.status === "awaiting_choice" && turn.choice?.type === "home" && turn.actorId === uid && (
-        <HomeChoiceOverlay code={code} uid={uid} />
+        <HomeChoiceOverlay code={code} uid={uid} theme={theme} />
       )}
       {turn.status === "awaiting_invest" && turn.invest && turn.invest.pending.includes(uid) && me && (
-        <InvestOverlay code={code} uid={uid} invest={turn.invest} players={players} myMoney={me.money} />
+        <InvestOverlay code={code} uid={uid} invest={turn.invest} players={players} myMoney={me.money} theme={theme} />
       )}
-      {showcase && <ShowcaseOverlay event={showcase} />}
+      {showcase && <ShowcaseOverlay event={showcase} theme={theme} />}
     </div>
   );
 }

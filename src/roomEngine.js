@@ -12,7 +12,7 @@ import {
   deleteDoc,
 } from "firebase/firestore";
 import { db } from "./firebase.js";
-import { TOKENS, MAX_PLAYERS, createPlayer } from "./boardData.js";
+import { MAX_PLAYERS, createPlayer, DEFAULT_THEME_ID } from "./boardData.js";
 import {
   initGameState,
   rollForPlayer,
@@ -39,6 +39,7 @@ function roomRef(code) {
 
 function extractGameState(data) {
   return {
+    themeId: data.themeId || DEFAULT_THEME_ID,
     players: data.players,
     currentIdx: data.currentIdx,
     finishOrder: data.finishOrder,
@@ -66,17 +67,19 @@ function applyGameState(update, state) {
   return update;
 }
 
-export async function createRoom(uid, name) {
+export async function createRoom(uid, name, themeId) {
   let code = randomCode();
   for (let attempt = 0; attempt < 5; attempt++) {
     const snap = await getDoc(roomRef(code));
     if (!snap.exists()) break;
     code = randomCode();
   }
-  const host = createPlayer(uid, 0, name);
+  const resolvedThemeId = themeId || DEFAULT_THEME_ID;
+  const host = createPlayer(uid, 0, name, resolvedThemeId);
   const room = {
     code,
     hostUid: uid,
+    themeId: resolvedThemeId,
     status: "lobby",
     players: [host],
     currentIdx: 0,
@@ -104,7 +107,7 @@ export async function joinRoom(code, uid, name) {
     if (data.players.some((p) => p.id === uid)) return; // 再参加はそのまま許可
     if (data.status !== "lobby") throw new Error("すでにゲームが始まっています");
     if (data.players.length >= MAX_PLAYERS) throw new Error("満員です（最大4人）");
-    const player = createPlayer(uid, data.players.length, name);
+    const player = createPlayer(uid, data.players.length, name, data.themeId);
     tx.update(ref, {
       players: [...data.players, player],
       seq: (data.seq || 0) + 1,
@@ -131,7 +134,7 @@ export async function startGame(code, uid) {
     if (data.hostUid !== uid) throw new Error("ホストのみ開始できます");
     if (data.status !== "lobby") throw new Error("すでに開始しています");
     if (data.players.length < 2) throw new Error("2人以上必要です");
-    const state = initGameState(data.players.map((p) => ({ ...p })));
+    const state = initGameState(data.players.map((p) => ({ ...p })), data.themeId);
     const update = applyGameState({ seq: (data.seq || 0) + 1, updatedAt: serverTimestamp() }, state);
     tx.update(ref, update);
   });
@@ -185,7 +188,7 @@ export async function resetToLobby(code, uid) {
     if (!snap.exists()) throw new Error("ルームが見つかりません");
     const data = snap.data();
     if (data.hostUid !== uid) throw new Error("ホストのみ操作できます");
-    const players = data.players.map((p, i) => createPlayer(p.id, i, p.name));
+    const players = data.players.map((p, i) => createPlayer(p.id, i, p.name, data.themeId));
     tx.update(ref, {
       players,
       status: "lobby",
@@ -210,5 +213,3 @@ export async function deleteRoom(code, uid) {
     await deleteDoc(ref);
   }
 }
-
-export { TOKENS };
