@@ -8,6 +8,7 @@ import {
 } from "./roomEngine.js";
 import PlayingScreen from "./PlayingScreen.jsx";
 import { getRanking } from "./gameLogic.js";
+import GameTopBar from "./ui/TopBar.jsx";
 
 function LobbyScreen({ room, code, uid, onLeaveRoom }) {
   const isHost = room.hostUid === uid;
@@ -68,10 +69,11 @@ function LobbyScreen({ room, code, uid, onLeaveRoom }) {
   );
 }
 
-function SettlementScreen({ room, code, uid }) {
+function SettlementScreen({ room, code, uid, onLeaveRoom }) {
   const [busy, setBusy] = useState(false);
   return (
     <div className="sgr-app">
+      <GameTopBar title="マネー双六" code={code} uid={uid} hostUid={room.hostUid} onLeaveRoom={onLeaveRoom} />
       <div className="sgr-screen">
         <div className="sgr-title-block">
           <span className="sgr-eyebrow">📋</span>
@@ -122,11 +124,12 @@ function SettlementScreen({ room, code, uid }) {
   );
 }
 
-function LotteryScreen({ room, code }) {
+function LotteryScreen({ room, code, uid, onLeaveRoom }) {
   const [busy, setBusy] = useState(false);
   const winningNumber = room.lottery?.winningNumber || "----";
   return (
     <div className="sgr-app">
+      <GameTopBar title="マネー双六" code={code} uid={uid} hostUid={room.hostUid} onLeaveRoom={onLeaveRoom} />
       <div className="sgr-screen">
         <div className="sgr-title-block">
           <span className="sgr-eyebrow">🎰</span>
@@ -269,11 +272,11 @@ export default function GameRoom({ code, uid, onLeaveRoom }) {
     case "lobby":
       return <LobbyScreen room={room} code={code} uid={uid} onLeaveRoom={onLeaveRoom} />;
     case "playing":
-      return <PlayingScreen room={room} code={code} uid={uid} />;
+      return <PlayingScreen room={room} code={code} uid={uid} onLeaveRoom={onLeaveRoom} />;
     case "settlement":
-      return <SettlementScreen room={room} code={code} uid={uid} />;
+      return <SettlementScreen room={room} code={code} uid={uid} onLeaveRoom={onLeaveRoom} />;
     case "lottery":
-      return <LotteryScreen room={room} code={code} />;
+      return <LotteryScreen room={room} code={code} uid={uid} onLeaveRoom={onLeaveRoom} />;
     case "finished":
       return <FinalScreen room={room} code={code} uid={uid} onLeaveRoom={onLeaveRoom} />;
     default:

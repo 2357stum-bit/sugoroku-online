@@ -13,6 +13,7 @@ import {
 } from "./boardData.js";
 import { rollDice, chooseFork, chooseHome, submitInvest } from "./roomEngine.js";
 import { describeToast, signed, amtClass } from "./ui/helpers.js";
+import GameTopBar from "./ui/TopBar.jsx";
 
 function ScoreBoard({ players, currentIdx }) {
   return (
@@ -372,7 +373,7 @@ function InvestOverlay({ code, uid, invest, players, myMoney }) {
   );
 }
 
-export default function PlayingScreen({ room, code, uid }) {
+export default function PlayingScreen({ room, code, uid, onLeaveRoom }) {
   const { players, currentIdx, turn, lastEvent } = room;
   const me = players.find((p) => p.id === uid);
   const actor = players[currentIdx];
@@ -433,9 +434,7 @@ export default function PlayingScreen({ room, code, uid }) {
 
   return (
     <div className="sgr-app">
-      <div className="sgr-topbar">
-        <h1>マネー双六</h1>
-      </div>
+      <GameTopBar title="マネー双六" code={code} uid={uid} hostUid={room.hostUid} onLeaveRoom={onLeaveRoom} />
 
       <ScoreBoard players={players} currentIdx={currentIdx} />
 
