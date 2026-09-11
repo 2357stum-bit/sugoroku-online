@@ -310,6 +310,126 @@ const ADVENTURE_THEME_CFG = {
   ],
 };
 
+const IDOL_THEME_CFG = {
+  id: "idol",
+  name: "アイドル双六",
+  tagline: "100マスのステージを駆け抜け、ジャンルを選び、ファンを増やして芸能界の頂点を目指そう。",
+  eyebrowIcon: "🎤",
+  css: "idol",
+  tokens: ["🎤", "🎬", "🎸", "🌟"],
+  currencyUnit: "万円",
+  startLabel: "練習生スタート",
+  startIcon: "🌱",
+  goalLabel: "芸能界の頂点",
+  goalIcon: "👑",
+  labels: {
+    jobSquareName: "ジャンル",
+    jobGachaTitle: "ジャンル選択ガチャ！",
+    salaryName: "ギャラ日",
+    investVerb: "自己投資",
+    homeSquareName: "住まい",
+    homeVerb: "選択",
+    lotteryItemName: "オーディション整理番号",
+    lotteryFinaleName: "運命の生放送抽選会",
+    lotteryFinaleVerb: "抽選",
+    childEventVerb: "目標達成",
+    childGiftLabel: "お祝いの花輪代",
+    goalName: "頂点",
+    winningLabel: "運命の数字",
+  },
+  jobs: [
+    { id: "idol", name: "アイドル", icon: "🎤", desc: "バランス型。堅実にファンを増やす", mult: { income: 1.0, bonus: 1.0, accident: 1.0, salary: 1.0 } },
+    { id: "actress", name: "女優", icon: "🎭", desc: "高いギャラだが気の抜けない毎日", mult: { income: 1.6, bonus: 1.0, accident: 1.2, salary: 1.7 } },
+    { id: "comedian", name: "お笑い芸人", icon: "🤣", desc: "ギャラは控えめだが炎上リスクが低く手堅い", mult: { income: 0.85, bonus: 0.8, accident: 0.7, salary: 0.9 } },
+    { id: "model", name: "モデル", icon: "💃", desc: "当たれば大きいが波が激しい", mult: { income: 0.9, bonus: 1.6, accident: 1.3, salary: 0.8 } },
+    { id: "singer", name: "歌手", icon: "🎵", desc: "ハイリスク・ハイリターンな一発", mult: { income: 1.2, bonus: 1.8, accident: 1.8, salary: 1.3 } },
+    { id: "youtuber", name: "YouTuber", icon: "📹", desc: "バズれば大きいが浮き沈みが激しい", mult: { income: 0.8, bonus: 2.0, accident: 1.6, salary: 1.1 } },
+  ],
+  homeOptions: [
+    { id: "tower", label: "高級タワーマンション", icon: "🏙️", cost: -700, baseValue: 700, desc: "スター街道まっしぐらの豪華物件。資産価値も抜群" },
+    { id: "condo", label: "芸能人御用達マンション", icon: "🏢", cost: -380, baseValue: 380, desc: "同業者も多い人気エリア。堅実な資産に" },
+    { id: "dorm", label: "事務所の寮", icon: "🏠", cost: -250, baseValue: 250, desc: "仲間と共同生活。程よい距離感" },
+    { id: "home", label: "実家暮らし", icon: "🏡", cost: -30, baseValue: 0, desc: "地に足のついた実家暮らし。資産にはならない" },
+  ],
+  news: [
+    { text: "話題の新人が現れ、業界の注目度が急上昇している", pct: 12 },
+    { text: "大物のスキャンダルで業界全体がイメージダウン", pct: -10 },
+    { text: "ヒット番組の影響で仕事の需要が急増している", pct: 7 },
+    { text: "不況の影響でCM出演料の相場が下落している", pct: -8 },
+    { text: "SNSで新しいブームが起き注目度が急騰", pct: 15 },
+    { text: "大手事務所の不祥事で業界の信用が急落", pct: -14 },
+    { text: "海外市場で日本のコンテンツが人気上昇", pct: 6 },
+    { text: "新しい配信プラットフォームの登場で業界が活気づく", pct: 9 },
+    { text: "業界全体に自粛ムードが広がっている", pct: -5 },
+    { text: "広告費が絞られ気味で仕事の相場が伸び悩む", pct: -6 },
+    { text: "話題のドラマがヒットし関連の仕事が増加", pct: 5 },
+    { text: "音楽フェスの盛況でライブ需要が急伸", pct: 8 },
+  ],
+  desc: {
+    income: ["CM契約が決まりギャラが入った", "雑誌の専属モデルに抜擢された", "ラジオのレギュラー出演が決まった", "ファンミーティングのチケットが完売した", "ドラマの脇役オファーが来た", "企業とのタイアップ曲が採用された", "地方営業でしっかり稼いだ", "配信のスーパーチャットで盛り上がった", "雑誌の表紙を飾り増刷がかかった"],
+    expense: ["衣装用にオーダーメイドのドレスを新調した", "ボイストレーニングの月謝を払った", "マネージャーへの謝礼を包んだ", "SNS炎上対応で謝罪広告費がかかった", "ダンスレッスンの追加コマを取った", "ファンクラブ会報の制作費を負担した", "私服がスクープされ買い替えた", "事務所へのマネジメント料を払った", "収録先への交通費がかさんだ"],
+    bonus: ["配信の投げ銭で予想外の収入があった", "路上ライブがバズって注目を浴びた", "握手会でファンから差し入れの商品券をもらった", "古い写真集が再評価され重版した", "先輩芸能人から仕事を紹介してもらえた", "CMのギャラが交渉で上乗せされた", "懸賞で豪華賞品が当たった", "昔の楽曲が海外でバズって印税が入った", "ファンからの応援グッズが話題になった"],
+    accident: ["SNSの発言が炎上し対応に追われた", "熱愛報道の火消しに費用がかかった", "本番で大失敗しお詫びの品を配った", "マネージャーとのトラブルで仲裁費用がかかった", "私物を盗まれ買い直した", "体調を崩して公演を欠席し違約金を払った", "誤情報を流され訂正広告を出した", "ライバルにポジションを奪われ立て直し費用がかかった", "収録先でのトラブル対応に追われた"],
+    rest: ["喉を痛めて声が出ず一回休み", "体調不良でスケジュールを調整し一回休み", "長時間の収録が続き一回休み", "地方巡業の移動で一回休み", "メンタルケアのため一回休み"],
+    treasure: ["デビュー当時の直筆サイン色紙", "伝説のライブの半券", "初代衣装の一着", "幻の未発表デモ音源", "大御所とのツーショット写真", "受賞トロフィーのレプリカ", "ファン一号からの手紙", "テレビ初出演時の台本", "伝説のポスター初版"],
+  },
+  icon: {
+    income: "💰", expense: "💸", bonus: "🎁", accident: "⚡", rest: "🛌",
+    treasure: "💎", job: "🎤", salary: "💴", lifeevent: "✨",
+    childevent: "🤝", homepurchase: "🏙️", lottery: "🎬",
+  },
+  squareDesc: {
+    job: "ジャンルを選ぼう",
+    home: "住まいを選ぼう",
+    fork: "進む道を選ぼう",
+    lottery: "オーディション整理番号を発見",
+    salary: "ギャラ日がやってきた",
+  },
+  lifeEvents: [
+    { idx: 14, icon: "🎤", label: "オーディション", desc: "憧れのオーディションに挑戦した！審査結果は…", base: 120 },
+    { idx: 26, icon: "✨", label: "メジャーデビュー", desc: "念願のメジャーデビューを果たした！滑り出しの評判は…", base: 220 },
+    { idx: 78, icon: "📺", label: "大型音楽番組出演", desc: "大型音楽番組に出演した！反響のほどは…", base: 550 },
+    { idx: 92, icon: "🎊", label: "紅白初出場", desc: "伝説の紅白歌合戦に初出場した！本番の出来は…", base: 850 },
+  ],
+  childEvents: [
+    { idx: 40, label: "念願のソロデビュー", cost: -150 },
+    { idx: 84, label: "主演ドラマへの挑戦", cost: -130 },
+  ],
+  forkOptions: [
+    { id: "risk", label: "一攫千金コース", icon: "💥", desc: "過激な路線。大バズりも大炎上もある波乱の数マス" },
+    { id: "safe", label: "堅実コース", icon: "🎗️", desc: "地道な路線。少しずつ確実に評価が貯まっていく" },
+  ],
+  riskTemplate: [
+    { type: "bonus", desc: "過激な企画に挑戦して大バズりした", amount: [100, 300] },
+    { type: "accident", desc: "炎上覚悟の発言が裏目に出た", amount: [-200, -60] },
+    { type: "bonus", desc: "際どい写真集が話題騒然になった", amount: [80, 250] },
+    { type: "accident", desc: "一か八かのスキャンダル暴露が逆効果に", amount: [-180, -50] },
+    { type: "bonus", desc: "際どいネタが当たって注目を独占した", amount: [90, 280] },
+    { type: "accident", desc: "過激な発言が大炎上し謝罪に追われた", amount: [-220, -70] },
+    { type: "bonus", desc: "炎上覚悟の企画がまさかの神回になった", amount: [110, 320] },
+    { type: "accident", desc: "調子に乗りすぎて評判を落とした", amount: [-240, -80] },
+  ],
+  safeTemplate: [
+    { type: "income", desc: "地道なファンサービスで信頼を積み重ねた", amount: [50, 90] },
+    { type: "income", desc: "堅実に営業をこなし着実に稼いだ", amount: [40, 80] },
+    { type: "income", desc: "真面目な活動が評価され安定収入を得た", amount: [50, 90] },
+    { type: "income", desc: "安全第一で慎重にスケジュールをこなした", amount: [40, 80] },
+    { type: "income", desc: "誠実な対応でファンの支持を固めた", amount: [50, 90] },
+    { type: "income", desc: "コツコツ営業して確実に貯蓄を増やした", amount: [40, 80] },
+    { type: "income", desc: "手堅い仕事をきっちりこなして評価された", amount: [50, 90] },
+    { type: "income", desc: "無理せず着実に活動を続けた", amount: [40, 80] },
+  ],
+  rules: [
+    { icon: "🎤", label: "ジャンル選択マス", text: "サイコロで活動ジャンルがランダムに決定" },
+    { icon: "💴", label: "ギャラ日マス", text: "全員が同時に自己投資額を決める（他のプレイヤーの決定を待ちます）" },
+    { icon: "✨", label: "芸能界の一大イベントマス", text: "オーディションや紅白出場など、出目で収入が変わる" },
+    { icon: "🤝", label: "目標達成マス", text: "五分五分の運。成功すると他の全員からお祝いの花輪代がもらえる" },
+    { icon: "🔀", label: "分かれ道マス", text: "一攫千金コースか堅実コースを選べる" },
+    { icon: "🏙️", label: "住まい選択マス", text: "ゴール後に売却して精算" },
+    { icon: "🎬💎", label: "オーディション整理番号マス／レジェンドアイテムマス", text: "ゴール後の生放送抽選会・換金でお楽しみ" },
+  ],
+};
+
 function buildTheme(cfg) {
   const LIFEEVENT_MAP = {};
   cfg.lifeEvents.forEach((ev) => (LIFEEVENT_MAP[ev.idx] = ev));
@@ -406,6 +526,7 @@ function buildTheme(cfg) {
 export const THEMES = {
   money: buildTheme(MONEY_THEME_CFG),
   adventure: buildTheme(ADVENTURE_THEME_CFG),
+  idol: buildTheme(IDOL_THEME_CFG),
 };
 export const DEFAULT_THEME_ID = "money";
 export const THEME_LIST = Object.values(THEMES);
