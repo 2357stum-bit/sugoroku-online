@@ -40,6 +40,8 @@
   --sgr-accent-ink: #04241c;
   --sgr-danger-ink: #2b0713;
   --sgr-heading-font: "Zen Kaku Gothic New", sans-serif;
+  --sgr-glow-1: rgba(0, 217, 163, 0.1);
+  --sgr-glow-2: rgba(167, 139, 250, 0.08);
   font-family: "Zen Kaku Gothic New", "Noto Sans JP", sans-serif;
   color: var(--sgr-ink);
   background: var(--sgr-bg);
@@ -83,6 +85,8 @@
   --sgr-accent-ink: #2b1d02;
   --sgr-danger-ink: #2b0906;
   --sgr-heading-font: "Shippori Mincho", serif;
+  --sgr-glow-1: rgba(232, 184, 75, 0.1);
+  --sgr-glow-2: rgba(155, 111, 224, 0.08);
   font-family: "Zen Maru Gothic", "Noto Sans JP", sans-serif;
 }
 
@@ -120,6 +124,47 @@
   --sgr-accent-ink: #2b0620;
   --sgr-danger-ink: #2b0713;
   --sgr-heading-font: "M PLUS Rounded 1c", sans-serif;
+  --sgr-glow-1: rgba(255, 61, 154, 0.12);
+  --sgr-glow-2: rgba(177, 92, 255, 0.09);
+  font-family: "Zen Maru Gothic", "Noto Sans JP", sans-serif;
+}
+
+/* ---- 学園生活双六テーマ: 明るい水色×ピンクの学生カラー ---- */
+.sgr-root[data-theme="school"] {
+  --sgr-bg: #f7fafd;
+  --sgr-board: #ffffff;
+  --sgr-board-alt: #eef3fa;
+  --sgr-ink: #2b3a4a;
+  --sgr-muted: #7c8b9b;
+  --sgr-accent: #3e8ede;
+  --sgr-accent-dim: rgba(62, 142, 222, 0.13);
+  --sgr-coral: #ff6b81;
+  --sgr-coral-dim: rgba(255, 107, 129, 0.14);
+  --sgr-gold: #ffc94a;
+  --sgr-gold-dim: rgba(255, 201, 74, 0.2);
+  --sgr-purple: #9c7fe0;
+  --sgr-purple-dim: rgba(156, 127, 224, 0.15);
+  --sgr-pink: #ff9fc8;
+  --sgr-pink-dim: rgba(255, 159, 200, 0.18);
+  --sgr-blue: #5dbbff;
+  --sgr-blue-dim: rgba(93, 187, 255, 0.16);
+  --sgr-bronze: #d9a86c;
+  --sgr-bronze-dim: rgba(217, 168, 108, 0.2);
+  --sgr-sq-normal: #eef3fa;
+  --sgr-sq-rest: rgba(47, 191, 159, 0.14);
+  --sgr-sq-salary: var(--sgr-bronze-dim);
+  --sgr-sq-lifeevent: var(--sgr-coral-dim);
+  --sgr-sq-childevent: rgba(47, 191, 159, 0.14);
+  --sgr-sq-home: var(--sgr-bronze-dim);
+  --sgr-line: rgba(43, 58, 74, 0.11);
+  --sgr-shadow: 0 6px 18px rgba(43, 58, 74, 0.14);
+  --sgr-money-pos: #1f9e6e;
+  --sgr-money-neg: #e0435d;
+  --sgr-accent-ink: #ffffff;
+  --sgr-danger-ink: #ffffff;
+  --sgr-heading-font: "Zen Kaku Gothic New", sans-serif;
+  --sgr-glow-1: rgba(255, 159, 200, 0.16);
+  --sgr-glow-2: rgba(62, 142, 222, 0.1);
   font-family: "Zen Maru Gothic", "Noto Sans JP", sans-serif;
 }
 
@@ -130,14 +175,14 @@
   display: flex;
   flex-direction: column;
   background:
-    radial-gradient(ellipse 620px 300px at 15% -6%, rgba(0, 217, 163, 0.1), transparent 60%),
-    radial-gradient(ellipse 520px 280px at 100% 10%, rgba(167, 139, 250, 0.08), transparent 55%),
+    radial-gradient(ellipse 620px 300px at 15% -6%, var(--sgr-glow-1), transparent 60%),
+    radial-gradient(ellipse 520px 280px at 100% 10%, var(--sgr-glow-2), transparent 55%),
     var(--sgr-bg);
 }
 
 .sgr-screen { padding: 28px 22px 40px; display: flex; flex-direction: column; gap: 18px; flex: 1; justify-content: center; }
 .sgr-title-block { text-align: center; }
-.sgr-title-block .sgr-eyebrow { font-size: 32px; display: block; margin-bottom: 8px; filter: drop-shadow(0 0 14px rgba(0, 217, 163, 0.5)); }
+.sgr-title-block .sgr-eyebrow { font-size: 32px; display: block; margin-bottom: 8px; filter: drop-shadow(0 0 14px var(--sgr-accent-dim)); }
 .sgr-title-block h1 { font-size: 26px; margin: 0 0 8px; line-height: 1.3; color: var(--sgr-ink); letter-spacing: 0.01em; font-weight: 700; }
 .sgr-title-block p { margin: 0; font-size: 13px; line-height: 1.7; color: var(--sgr-muted); }
 
