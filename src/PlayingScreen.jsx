@@ -14,6 +14,8 @@ import {
   sfxSparkle,
   sfxSadTone,
   sfxJackpot,
+  startBgm,
+  setBgmMode,
 } from "./audio.js";
 
 const DIE_FACE = { 1: "⚀", 2: "⚁", 3: "⚂", 4: "⚃", 5: "⚄", 6: "⚅" };
@@ -491,6 +493,13 @@ export default function PlayingScreen({ room, code, uid, onLeaveRoom }) {
   // 出したり、ゲームを先に進めたりしない(演出用の別エフェクトと競合させないため)。
   const busyRef = useRef(false);
   const [submitting, setSubmitting] = useState(false);
+
+  // プレイ中は少しテンポの速いBGMに切り替える。画面を離れたら元(落ち着いた曲調)に戻す。
+  useEffect(() => {
+    startBgm();
+    setBgmMode("play");
+    return () => setBgmMode("ambient");
+  }, []);
 
   // turn.roll/fromPos/toPos/path はターンが確定した瞬間から次のプレイヤーの番になるまで
   // 変わらないので、これをキーにして「新しいロールが起きた」ことを検出する。
