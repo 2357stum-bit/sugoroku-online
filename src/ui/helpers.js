@@ -17,6 +17,7 @@ export const EVENT_BG = {
   childevent: "var(--sgr-sq-childevent)",
   goal: "var(--sgr-sq-goal)",
   choice: "var(--sgr-sq-bonus)",
+  raid: "var(--sgr-sq-accident)",
 };
 
 export function findPlayerName(players, id) {
@@ -68,6 +69,14 @@ export function describeToast(event, players, theme) {
       return { icon: theme.icon.choice, bg: EVENT_BG.choice, title: `${name}さんが「${event.desc}」を検討中…` };
     case "pick_result":
       return { icon: theme.icon.choice, bg: EVENT_BG.choice, title: `${name}：${event.desc}『${event.option.label}』を選んだ`, amount: event.amt, unit };
+    case "raid": {
+      const targetName = findPlayerName(players, event.targetId);
+      return event.success
+        ? { icon: theme.icon.raid, bg: EVENT_BG.raid, title: `${name}：${targetName}から奪った！`, sub: event.flavor, amount: event.amt, unit }
+        : { icon: theme.icon.raid, bg: EVENT_BG.raid, title: `${name}：${targetName}を狙ったが反撃された…`, sub: event.flavor, amount: event.amt, unit };
+    }
+    case "raid_none":
+      return { icon: theme.icon.raid, bg: EVENT_BG.raid, title: `${name}：狙う相手がいなかった` };
     default:
       return null;
   }

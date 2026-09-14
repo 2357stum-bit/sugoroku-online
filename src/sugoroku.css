@@ -33,6 +33,7 @@
   --sgr-sq-treasure: var(--sgr-pink-dim);
   --sgr-sq-job: var(--sgr-blue-dim);
   --sgr-sq-goal: var(--sgr-gold-dim);
+  --sgr-sq-raid: var(--sgr-coral-dim);
   --sgr-line: rgba(255, 255, 255, 0.09);
   --sgr-shadow: 0 8px 22px rgba(0, 0, 0, 0.4);
   --sgr-money-pos: #00d9a3;
@@ -207,6 +208,45 @@
   font-family: "Zen Kaku Gothic New", "Noto Sans JP", sans-serif;
 }
 
+/* ---- 裏社会双六テーマ: 夜の裏路地を思わせる黒×金×血のような赤のパレット ---- */
+.sgr-root[data-theme="underworld"] {
+  --sgr-bg: #0d0908;
+  --sgr-board: #1a1210;
+  --sgr-board-alt: #251815;
+  --sgr-ink: #f2e8e0;
+  --sgr-muted: #a8938a;
+  --sgr-accent: #d4af37;
+  --sgr-accent-dim: rgba(212, 175, 55, 0.18);
+  --sgr-coral: #e8384f;
+  --sgr-coral-dim: rgba(232, 56, 79, 0.18);
+  --sgr-gold: #ffcc4d;
+  --sgr-gold-dim: rgba(255, 204, 77, 0.18);
+  --sgr-purple: #8b6fb3;
+  --sgr-purple-dim: rgba(139, 111, 179, 0.18);
+  --sgr-pink: #c9707f;
+  --sgr-pink-dim: rgba(201, 112, 127, 0.16);
+  --sgr-blue: #5d8aa8;
+  --sgr-blue-dim: rgba(93, 138, 168, 0.18);
+  --sgr-bronze: #b08d57;
+  --sgr-bronze-dim: rgba(176, 141, 87, 0.2);
+  --sgr-sq-normal: #201613;
+  --sgr-sq-rest: rgba(160, 147, 138, 0.14);
+  --sgr-sq-salary: var(--sgr-bronze-dim);
+  --sgr-sq-lifeevent: var(--sgr-coral-dim);
+  --sgr-sq-childevent: var(--sgr-accent-dim);
+  --sgr-sq-home: var(--sgr-bronze-dim);
+  --sgr-line: rgba(212, 175, 55, 0.14);
+  --sgr-shadow: 0 8px 22px rgba(0, 0, 0, 0.6);
+  --sgr-money-pos: #7fd99b;
+  --sgr-money-neg: #e4685d;
+  --sgr-accent-ink: #2b1d02;
+  --sgr-danger-ink: #2b0713;
+  --sgr-heading-font: "Shippori Mincho", serif;
+  --sgr-glow-1: rgba(212, 175, 55, 0.12);
+  --sgr-glow-2: rgba(232, 56, 79, 0.08);
+  font-family: "Zen Kaku Gothic New", "Noto Sans JP", sans-serif;
+}
+
 .sgr-app {
   max-width: 480px;
   margin: 0 auto;
@@ -357,14 +397,19 @@
 .sgr-sq.sgr-goal::before { background: var(--sgr-sq-goal); inset: 0; clip-path: polygon(50% 0%, 61% 35%, 98% 35%, 68% 57%, 79% 91%, 50% 70%, 21% 91%, 32% 57%, 2% 35%, 39% 35%); border: 1.5px solid rgba(255, 184, 77, 0.7); animation: sgrGoalpulse 1.8s ease-in-out infinite; }
 .sgr-sq.sgr-goal .sgr-icon { font-size: 17px; }
 
+.sgr-sq.sgr-raid { z-index: 2; }
+.sgr-sq.sgr-raid::before { background: var(--sgr-sq-raid); inset: 0; clip-path: polygon(48% 0%, 60% 32%, 96% 30%, 68% 54%, 80% 90%, 50% 68%, 20% 90%, 32% 54%, 4% 30%, 40% 32%); border: 1.5px solid rgba(255, 84, 112, 0.7); animation: sgrRaidglow 1.6s ease-in-out infinite; }
+.sgr-sq.sgr-raid .sgr-icon { font-size: 17px; }
+
 @keyframes sgrShimmer { 0%, 100% { box-shadow: 0 0 0 0 rgba(255, 122, 168, 0); } 50% { box-shadow: 0 0 9px 2px rgba(255, 122, 168, 0.5); } }
 @keyframes sgrShimmer2 { 0%, 100% { box-shadow: 0 0 0 0 rgba(167, 139, 250, 0); } 50% { box-shadow: 0 0 9px 2px rgba(167, 139, 250, 0.5); } }
 @keyframes sgrGoalpulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.06); } }
 @keyframes sgrLifeglow { 0%, 100% { box-shadow: 0 0 0 0 rgba(255, 122, 168, 0); } 50% { box-shadow: 0 0 10px 3px rgba(255, 122, 168, 0.55); } }
 @keyframes sgrChildglow { 0%, 100% { box-shadow: 0 0 0 0 rgba(0, 217, 163, 0); } 50% { box-shadow: 0 0 10px 3px rgba(0, 217, 163, 0.55); } }
+@keyframes sgrRaidglow { 0%, 100% { box-shadow: 0 0 0 0 rgba(255, 84, 112, 0); } 50% { box-shadow: 0 0 10px 3px rgba(255, 84, 112, 0.55); } }
 @media (prefers-reduced-motion: reduce) {
   .sgr-sq.sgr-treasure::before, .sgr-sq.sgr-goal::before, .sgr-sq.sgr-lifeevent::before,
-  .sgr-sq.sgr-childevent::before, .sgr-sq.sgr-lottery::before { animation: none; }
+  .sgr-sq.sgr-childevent::before, .sgr-sq.sgr-lottery::before, .sgr-sq.sgr-raid::before { animation: none; }
 }
 
 .sgr-msg-toast { margin: 0 18px 10px; background: var(--sgr-board-alt); border: 1px solid var(--sgr-line); color: var(--sgr-ink); border-radius: 14px; padding: 12px 16px; font-size: 13px; line-height: 1.6; display: flex; align-items: flex-start; gap: 10px; }

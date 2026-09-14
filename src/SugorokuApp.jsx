@@ -2,7 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import "./sugoroku.css";
 import { authReady } from "./firebase.js";
 import { createRoom, joinRoom } from "./roomEngine.js";
-import { THEME_LIST, DEFAULT_THEME_ID, getTheme } from "./boardData.js";
+import { THEME_LIST, DEFAULT_THEME_ID, START_MONEY, getTheme } from "./boardData.js";
 import GameRoom from "./GameRoom.jsx";
 import SoundToggle from "./ui/SoundToggle.jsx";
 import { primeAudio } from "./audio.js";
@@ -235,7 +235,8 @@ export default function SugorokuApp() {
               <div key={r.label}>{r.icon} <b>{r.label}</b>：{r.text}</div>
             ))}
             <div>
-              2〜4人でプレイ可能。はじめの所持{{ G: "ゴールド", Cr: "クレジット" }[theme.currencyUnit] || "金"}は全員 <b>500{theme.currencyUnit}</b>
+              2〜4人でプレイ可能。はじめの所持{{ G: "ゴールド", Cr: "クレジット" }[theme.currencyUnit] || "金"}は全員{" "}
+              <b>{theme.startMoney || START_MONEY}{theme.currencyUnit}</b>
             </div>
           </div>
         </div>

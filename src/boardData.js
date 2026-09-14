@@ -851,6 +851,167 @@ const SPACE_THEME_CFG = {
   ],
 };
 
+const UNDERWORLD_THEME_CFG = {
+  id: "underworld",
+  name: "裏社会双六",
+  tagline: "5000万円を元手に、シノギを重ねて成り上がり、100マスの抗争を勝ち抜いて裏社会の帝王を目指せ。",
+  eyebrowIcon: "🕶️",
+  css: "underworld",
+  tokens: ["🦈", "🐺", "🐍", "🦂"],
+  currencyUnit: "万円",
+  startMoney: 5000,
+  startLabel: "下っ端スタート",
+  startIcon: "🌆",
+  goalLabel: "裏社会の帝王",
+  goalIcon: "👑",
+  labels: {
+    jobSquareName: "役職",
+    jobGachaTitle: "役職決定ガチャ！",
+    salaryName: "上納日",
+    investVerb: "裏取引",
+    homeSquareName: "隠れ家",
+    homeVerb: "購入",
+    lotteryItemName: "情報屋のネタ",
+    lotteryFinaleName: "運命の情報開示",
+    lotteryFinaleVerb: "開示",
+    childEventVerb: "勧誘",
+    childGiftLabel: "祝儀(みかじめ料)",
+    goalName: "帝王",
+    winningLabel: "暗号ナンバー",
+  },
+  jobs: [
+    { id: "muscle", name: "下っ端", icon: "🥊", desc: "バランス型。手堅く稼ぐ", mult: { income: 1.0, bonus: 1.0, accident: 1.0, salary: 1.0 } },
+    { id: "fixer", name: "始末屋", icon: "🔧", desc: "高い成果報酬だが危険と隣り合わせ", mult: { income: 1.6, bonus: 1.0, accident: 1.2, salary: 1.7 } },
+    { id: "accountant", name: "帳簿屋", icon: "📒", desc: "報酬は控えめだが危険を避けて手堅い", mult: { income: 0.85, bonus: 0.8, accident: 0.7, salary: 0.9 } },
+    { id: "smuggler", name: "密輸屋", icon: "🚤", desc: "当たれば大きいが波が激しい", mult: { income: 0.9, bonus: 1.6, accident: 1.3, salary: 0.8 } },
+    { id: "hacker", name: "裏社会のハッカー", icon: "💻", desc: "ハイリスク・ハイリターンな一撃", mult: { income: 1.2, bonus: 1.8, accident: 1.8, salary: 1.3 } },
+    { id: "boss", name: "若頭", icon: "🎩", desc: "カリスマ次第で成果が乱高下", mult: { income: 0.8, bonus: 2.0, accident: 1.6, salary: 1.1 } },
+  ],
+  homeOptions: [
+    { id: "fortress", label: "要塞のような豪邸", icon: "🏯", cost: -3000, baseValue: 3000, desc: "厳重警備の隠れ家。資産価値も抜群" },
+    { id: "penthouse", label: "高級ペントハウス", icon: "🏙️", cost: -1500, baseValue: 1500, desc: "街を見下ろす拠点。堅実な資産に" },
+    { id: "office", label: "組事務所の一室", icon: "🏢", cost: -800, baseValue: 800, desc: "仲間と過ごす拠点暮らし" },
+    { id: "hideout", label: "怪しい倉庫", icon: "🏚️", cost: -100, baseValue: 0, desc: "身軽な仮の隠れ家。資産にはならない" },
+  ],
+  news: [
+    { text: "新しいシノギが軌道に乗り、裏経済が拡大している", pct: 12 },
+    { text: "警察の一斉摘発で市場に激震が走る", pct: -10 },
+    { text: "縄張り拡大が成功し取引が堅調に推移", pct: 7 },
+    { text: "上納金の増額懸念から相場が下落", pct: -8 },
+    { text: "新しい裏取引ルートへの期待から相場が急騰", pct: 15 },
+    { text: "大物幹部の裏切りが発覚し組織の信用が急落", pct: -14 },
+    { text: "隣の縄張りとの手打ちで取引が上昇", pct: 6 },
+    { text: "上層部の後押しで市場が活気づく", pct: 9 },
+    { text: "潜入捜査の噂で様子見ムードが広がる", pct: -5 },
+    { text: "景気後退の噂がじわじわ広がっている", pct: -6 },
+    { text: "新規の客が増えて取引がよく売れている", pct: 5 },
+    { text: "情報屋のネタが当たり関連取引が急伸", pct: 8 },
+  ],
+  desc: {
+    income: ["みかじめ料をきっちり回収した", "怪しい荷物の運び屋で謝礼をもらった", "賭場の上がりを受け取った", "闇市で品物を売って稼いだ", "組の評価が上がり特別報酬が出た", "兄貴から祝儀をもらった", "情報屋への口利きで謝礼を得た", "古い借金を取り立てた", "見張り役の報酬が出た"],
+    expense: ["高級車の修理代を支払った", "接待でいいホテルに泊まった", "弁護士への相談料を支払った", "隠れ家の設備が壊れ修理費がかかった", "下っ端にわずかな金を奪われた", "組全員へのご祝儀を包んだ", "装備の手入れ代を支払った", "縄張りの通行料を払った", "検問での揉め事で金を渡した"],
+    bonus: ["路上で落とし物の札束を拾った", "商人と交渉して掘り出し物を安く買えた", "骨董品の収集品が高く売れた", "賭け事で思わぬ大勝ちをした", "旧友から餞別をもらった", "隠し金庫で現金の山を発見した", "怪しい情報屋から儲け話をもらった", "廃ビルの隠し財産を発見した", "闇商人から掘り出し物を譲られた"],
+    accident: ["賭場でスってしまった", "偽の商談に引っかかり大損した", "詐欺師に高額な怪しい品を売りつけられた", "抗争に巻き込まれ装備が壊れた", "罠にかかり出費がかさんだ", "酒場の喧嘩に巻き込まれ弁償させられた", "他の組に因縁をつけられ金を渡した", "手入れで隠し金を没収された", "遠回りを強いられ路銀を使った"],
+    rest: ["長距離の護送で一回休み", "怪我の療養で一回休み", "潜伏生活で一回休み", "抗争の後始末で一回休み", "仲間の看病で一回休み"],
+    treasure: ["伝説の金の延べ棒", "幻のダイヤの指輪", "裏社会の秘宝", "呪われた金貨", "失われた組長の遺産", "闇市の骨董品", "古の裏帳簿", "宝石をあしらった短剣の柄", "巨大商船の財宝"],
+    raid: ["闇にまぎれて忍び寄った", "縄張りを荒らして金を狙った", "不意打ちで金庫を狙った", "脅しをかけて金を巻き上げようとした", "隙をついて有り金を狙った"],
+    raidFail: ["反撃を受けて逃げ帰った", "見つかって仲間に取り返された", "用心棒に阻まれて失敗した", "返り討ちにあった", "計画がバレて仕返しされた"],
+  },
+  icon: {
+    income: "💰", expense: "💸", bonus: "🎁", accident: "⚡", rest: "🛌",
+    treasure: "💎", job: "🎩", salary: "💴", lifeevent: "🚨",
+    childevent: "🤝", homepurchase: "🏢", lottery: "🎟️", choice: "🃏", raid: "🥊",
+  },
+  squareDesc: {
+    job: "役職を決めよう",
+    home: "隠れ家を選ぼう",
+    fork: "進むルートを選ぼう",
+    lottery: "情報屋のネタを発見",
+    salary: "上納日がやってきた",
+  },
+  lifeEvents: [
+    { idx: 14, icon: "🕵️", label: "潜入捜査官との遭遇", desc: "潜入捜査官に目をつけられた！切り抜けられるか…", base: 1200 },
+    { idx: 26, icon: "🔥", label: "縄張り抗争", desc: "隣の組との縄張り抗争が勃発した！結果は…", base: 2200 },
+    { idx: 78, icon: "🚔", label: "警察のガサ入れ", desc: "隠れ家に警察のガサ入れが入った！被害の程度は…", base: 5500 },
+    { idx: 92, icon: "👑", label: "裏社会の頂点決戦", desc: "裏社会の頂点をかけた決戦に挑む！勝敗のゆくえは…", base: 8500 },
+  ],
+  childEvents: [
+    { idx: 40, label: "舎弟その1", cost: -1500 },
+    { idx: 84, label: "舎弟その2", cost: -1300 },
+  ],
+  choices: [
+    { idx: 6, squareDesc: "臨時収入の使い道", options: [
+      { id: "a", label: "貯める", desc: "いざという時のために蓄える", amount: [200, 300] },
+      { id: "b", label: "豪遊する", desc: "気分次第で得することも損することも", amount: [-150, 800] },
+    ] },
+    { idx: 18, squareDesc: "危ない仕事の誘い", options: [
+      { id: "a", label: "断る", desc: "今の組で頑張る", amount: [100, 200] },
+      { id: "b", label: "受ける", desc: "うまくいけば大金、しくじれば大損", amount: [-250, 1500] },
+    ] },
+    { idx: 30, squareDesc: "裏金の使い道", options: [
+      { id: "a", label: "地下銀行に預ける", desc: "手堅く利子を得る", amount: [300, 500] },
+      { id: "b", label: "怪しい商人の話に乗る", desc: "一攫千金か、丸損か", amount: [-700, 2500] },
+    ] },
+    { idx: 42, squareDesc: "他の組からの勧誘", options: [
+      { id: "a", label: "今の組に残る", desc: "安定を選ぶ", amount: [400, 700] },
+      { id: "b", label: "移籍する", desc: "環境が変わり運命が動く", amount: [-1000, 3000] },
+    ] },
+    { idx: 72, squareDesc: "独立開業のチャンス", options: [
+      { id: "a", label: "見送る", desc: "今のままで手堅く", amount: [600, 1000] },
+      { id: "b", label: "自分の組を持つ", desc: "大きなリターンとリスクが両方待つ", amount: [-1800, 6000] },
+    ] },
+    { idx: 80, squareDesc: "怪しい儲け話", options: [
+      { id: "a", label: "我慢する", desc: "節約して蓄える", amount: [800, 1200] },
+      { id: "b", label: "思い切って乗る", desc: "駄作か、伝説級の大金か", amount: [-1400, 4000] },
+    ] },
+    { idx: 87, squareDesc: "先代からの遺産", options: [
+      { id: "a", label: "現金で受け取る", desc: "手堅く確実に", amount: [1000, 1500] },
+      { id: "b", label: "秘宝で受け取る", desc: "化けるかもしれないが手間もかかる", amount: [-900, 5000] },
+    ] },
+    { idx: 95, squareDesc: "最後の大勝負", options: [
+      { id: "a", label: "手堅く終える", desc: "安全策で締めくくる", amount: [1500, 2000] },
+      { id: "b", label: "一発逆転を狙う", desc: "すべてを賭けた大博打", amount: [-2500, 9000] },
+    ] },
+  ],
+  forkOptions: [
+    { id: "risk", label: "抗争ルート", icon: "🔥", desc: "危険な抗争。大金星も大惨事もある波乱の数マス" },
+    { id: "safe", label: "地道なシノギルート", icon: "🛡️", desc: "手堅い稼ぎ。少しずつ確実に儲けが増える" },
+  ],
+  riskTemplate: [
+    { type: "bonus", desc: "危険な抗争で敵の隠し金庫を見つけた", amount: [1000, 3000] },
+    { type: "accident", desc: "抗争に巻き込まれ大怪我をした", amount: [-1000, -300] },
+    { type: "bonus", desc: "裏市場で怪しい大取引がまとまった", amount: [800, 2500] },
+    { type: "accident", desc: "一か八かの取引で罠にかかった", amount: [-900, -250] },
+    { type: "bonus", desc: "廃ビルで埋もれた財宝を掘り当てた", amount: [900, 2800] },
+    { type: "accident", desc: "敵の待ち伏せに遭い身包み剥がされた", amount: [-1100, -350] },
+    { type: "bonus", desc: "古い情報を頼りに秘密の金庫を突き止めた", amount: [1100, 3200] },
+    { type: "accident", desc: "調子に乗って危険な深部まで踏み込んだ", amount: [-1200, -400] },
+  ],
+  safeTemplate: [
+    { type: "income", desc: "安全な仕事で着実にシノギをこなした", amount: [500, 900] },
+    { type: "income", desc: "堅実に運び屋の仕事をこなした", amount: [400, 800] },
+    { type: "income", desc: "地道な取引で確実な儲けを得た", amount: [500, 900] },
+    { type: "income", desc: "安全第一で慎重に事を進めた", amount: [400, 800] },
+    { type: "income", desc: "信頼できる相手と手堅い取引をした", amount: [500, 900] },
+    { type: "income", desc: "コツコツ働いて確実に儲けを増やした", amount: [400, 800] },
+    { type: "income", desc: "評判のいい仕事をきっちりこなした", amount: [500, 900] },
+    { type: "income", desc: "無理せず着実に事を進めた", amount: [400, 800] },
+  ],
+  // 「襲撃マス」: 今いる相手の中で最も裕福な相手を狙い、金を奪う(失敗すると反撃を受ける)。
+  // 他のマップにはない、このテーマ専用のマス位置。
+  raidIdx: [11, 22, 37, 51, 71, 83, 93, 98],
+  rules: [
+    { icon: "🎩", label: "役職決定マス", text: "サイコロで組内の役職がランダムに決定" },
+    { icon: "💴", label: "上納日マス", text: "全員が同時に裏取引の金額を決める（他のプレイヤーの決定を待ちます）" },
+    { icon: "🚨", label: "抗争イベントマス", text: "潜入捜査官や警察のガサ入れなど、出目で財産が変わる" },
+    { icon: "🤝", label: "舎弟勧誘マス", text: "五分五分の運。成功すると他の全員から祝儀(みかじめ料)がもらえる" },
+    { icon: "🔀", label: "分かれ道マス", text: "抗争ルートか地道なシノギルートを選べる" },
+    { icon: "🥊", label: "襲撃マス", text: "今いる中で最も裕福な相手を狙って金を奪う。失敗すると反撃を受ける" },
+    { icon: "🏢", label: "隠れ家選択マス", text: "ゴール後に売却して精算" },
+    { icon: "🎟️💎", label: "情報屋のネタマス／お宝マス", text: "ゴール後の情報開示・換金でお楽しみ" },
+  ],
+};
+
 function buildTheme(cfg) {
   const LIFEEVENT_MAP = {};
   cfg.lifeEvents.forEach((ev) => (LIFEEVENT_MAP[ev.idx] = ev));
@@ -906,6 +1067,10 @@ function buildTheme(cfg) {
       SQUARES[i] = { type: "choice", icon: cfg.icon.choice, desc: c.squareDesc, options: c.options, forcedStop: true };
       continue;
     }
+    if ((cfg.raidIdx || []).includes(i)) {
+      SQUARES[i] = { type: "raid", icon: cfg.icon.raid, forcedStop: true };
+      continue;
+    }
     if (i === HOME_IDX) {
       SQUARES[i] = { type: "homepurchase", icon: cfg.icon.homepurchase, desc: cfg.squareDesc.home, forcedStop: true };
       continue;
@@ -959,6 +1124,7 @@ export const THEMES = {
   idol: buildTheme(IDOL_THEME_CFG),
   school: buildTheme(SCHOOL_THEME_CFG),
   space: buildTheme(SPACE_THEME_CFG),
+  underworld: buildTheme(UNDERWORLD_THEME_CFG),
 };
 export const DEFAULT_THEME_ID = "money";
 export const THEME_LIST = Object.values(THEMES);
@@ -992,7 +1158,7 @@ export function createPlayer(id, idx, name, themeId) {
     name: name || `プレイヤー${idx + 1}`,
     pos: 0,
     rest: 0,
-    money: START_MONEY,
+    money: theme.startMoney || START_MONEY,
     finished: false,
     job: null,
     cards: [],

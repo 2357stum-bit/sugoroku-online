@@ -184,6 +184,36 @@ function resolveLandingAuto(state, theme, actor, sq, idx) {
       state.turn.status = "landed";
       return true;
     }
+    case "raid": {
+      const others = state.players.filter((p) => p.id !== actor.id && !p.finished);
+      if (others.length === 0) {
+        setLastEvent(state, { kind: "raid_none", playerId: actor.id });
+        pushLog(state, `${actor.name}：狙う相手がいなかった`, "raid", actor.id);
+        state.turn.status = "landed";
+        return true;
+      }
+      // 今いる中で最も裕福な相手を狙う(強い相手ほど狙われやすくなる)
+      const target = others.reduce((a, b) => (b.money > a.money ? b : a));
+      const roll = 1 + Math.floor(Math.random() * 6);
+      const success = roll >= 3;
+      let amt;
+      if (success) {
+        amt = Math.max(10, Math.round((target.money * (0.1 + Math.random() * 0.15)) / 10) * 10);
+        amt = Math.min(amt, target.money);
+        target.money -= amt;
+        actor.money += amt;
+      } else {
+        amt = -pickAmount([30, 120]);
+        actor.money += amt;
+      }
+      const flavor = success ? randomDesc(theme, "raid") : randomDesc(theme, "raidFail");
+      setLastEvent(state, { kind: "raid", playerId: actor.id, targetId: target.id, success, amt, flavor });
+      pushLog(state, success
+        ? `${actor.name}：${target.name}から ${amt}${theme.currencyUnit} を奪った！(${flavor})`
+        : `${actor.name}：${target.name}を狙ったが ${Math.abs(amt)}${theme.currencyUnit} 失った…(${flavor})`, "raid", actor.id);
+      state.turn.status = "landed";
+      return true;
+    }
     case "lottery": {
       const ticket = randomTicket();
       actor.lotteryTickets.push(ticket);

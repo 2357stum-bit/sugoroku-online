@@ -559,7 +559,7 @@ export default function PlayingScreen({ room, code, uid, onLeaveRoom }) {
     if (isShowcase) {
       setShowcase(lastEvent);
     } else if (lastEvent) {
-      if (["income", "expense", "bonus", "accident", "pick_result"].includes(lastEvent.kind)) {
+      if (["income", "expense", "bonus", "accident", "pick_result", "raid"].includes(lastEvent.kind)) {
         (lastEvent.amt >= 0 ? sfxCoinGain : sfxCoinLoss)();
       } else if (lastEvent.kind === "treasure" || lastEvent.kind === "lottery") {
         sfxSparkle();
