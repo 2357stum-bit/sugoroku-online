@@ -16,6 +16,7 @@ export const EVENT_BG = {
   lifeevent: "var(--sgr-sq-lifeevent)",
   childevent: "var(--sgr-sq-childevent)",
   goal: "var(--sgr-sq-goal)",
+  choice: "var(--sgr-sq-bonus)",
 };
 
 export function findPlayerName(players, id) {
@@ -63,6 +64,10 @@ export function describeToast(event, players, theme) {
       return { icon: event.option.icon, bg: EVENT_BG.homepurchase, title: `${name}：${event.option.label}を${theme.labels.homeVerb}した！`, sub: "ゴール後に売却できるよ" };
     case "salary":
       return { icon: theme.icon.salary, bg: EVENT_BG.salary, title: `${name}：${theme.labels.salaryName} ${signed(event.salaryAmt, unit)}`, sub: "全員の投資判断を待っています…" };
+    case "pick_wait":
+      return { icon: theme.icon.choice, bg: EVENT_BG.choice, title: `${name}さんが「${event.desc}」を検討中…` };
+    case "pick_result":
+      return { icon: theme.icon.choice, bg: EVENT_BG.choice, title: `${name}：${event.desc}『${event.option.label}』を選んだ`, amount: event.amt, unit };
     default:
       return null;
   }

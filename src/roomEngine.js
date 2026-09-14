@@ -18,6 +18,7 @@ import {
   rollForPlayer,
   chooseFork as glChooseFork,
   chooseHome as glChooseHome,
+  choosePick as glChoosePick,
   submitInvestDecision as glSubmitInvestDecision,
   startSettlement,
   startLottery,
@@ -163,6 +164,10 @@ export function chooseFork(code, playerId, choiceId) {
 
 export function chooseHome(code, playerId, optionId) {
   return runGameTransaction(code, (state) => glChooseHome(state, playerId, optionId));
+}
+
+export function choosePick(code, playerId, optionId) {
+  return runGameTransaction(code, (state) => glChoosePick(state, playerId, optionId));
 }
 
 export function submitInvest(code, playerId, amount) {

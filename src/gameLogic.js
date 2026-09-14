@@ -120,6 +120,13 @@ function resolveLandingAuto(state, theme, actor, sq, idx) {
       openInvestPhase(state, theme, actor.id, idx);
       return true;
     }
+    case "choice": {
+      state.turn.choice = { type: "pick", options: sq.options, desc: sq.desc };
+      state.turn.status = "awaiting_choice";
+      setLastEvent(state, { kind: "pick_wait", playerId: actor.id, desc: sq.desc });
+      pushLog(state, `${actor.name}：${sq.desc} を検討中…`, "choice", actor.id);
+      return true;
+    }
     case "goal": {
       actor.finished = true;
       const rank = state.finishOrder + 1;
@@ -336,6 +343,26 @@ export function chooseHome(state, playerId, optionId) {
   state.turn.status = "animating";
   setLastEvent(state, { kind: "home_result", playerId: actor.id, option: opt });
   pushLog(state, `${actor.name}：${opt.icon}${opt.label}を${theme.labels.homeVerb}`, "homepurchase", actor.id);
+  processQueue(state, theme);
+  return state;
+}
+
+export function choosePick(state, playerId, optionId) {
+  if (state.turn.status !== "awaiting_choice" || !state.turn.choice || state.turn.choice.type !== "pick") {
+    throw new Error("選択のタイミングではありません");
+  }
+  if (state.turn.actorId !== playerId) throw new Error("あなたの選択ではありません");
+  const theme = getTheme(state.themeId);
+  const opt = state.turn.choice.options.find((o) => o.id === optionId);
+  if (!opt) throw new Error("不正な選択です");
+  const actor = findPlayer(state, playerId);
+  const amt = pickAmount(opt.amount);
+  actor.money += amt;
+  const desc = state.turn.choice.desc;
+  state.turn.choice = null;
+  state.turn.status = "animating";
+  setLastEvent(state, { kind: "pick_result", playerId: actor.id, desc, option: opt, amt });
+  pushLog(state, `${actor.name}：${desc}『${opt.label}』を選択 ${amt >= 0 ? "+" : ""}${amt}${theme.currencyUnit}`, "choice", actor.id);
   processQueue(state, theme);
   return state;
 }

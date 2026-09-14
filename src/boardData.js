@@ -41,6 +41,10 @@ export const LOTTERY_REWARD = { 4: 2000, 3: 500, 2: 100, 1: 20, 0: 0 };
 export const FORK_LEN = 15;
 export const FORKS = [55];
 
+// 「二択マス」: 立ち止まって2つの選択肢からどちらかを選ぶ、より軽量な決断ポイント。
+// 全テーマ共通の位置(構造)で、内容(文言・金額)だけテーマごとに変わる。
+export const CHOICE_IDX = [6, 18, 30, 42, 72, 80, 87, 95];
+
 export function isForkIdx(idx) {
   return FORKS.indexOf(idx) !== -1;
 }
@@ -136,7 +140,7 @@ const MONEY_THEME_CFG = {
   icon: {
     income: "💰", expense: "💸", bonus: "🎁", accident: "⚡", rest: "💤",
     treasure: "💎", job: "🏢", salary: "💴", lifeevent: "💍",
-    childevent: "👶", homepurchase: "🏘️", lottery: "🎫",
+    childevent: "👶", homepurchase: "🏘️", lottery: "🎫", choice: "🤔",
   },
   squareDesc: {
     job: "就職先を選ぼう",
@@ -154,6 +158,40 @@ const MONEY_THEME_CFG = {
   childEvents: [
     { idx: 40, label: "第一子", cost: -150 },
     { idx: 84, label: "第二子", cost: -130 },
+  ],
+  choices: [
+    { idx: 6, squareDesc: "臨時ボーナスの使い道", options: [
+      { id: "a", label: "貯金する", desc: "手堅く将来に備える", amount: [20, 30] },
+      { id: "b", label: "パーッと使う", desc: "気分次第で得することも損することも", amount: [-30, 80] },
+    ] },
+    { idx: 18, squareDesc: "副業の誘い", options: [
+      { id: "a", label: "断る", desc: "今の生活を大事にする", amount: [10, 20] },
+      { id: "b", label: "受ける", desc: "うまくいけば大きいが空振りもある", amount: [-50, 150] },
+    ] },
+    { idx: 30, squareDesc: "お金の使い道", options: [
+      { id: "a", label: "定期預金にする", desc: "コツコツ堅実に増やす", amount: [30, 50] },
+      { id: "b", label: "怪しい儲け話に乗る", desc: "一攫千金か、大損か", amount: [-150, 250] },
+    ] },
+    { idx: 42, squareDesc: "転職エージェントからの連絡", options: [
+      { id: "a", label: "今の職場に残る", desc: "安定を選ぶ", amount: [40, 70] },
+      { id: "b", label: "転職する", desc: "環境が変わり運命が動く", amount: [-200, 300] },
+    ] },
+    { idx: 72, squareDesc: "起業のお誘い", options: [
+      { id: "a", label: "見送る", desc: "今のままで手堅く", amount: [60, 100] },
+      { id: "b", label: "起業する", desc: "大きなリターンとリスクが両方待つ", amount: [-400, 600] },
+    ] },
+    { idx: 80, squareDesc: "大きな買い物", options: [
+      { id: "a", label: "我慢する", desc: "節約して貯蓄にまわす", amount: [80, 120] },
+      { id: "b", label: "思い切って買う", desc: "散財するか、資産価値が上がるか", amount: [-300, 400] },
+    ] },
+    { idx: 87, squareDesc: "遺産相続の選択", options: [
+      { id: "a", label: "現金で受け取る", desc: "手堅く確実に", amount: [100, 150] },
+      { id: "b", label: "不動産で受け取る", desc: "化けるかもしれないが手間もかかる", amount: [-200, 500] },
+    ] },
+    { idx: 95, squareDesc: "人生最後の大勝負", options: [
+      { id: "a", label: "手堅く終える", desc: "安定志向で締めくくる", amount: [150, 200] },
+      { id: "b", label: "一発逆転を狙う", desc: "すべてを賭けた大博打", amount: [-600, 900] },
+    ] },
   ],
   forkOptions: [
     { id: "risk", label: "一攫千金コース", icon: "💀", desc: "荒れた道。大勝ちも大負けもある波乱の数マス" },
@@ -256,7 +294,7 @@ const ADVENTURE_THEME_CFG = {
   icon: {
     income: "💰", expense: "💸", bonus: "🎁", accident: "⚡", rest: "🏕️",
     treasure: "💎", job: "⚔️", salary: "🛡️", lifeevent: "🔥",
-    childevent: "🤝", homepurchase: "🏯", lottery: "🗺️",
+    childevent: "🤝", homepurchase: "🏯", lottery: "🗺️", choice: "⚖️",
   },
   squareDesc: {
     job: "クラスを選ぼう",
@@ -274,6 +312,40 @@ const ADVENTURE_THEME_CFG = {
   childEvents: [
     { idx: 40, label: "第一の仲間", cost: -150 },
     { idx: 84, label: "第二の仲間", cost: -130 },
+  ],
+  choices: [
+    { idx: 6, squareDesc: "臨時報酬の使い道", options: [
+      { id: "a", label: "貯める", desc: "いざという時のために蓄える", amount: [20, 30] },
+      { id: "b", label: "豪遊する", desc: "気分次第で得することも損することも", amount: [-30, 80] },
+    ] },
+    { idx: 18, squareDesc: "傭兵の誘い", options: [
+      { id: "a", label: "断る", desc: "今のパーティで頑張る", amount: [10, 20] },
+      { id: "b", label: "受ける", desc: "うまくいけば大金、しくじれば大損", amount: [-50, 150] },
+    ] },
+    { idx: 30, squareDesc: "資金の使い道", options: [
+      { id: "a", label: "ギルドに預ける", desc: "手堅く利子を得る", amount: [30, 50] },
+      { id: "b", label: "怪しい商人の話に乗る", desc: "一攫千金か、丸損か", amount: [-150, 250] },
+    ] },
+    { idx: 42, squareDesc: "別のギルドからの勧誘", options: [
+      { id: "a", label: "今のギルドに残る", desc: "安定を選ぶ", amount: [40, 70] },
+      { id: "b", label: "移籍する", desc: "環境が変わり運命が動く", amount: [-200, 300] },
+    ] },
+    { idx: 72, squareDesc: "独立開業のチャンス", options: [
+      { id: "a", label: "見送る", desc: "今のままで手堅く", amount: [60, 100] },
+      { id: "b", label: "自分の店を持つ", desc: "大きなリターンとリスクが両方待つ", amount: [-400, 600] },
+    ] },
+    { idx: 80, squareDesc: "伝説の武具の噂", options: [
+      { id: "a", label: "我慢する", desc: "節約して蓄える", amount: [80, 120] },
+      { id: "b", label: "思い切って買う", desc: "駄作か、伝説級の掘り出し物か", amount: [-300, 400] },
+    ] },
+    { idx: 87, squareDesc: "先代からの遺産", options: [
+      { id: "a", label: "金貨で受け取る", desc: "手堅く確実に", amount: [100, 150] },
+      { id: "b", label: "秘宝で受け取る", desc: "化けるかもしれないが手間もかかる", amount: [-200, 500] },
+    ] },
+    { idx: 95, squareDesc: "最後の大冒険", options: [
+      { id: "a", label: "手堅く終える", desc: "安全策で締めくくる", amount: [150, 200] },
+      { id: "b", label: "一発逆転を狙う", desc: "すべてを賭けた大博打", amount: [-600, 900] },
+    ] },
   ],
   forkOptions: [
     { id: "risk", label: "一攫千金コース", icon: "💀", desc: "荒れた道。大勝ちも大負けもある波乱の数マス" },
@@ -376,7 +448,7 @@ const IDOL_THEME_CFG = {
   icon: {
     income: "💰", expense: "💸", bonus: "🎁", accident: "⚡", rest: "🛌",
     treasure: "💎", job: "🎤", salary: "💴", lifeevent: "✨",
-    childevent: "🤝", homepurchase: "🏙️", lottery: "🎬",
+    childevent: "🤝", homepurchase: "🏙️", lottery: "🎬", choice: "🎯",
   },
   squareDesc: {
     job: "ジャンルを選ぼう",
@@ -394,6 +466,40 @@ const IDOL_THEME_CFG = {
   childEvents: [
     { idx: 40, label: "念願のソロデビュー", cost: -150 },
     { idx: 84, label: "主演ドラマへの挑戦", cost: -130 },
+  ],
+  choices: [
+    { idx: 6, squareDesc: "臨時収入の使い道", options: [
+      { id: "a", label: "貯金する", desc: "将来のために備える", amount: [20, 30] },
+      { id: "b", label: "パーッと使う", desc: "気分次第で得することも損することも", amount: [-30, 80] },
+    ] },
+    { idx: 18, squareDesc: "副業案件の誘い", options: [
+      { id: "a", label: "断る", desc: "今の活動に専念する", amount: [10, 20] },
+      { id: "b", label: "受ける", desc: "バズれば大きいが空振りもある", amount: [-50, 150] },
+    ] },
+    { idx: 30, squareDesc: "資金の使い道", options: [
+      { id: "a", label: "貯蓄する", desc: "コツコツ堅実に増やす", amount: [30, 50] },
+      { id: "b", label: "怪しい投資話に乗る", desc: "一攫千金か、大損か", amount: [-150, 250] },
+    ] },
+    { idx: 42, squareDesc: "移籍のオファー", options: [
+      { id: "a", label: "今の事務所に残る", desc: "安定を選ぶ", amount: [40, 70] },
+      { id: "b", label: "移籍する", desc: "環境が変わり運命が動く", amount: [-200, 300] },
+    ] },
+    { idx: 72, squareDesc: "独立プロデュースの誘い", options: [
+      { id: "a", label: "見送る", desc: "今のままで手堅く", amount: [60, 100] },
+      { id: "b", label: "独立する", desc: "大きなリターンとリスクが両方待つ", amount: [-400, 600] },
+    ] },
+    { idx: 80, squareDesc: "大きな買い物", options: [
+      { id: "a", label: "我慢する", desc: "節約して貯蓄にまわす", amount: [80, 120] },
+      { id: "b", label: "思い切って買う", desc: "散財するか、話題になり資産価値が上がるか", amount: [-300, 400] },
+    ] },
+    { idx: 87, squareDesc: "レコード契約の選択", options: [
+      { id: "a", label: "契約金で受け取る", desc: "手堅く確実に", amount: [100, 150] },
+      { id: "b", label: "印税契約にする", desc: "化けるかもしれないが手間もかかる", amount: [-200, 500] },
+    ] },
+    { idx: 95, squareDesc: "芸能生活最後の大勝負", options: [
+      { id: "a", label: "手堅く終える", desc: "安定志向で締めくくる", amount: [150, 200] },
+      { id: "b", label: "一発逆転を狙う", desc: "すべてを賭けた大勝負", amount: [-600, 900] },
+    ] },
   ],
   forkOptions: [
     { id: "risk", label: "一攫千金コース", icon: "💥", desc: "過激な路線。大バズりも大炎上もある波乱の数マス" },
@@ -496,7 +602,7 @@ const SCHOOL_THEME_CFG = {
   icon: {
     income: "💰", expense: "💸", bonus: "🎁", accident: "⚡", rest: "🛌",
     treasure: "💎", job: "🎒", salary: "💴", lifeevent: "🌸",
-    childevent: "💌", homepurchase: "🏠", lottery: "🎫",
+    childevent: "💌", homepurchase: "🏠", lottery: "🎫", choice: "✏️",
   },
   squareDesc: {
     job: "部活動を選ぼう",
@@ -514,6 +620,40 @@ const SCHOOL_THEME_CFG = {
   childEvents: [
     { idx: 40, label: "初恋の告白", cost: -150 },
     { idx: 84, label: "運命の人への告白", cost: -130 },
+  ],
+  choices: [
+    { idx: 6, squareDesc: "お小遣いの使い道", options: [
+      { id: "a", label: "貯金する", desc: "将来のために備える", amount: [20, 30] },
+      { id: "b", label: "パーッと使う", desc: "気分次第で得することも損することも", amount: [-30, 80] },
+    ] },
+    { idx: 18, squareDesc: "バイトの誘い", options: [
+      { id: "a", label: "断る", desc: "今の生活を大事にする", amount: [10, 20] },
+      { id: "b", label: "受ける", desc: "うまくいけば稼げるが空振りもある", amount: [-50, 150] },
+    ] },
+    { idx: 30, squareDesc: "お年玉の使い道", options: [
+      { id: "a", label: "貯金する", desc: "コツコツ堅実に増やす", amount: [30, 50] },
+      { id: "b", label: "友達との投資ごっこに乗る", desc: "一攫千金か、大損か", amount: [-150, 250] },
+    ] },
+    { idx: 42, squareDesc: "部活の掛け持ちの誘い", options: [
+      { id: "a", label: "今の部活に専念する", desc: "安定を選ぶ", amount: [40, 70] },
+      { id: "b", label: "掛け持ちする", desc: "環境が変わり運命が動く", amount: [-200, 300] },
+    ] },
+    { idx: 72, squareDesc: "文化祭の出店企画", options: [
+      { id: "a", label: "見送る", desc: "今のままで手堅く", amount: [60, 100] },
+      { id: "b", label: "出店する", desc: "大成功か大赤字か", amount: [-400, 600] },
+    ] },
+    { idx: 80, squareDesc: "大きな買い物", options: [
+      { id: "a", label: "我慢する", desc: "節約して貯金にまわす", amount: [80, 120] },
+      { id: "b", label: "思い切って買う", desc: "散財するか、みんなに羨ましがられるか", amount: [-300, 400] },
+    ] },
+    { idx: 87, squareDesc: "おじいちゃんからのお小遣い", options: [
+      { id: "a", label: "現金で受け取る", desc: "手堅く確実に", amount: [100, 150] },
+      { id: "b", label: "株を買ってもらう", desc: "化けるかもしれないが手間もかかる", amount: [-200, 500] },
+    ] },
+    { idx: 95, squareDesc: "卒業前最後の賭け", options: [
+      { id: "a", label: "手堅く終える", desc: "安定志向で締めくくる", amount: [150, 200] },
+      { id: "b", label: "一発逆転を狙う", desc: "すべてを賭けた大勝負", amount: [-600, 900] },
+    ] },
   ],
   forkOptions: [
     { id: "risk", label: "一攫千金コース", icon: "💥", desc: "型破りな青春。大成功も大失敗もある波乱の数マス" },
@@ -555,6 +695,8 @@ function buildTheme(cfg) {
   cfg.lifeEvents.forEach((ev) => (LIFEEVENT_MAP[ev.idx] = ev));
   const CHILDEVENT_MAP = {};
   cfg.childEvents.forEach((ev) => (CHILDEVENT_MAP[ev.idx] = ev));
+  const CHOICE_MAP = {};
+  (cfg.choices || []).forEach((c) => (CHOICE_MAP[c.idx] = c));
 
   const BRANCH_MAP = {};
   FORKS.forEach((forkIdx) => {
@@ -602,6 +744,11 @@ function buildTheme(cfg) {
     if (CHILDEVENT_MAP[i]) {
       const ev = CHILDEVENT_MAP[i];
       SQUARES[i] = { type: "childevent", icon: cfg.icon.childevent, label: ev.label, childCost: ev.cost, forcedStop: true };
+      continue;
+    }
+    if (CHOICE_MAP[i]) {
+      const c = CHOICE_MAP[i];
+      SQUARES[i] = { type: "choice", icon: cfg.icon.choice, desc: c.squareDesc, options: c.options, forcedStop: true };
       continue;
     }
     if (i === HOME_IDX) {

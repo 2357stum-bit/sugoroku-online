@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { BOARD_SIZE, GRID_COLS, ROW_HEIGHT, LANE_OFFSET, basePoint, getTheme } from "./boardData.js";
-import { rollDice, chooseFork, chooseHome, submitInvest } from "./roomEngine.js";
+import { rollDice, chooseFork, chooseHome, choosePick, submitInvest } from "./roomEngine.js";
 import { describeToast, signed, amtClass } from "./ui/helpers.js";
 import GameTopBar from "./ui/TopBar.jsx";
 
@@ -387,6 +387,67 @@ function InvestOverlay({ code, uid, invest, players, myMoney, theme }) {
   );
 }
 
+function ChoiceSquareOverlay({ code, uid, choice, theme }) {
+  const [busy, setBusy] = useState(false);
+  const optIcon = { a: "🛡️", b: "🎲" };
+  return (
+    <div className="sgr-ovl sgr-show">
+      <div className="sgr-ovl-card">
+        <h2>{theme.icon.choice} {choice.desc}</h2>
+        <p className="sgr-ovl-lead">どちらを選ぶ？</p>
+        <div className="sgr-choice-list">
+          {choice.options.map((opt) => (
+            <button
+              key={opt.id}
+              className="sgr-choice-btn"
+              disabled={busy}
+              onClick={async () => {
+                setBusy(true);
+                try {
+                  await choosePick(code, uid, opt.id);
+                } finally {
+                  setBusy(false);
+                }
+              }}
+            >
+              <span className="sgr-c-icon">{optIcon[opt.id] || "・"}</span>
+              <span className="sgr-c-txt">
+                <span className="sgr-c-name">{opt.label}</span>
+                <span className="sgr-c-desc">{opt.desc}</span>
+              </span>
+            </button>
+          ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LogOverlay({ log, players, onClose }) {
+  const entries = [...log].reverse();
+  return (
+    <div className="sgr-ovl sgr-show">
+      <div className="sgr-ovl-card">
+        <h2>📜 これまでのログ</h2>
+        <div className="sgr-log-feed" style={{ maxHeight: "50vh" }}>
+          {entries.length === 0 && <div className="sgr-log-line">まだ記録がありません</div>}
+          {entries.map((entry, i) => {
+            const p = entry.playerId ? players.find((pl) => pl.id === entry.playerId) : null;
+            return (
+              <div key={i} className="sgr-log-line">
+                {p ? p.token + " " : ""}{entry.text}
+              </div>
+            );
+          })}
+        </div>
+        <button className="sgr-btn sgr-secondary sgr-small" onClick={onClose} style={{ marginTop: 12 }}>
+          閉じる
+        </button>
+      </div>
+    </div>
+  );
+}
+
 export default function PlayingScreen({ room, code, uid, onLeaveRoom }) {
   const theme = getTheme(room.themeId);
   const { players, currentIdx, turn, lastEvent } = room;
@@ -398,7 +459,10 @@ export default function PlayingScreen({ room, code, uid, onLeaveRoom }) {
   const [diceFace, setDiceFace] = useState("🎲");
   const [showcase, setShowcase] = useState(null);
   const [walking, setWalking] = useState(null);
-  const seenAt = useRef(null);
+  // コマが着地するまでは、トースト/選択画面などマスの内容を隠しておく
+  // (「移動しきってから内容を表示する」ため)
+  const [revealReady, setRevealReady] = useState(true);
+  const [showLog, setShowLog] = useState(false);
   const seenTurnKey = useRef(null);
   const [submitting, setSubmitting] = useState(false);
 
@@ -415,7 +479,12 @@ export default function PlayingScreen({ room, code, uid, onLeaveRoom }) {
     const path = turn.path;
     const actorId = turn.actorId;
     const finalRoll = turn.roll;
+    // ロール検出と同時に届く lastEvent は、着地マスが job/lifeevent/childevent
+    // なら既にその結果を含んでいる(同一トランザクションで解決されるため)。
+    // 着地後にショーケース演出を出すため、ここで値を確保しておく。
+    const revealEvent = lastEvent;
 
+    setRevealReady(false);
     setRolling(true);
     let n = 0;
     const totalTicks = 16; // サイコロを振っている感覚が出るよう、少し長めに転がす
@@ -434,25 +503,20 @@ export default function PlayingScreen({ room, code, uid, onLeaveRoom }) {
           if (i >= path.length) {
             clearInterval(stepTimer);
             setWalking(null);
+            setRevealReady(true);
+            if (revealEvent && ["job", "lifeevent", "childevent"].includes(revealEvent.kind)) {
+              setShowcase(revealEvent);
+              setTimeout(() => setShowcase(null), 2200);
+            }
             return;
           }
           setWalking({ playerId: actorId, pos: path[i] });
           i++;
-        }, 850);
+        }, 1300);
       }
     }, 110);
     return () => clearInterval(diceTimer);
-  }, [turn.actorId, turn.roll, turn.fromPos, turn.toPos]);
-
-  useEffect(() => {
-    if (!lastEvent || lastEvent.at === seenAt.current) return;
-    seenAt.current = lastEvent.at;
-    if (lastEvent.kind === "job" || lastEvent.kind === "lifeevent" || lastEvent.kind === "childevent") {
-      setShowcase(lastEvent);
-      const t = setTimeout(() => setShowcase(null), 2200);
-      return () => clearTimeout(t);
-    }
-  }, [lastEvent]);
+  }, [turn.actorId, turn.roll, turn.fromPos, turn.toPos, lastEvent]);
 
   async function handleRoll() {
     if (!isMyTurn || submitting) return;
@@ -470,9 +534,14 @@ export default function PlayingScreen({ room, code, uid, onLeaveRoom }) {
   if (turn.status === "idle") {
     turnSub = actor.id === uid ? "サイコロを振ってね" : "サイコロを待っています…";
   } else if (turn.status === "awaiting_choice") {
-    turnSub = turn.choice?.type === "fork" ? "分かれ道を選んでいます…" : `${theme.labels.homeSquareName}を選んでいます…`;
+    if (turn.choice?.type === "fork") turnSub = "分かれ道を選んでいます…";
+    else if (turn.choice?.type === "home") turnSub = `${theme.labels.homeSquareName}を選んでいます…`;
+    else if (turn.choice?.type === "pick") turnSub = `${turn.choice.desc}を検討中…`;
+    else turnSub = "選んでいます…";
   } else if (turn.status === "awaiting_invest") {
     turnSub = "全員の投資判断を待っています…";
+  } else if (!revealReady) {
+    turnSub = "移動中…";
   } else {
     turnSub = "進行中…";
   }
@@ -480,6 +549,10 @@ export default function PlayingScreen({ room, code, uid, onLeaveRoom }) {
   return (
     <div className="sgr-app">
       <GameTopBar title={theme.name} code={code} uid={uid} hostUid={room.hostUid} onLeaveRoom={onLeaveRoom} />
+
+      <div className="sgr-topbar-btns" style={{ justifyContent: "flex-end", padding: "0 18px 4px" }}>
+        <button className="sgr-link-btn" onClick={() => setShowLog(true)}>📜 ログ</button>
+      </div>
 
       <ScoreBoard players={players} currentIdx={currentIdx} unit={theme.currencyUnit} />
 
@@ -493,7 +566,7 @@ export default function PlayingScreen({ room, code, uid, onLeaveRoom }) {
 
       <Board theme={theme} players={players} walking={walking} />
 
-      <Toast event={lastEvent} players={players} theme={theme} />
+      {revealReady && <Toast event={lastEvent} players={players} theme={theme} />}
 
       <div className="sgr-controls">
         <button className={"sgr-dice" + (rolling ? " sgr-rolling" : "")} disabled={!isMyTurn || submitting} onClick={handleRoll}>
@@ -502,16 +575,20 @@ export default function PlayingScreen({ room, code, uid, onLeaveRoom }) {
         <div className="sgr-dice-label">{isMyTurn ? "タップしてサイコロを振る" : ""}</div>
       </div>
 
-      {turn.status === "awaiting_choice" && turn.choice?.type === "fork" && turn.actorId === uid && (
+      {revealReady && turn.status === "awaiting_choice" && turn.choice?.type === "fork" && turn.actorId === uid && (
         <ForkChoiceOverlay code={code} uid={uid} theme={theme} />
       )}
-      {turn.status === "awaiting_choice" && turn.choice?.type === "home" && turn.actorId === uid && (
+      {revealReady && turn.status === "awaiting_choice" && turn.choice?.type === "home" && turn.actorId === uid && (
         <HomeChoiceOverlay code={code} uid={uid} theme={theme} />
       )}
-      {turn.status === "awaiting_invest" && turn.invest && turn.invest.pending.includes(uid) && me && (
+      {revealReady && turn.status === "awaiting_choice" && turn.choice?.type === "pick" && turn.actorId === uid && (
+        <ChoiceSquareOverlay code={code} uid={uid} choice={turn.choice} theme={theme} />
+      )}
+      {revealReady && turn.status === "awaiting_invest" && turn.invest && turn.invest.pending.includes(uid) && me && (
         <InvestOverlay code={code} uid={uid} invest={turn.invest} players={players} myMoney={me.money} theme={theme} />
       )}
       {showcase && <ShowcaseOverlay event={showcase} theme={theme} />}
+      {showLog && <LogOverlay log={room.log || []} players={players} onClose={() => setShowLog(false)} />}
     </div>
   );
 }

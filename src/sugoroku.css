@@ -269,6 +269,10 @@
 .sgr-sq.sgr-fork { z-index: 2; }
 .sgr-sq.sgr-fork::before { background: var(--sgr-sq-lifeevent); inset: 0; clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%); border: 1.5px solid var(--sgr-accent); animation: sgrForkpulse 1.6s ease-in-out infinite; }
 .sgr-sq.sgr-fork .sgr-icon { font-size: 16px; }
+
+.sgr-sq.sgr-choice { z-index: 2; }
+.sgr-sq.sgr-choice::before { background: var(--sgr-sq-bonus); inset: 0; clip-path: polygon(50% 0%, 100% 50%, 50% 100%, 0% 50%); border: 1.5px solid var(--sgr-gold); animation: sgrForkpulse 1.6s ease-in-out infinite; }
+.sgr-sq.sgr-choice .sgr-icon { font-size: 16px; }
 @keyframes sgrForkpulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.14); } }
 
 .sgr-sq.sgr-start::before { background: var(--sgr-board-alt); border-radius: 9px 9px 9px 0; border-color: var(--sgr-line); }
