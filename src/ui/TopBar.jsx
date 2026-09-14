@@ -1,5 +1,6 @@
 import { useState } from "react";
 import { resetToLobby } from "../roomEngine.js";
+import SoundToggle from "./SoundToggle.jsx";
 
 export default function GameTopBar({ title, code, uid, hostUid, onLeaveRoom }) {
   const [busy, setBusy] = useState(false);
@@ -26,6 +27,7 @@ export default function GameTopBar({ title, code, uid, hostUid, onLeaveRoom }) {
     <div className="sgr-topbar">
       <h1>{title}</h1>
       <div className="sgr-topbar-btns">
+        <SoundToggle />
         {isHost && (
           <button className="sgr-link-btn" disabled={busy} onClick={handleReset}>
             リセット

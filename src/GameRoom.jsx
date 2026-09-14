@@ -10,6 +10,8 @@ import { getTheme } from "./boardData.js";
 import PlayingScreen from "./PlayingScreen.jsx";
 import { getRanking } from "./gameLogic.js";
 import GameTopBar from "./ui/TopBar.jsx";
+import SoundToggle from "./ui/SoundToggle.jsx";
+import { sfxSparkle, sfxJackpot, sfxFanfare } from "./audio.js";
 
 function LobbyScreen({ room, code, uid, theme, onLeaveRoom }) {
   const isHost = room.hostUid === uid;
@@ -30,6 +32,9 @@ function LobbyScreen({ room, code, uid, theme, onLeaveRoom }) {
 
   return (
     <div className="sgr-app">
+      <div style={{ display: "flex", justifyContent: "flex-end", padding: "12px 18px 0" }}>
+        <SoundToggle />
+      </div>
       <div className="sgr-screen">
         <div className="sgr-title-block">
           <span className="sgr-eyebrow">{theme.eyebrowIcon}</span>
@@ -81,6 +86,11 @@ function LobbyScreen({ room, code, uid, theme, onLeaveRoom }) {
 function SettlementScreen({ room, code, uid, theme, onLeaveRoom }) {
   const [busy, setBusy] = useState(false);
   const unit = theme.currencyUnit;
+
+  useEffect(() => {
+    sfxSparkle();
+  }, []);
+
   return (
     <div className="sgr-app">
       <GameTopBar title={theme.name} code={code} uid={uid} hostUid={room.hostUid} onLeaveRoom={onLeaveRoom} />
@@ -138,6 +148,11 @@ function LotteryScreen({ room, code, uid, theme, onLeaveRoom }) {
   const [busy, setBusy] = useState(false);
   const unit = theme.currencyUnit;
   const winningNumber = room.lottery?.winningNumber || "----";
+
+  useEffect(() => {
+    sfxJackpot();
+  }, []);
+
   return (
     <div className="sgr-app">
       <GameTopBar title={theme.name} code={code} uid={uid} hostUid={room.hostUid} onLeaveRoom={onLeaveRoom} />
@@ -181,8 +196,16 @@ function FinalScreen({ room, code, uid, theme, onLeaveRoom }) {
   const isHost = room.hostUid === uid;
   const [busy, setBusy] = useState(false);
   const unit = theme.currencyUnit;
+
+  useEffect(() => {
+    sfxFanfare();
+  }, []);
+
   return (
     <div className="sgr-app">
+      <div style={{ display: "flex", justifyContent: "flex-end", padding: "12px 18px 0" }}>
+        <SoundToggle />
+      </div>
       <div className="sgr-screen">
         <div style={{ textAlign: "center", fontSize: 38 }}>🏆</div>
         <h2 style={{ textAlign: "center" }}>{sorted[0].name} の大勝利！</h2>

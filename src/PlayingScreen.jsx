@@ -3,6 +3,18 @@ import { BOARD_SIZE, GRID_COLS, ROW_HEIGHT, LANE_OFFSET, basePoint, getTheme } f
 import { rollDice, chooseFork, chooseHome, choosePick, submitInvest } from "./roomEngine.js";
 import { describeToast, signed, amtClass } from "./ui/helpers.js";
 import GameTopBar from "./ui/TopBar.jsx";
+import {
+  sfxDiceTick,
+  sfxDiceLand,
+  sfxStep,
+  sfxCoinGain,
+  sfxCoinLoss,
+  sfxChoiceClick,
+  sfxFanfare,
+  sfxSparkle,
+  sfxSadTone,
+  sfxJackpot,
+} from "./audio.js";
 
 const DIE_FACE = { 1: "⚀", 2: "⚁", 3: "⚂", 4: "⚃", 5: "⚄", 6: "⚅" };
 
@@ -163,9 +175,16 @@ function ShowcaseOverlay({ event, theme }) {
   useEffect(() => {
     const id = setInterval(() => setTick((t) => t + 1), 90);
     const stop = setTimeout(() => clearInterval(id), 1100);
+    // スピン演出が止まり結果が確定するタイミングで結果音を鳴らす
+    const soundTimer = setTimeout(() => {
+      if (event.kind === "job") sfxFanfare();
+      else if (event.kind === "lifeevent") (event.amt >= 0 ? sfxCoinGain() : sfxCoinLoss());
+      else if (event.kind === "childevent") (event.success ? sfxJackpot() : sfxSadTone());
+    }, 1000);
     return () => {
       clearInterval(id);
       clearTimeout(stop);
+      clearTimeout(soundTimer);
     };
   }, [event.at]);
 
@@ -252,6 +271,7 @@ function ForkChoiceOverlay({ code, uid, theme }) {
               className="sgr-choice-btn"
               disabled={busy}
               onClick={async () => {
+                sfxChoiceClick();
                 setBusy(true);
                 try {
                   await chooseFork(code, uid, opt.id);
@@ -290,6 +310,7 @@ function HomeChoiceOverlay({ code, uid, theme }) {
               className="sgr-choice-btn"
               disabled={busy}
               onClick={async () => {
+                sfxChoiceClick();
                 setBusy(true);
                 try {
                   await chooseHome(code, uid, opt.id);
@@ -358,20 +379,21 @@ function InvestOverlay({ code, uid, invest, players, myMoney, theme }) {
         </div>
         <div className="sgr-invest-title">{theme.labels.investVerb}する金額（10{unit}単位・あなたの手持ち: {myMoney}{unit}）</div>
         <div className="sgr-invest-row">
-          <button className="sgr-step-btn" onClick={() => setAmount((a) => Math.max(0, a - 10))}>−10</button>
+          <button className="sgr-step-btn" onClick={() => { sfxChoiceClick(); setAmount((a) => Math.max(0, a - 10)); }}>−10</button>
           <div className="sgr-invest-amt">{amount}{unit}</div>
-          <button className="sgr-step-btn" onClick={() => setAmount((a) => Math.min(maxAmt, a + 10))}>+10</button>
+          <button className="sgr-step-btn" onClick={() => { sfxChoiceClick(); setAmount((a) => Math.min(maxAmt, a + 10)); }}>+10</button>
         </div>
         <div className="sgr-invest-quick">
-          <button className="sgr-invest-quick-btn" onClick={() => setAmount(0)}>{theme.labels.investVerb}しない</button>
-          <button className="sgr-invest-quick-btn" onClick={() => setAmount(Math.floor(maxAmt / 2 / 10) * 10)}>半分</button>
-          <button className="sgr-invest-quick-btn" onClick={() => setAmount(maxAmt)}>全部</button>
+          <button className="sgr-invest-quick-btn" onClick={() => { sfxChoiceClick(); setAmount(0); }}>{theme.labels.investVerb}しない</button>
+          <button className="sgr-invest-quick-btn" onClick={() => { sfxChoiceClick(); setAmount(Math.floor(maxAmt / 2 / 10) * 10); }}>半分</button>
+          <button className="sgr-invest-quick-btn" onClick={() => { sfxChoiceClick(); setAmount(maxAmt); }}>全部</button>
         </div>
         <div className="sgr-invest-note">{theme.labels.investVerb}後の手持ち: {myMoney - amount}{unit}</div>
         <button
           className="sgr-btn"
           disabled={busy}
           onClick={async () => {
+            sfxChoiceClick();
             setBusy(true);
             try {
               await submitInvest(code, uid, amount);
@@ -402,6 +424,7 @@ function ChoiceSquareOverlay({ code, uid, choice, theme }) {
               className="sgr-choice-btn"
               disabled={busy}
               onClick={async () => {
+                sfxChoiceClick();
                 setBusy(true);
                 try {
                   await choosePick(code, uid, opt.id);
@@ -490,11 +513,13 @@ export default function PlayingScreen({ room, code, uid, onLeaveRoom }) {
     const totalTicks = 16; // サイコロを振っている感覚が出るよう、少し長めに転がす
     const diceTimer = setInterval(() => {
       setDiceFace(DIE_FACE[1 + Math.floor(Math.random() * 6)]);
+      sfxDiceTick();
       n++;
       if (n > totalTicks) {
         clearInterval(diceTimer);
         setDiceFace(DIE_FACE[finalRoll]);
         setRolling(false);
+        sfxDiceLand();
 
         // コマをスタート地点から1マスずつ、ゆっくり歩かせる
         setWalking({ playerId: actorId, pos: fromPos });
@@ -507,10 +532,17 @@ export default function PlayingScreen({ room, code, uid, onLeaveRoom }) {
             if (revealEvent && ["job", "lifeevent", "childevent"].includes(revealEvent.kind)) {
               setShowcase(revealEvent);
               setTimeout(() => setShowcase(null), 2200);
+            } else if (revealEvent && ["income", "expense", "bonus", "accident", "pick_result"].includes(revealEvent.kind)) {
+              (revealEvent.amt >= 0 ? sfxCoinGain : sfxCoinLoss)();
+            } else if (revealEvent && (revealEvent.kind === "treasure" || revealEvent.kind === "lottery")) {
+              sfxSparkle();
+            } else if (revealEvent && revealEvent.kind === "goal") {
+              sfxFanfare();
             }
             return;
           }
           setWalking({ playerId: actorId, pos: path[i] });
+          sfxStep();
           i++;
         }, 1300);
       }

@@ -4,6 +4,8 @@ import { authReady } from "./firebase.js";
 import { createRoom, joinRoom } from "./roomEngine.js";
 import { THEME_LIST, DEFAULT_THEME_ID, getTheme } from "./boardData.js";
 import GameRoom from "./GameRoom.jsx";
+import SoundToggle from "./ui/SoundToggle.jsx";
+import { primeAudio } from "./audio.js";
 
 const NAME_KEY = "sgr_name";
 const ROOM_KEY = "sgr_room";
@@ -69,6 +71,21 @@ export default function SugorokuApp() {
 
   useEffect(() => {
     document.title = "すごろく オンライン";
+  }, []);
+
+  // ブラウザの自動再生制限のため、最初のユーザー操作でオーディオを起動する
+  useEffect(() => {
+    const handler = () => {
+      primeAudio();
+      window.removeEventListener("pointerdown", handler);
+      window.removeEventListener("keydown", handler);
+    };
+    window.addEventListener("pointerdown", handler, { once: true });
+    window.addEventListener("keydown", handler, { once: true });
+    return () => {
+      window.removeEventListener("pointerdown", handler);
+      window.removeEventListener("keydown", handler);
+    };
   }, []);
 
   useEffect(() => {
@@ -153,6 +170,9 @@ export default function SugorokuApp() {
   return (
     <div className="sgr-root" data-theme={theme.css}>
       <div className="sgr-app">
+        <div style={{ display: "flex", justifyContent: "flex-end", padding: "12px 18px 0" }}>
+          <SoundToggle />
+        </div>
         <div className="sgr-screen">
           <div className="sgr-title-block">
             <span className="sgr-eyebrow">{theme.eyebrowIcon}</span>
