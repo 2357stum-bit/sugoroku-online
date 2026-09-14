@@ -168,6 +168,45 @@
   font-family: "Zen Maru Gothic", "Noto Sans JP", sans-serif;
 }
 
+/* ---- 宇宙双六テーマ: 深宇宙のネイビー×サイバーな水色/紫パレット ---- */
+.sgr-root[data-theme="space"] {
+  --sgr-bg: #050710;
+  --sgr-board: #0d1424;
+  --sgr-board-alt: #141d33;
+  --sgr-ink: #e8edf7;
+  --sgr-muted: #8590ab;
+  --sgr-accent: #34e0ff;
+  --sgr-accent-dim: rgba(52, 224, 255, 0.16);
+  --sgr-coral: #ff5470;
+  --sgr-coral-dim: rgba(255, 84, 112, 0.16);
+  --sgr-gold: #ffcc4d;
+  --sgr-gold-dim: rgba(255, 204, 77, 0.18);
+  --sgr-purple: #b388ff;
+  --sgr-purple-dim: rgba(179, 136, 255, 0.16);
+  --sgr-pink: #ff6fd8;
+  --sgr-pink-dim: rgba(255, 111, 216, 0.16);
+  --sgr-blue: #4f8dff;
+  --sgr-blue-dim: rgba(79, 141, 255, 0.16);
+  --sgr-bronze: #9fb3d1;
+  --sgr-bronze-dim: rgba(159, 179, 209, 0.2);
+  --sgr-sq-normal: #0f1830;
+  --sgr-sq-rest: rgba(0, 229, 208, 0.14);
+  --sgr-sq-salary: var(--sgr-bronze-dim);
+  --sgr-sq-lifeevent: var(--sgr-purple-dim);
+  --sgr-sq-childevent: rgba(0, 229, 208, 0.14);
+  --sgr-sq-home: var(--sgr-bronze-dim);
+  --sgr-line: rgba(52, 224, 255, 0.14);
+  --sgr-shadow: 0 8px 22px rgba(0, 0, 0, 0.55);
+  --sgr-money-pos: #4ce6a0;
+  --sgr-money-neg: #ff5470;
+  --sgr-accent-ink: #001820;
+  --sgr-danger-ink: #2b0713;
+  --sgr-heading-font: "Zen Kaku Gothic New", sans-serif;
+  --sgr-glow-1: rgba(52, 224, 255, 0.12);
+  --sgr-glow-2: rgba(179, 136, 255, 0.09);
+  font-family: "Zen Kaku Gothic New", "Noto Sans JP", sans-serif;
+}
+
 .sgr-app {
   max-width: 480px;
   margin: 0 auto;

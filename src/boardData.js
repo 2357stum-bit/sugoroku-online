@@ -697,6 +697,160 @@ const SCHOOL_THEME_CFG = {
   ],
 };
 
+const SPACE_THEME_CFG = {
+  id: "space",
+  name: "宇宙双六",
+  tagline: "100マスの銀河を旅して、任務をこなし、コロニーを築きながら、伝説の宇宙飛行士を目指そう。",
+  eyebrowIcon: "🚀",
+  css: "space",
+  tokens: ["🚀", "🛰️", "👽", "🪐"],
+  currencyUnit: "Cr",
+  startLabel: "訓練基地",
+  startIcon: "🌍",
+  goalLabel: "銀河の英雄",
+  goalIcon: "🌌",
+  labels: {
+    jobSquareName: "任務",
+    jobGachaTitle: "任務適性ガチャ！",
+    salaryName: "任務報酬日",
+    investVerb: "改造",
+    homeSquareName: "居住区",
+    homeVerb: "選択",
+    lotteryItemName: "座標データ",
+    lotteryFinaleName: "運命の座標解析",
+    lotteryFinaleVerb: "解析",
+    childEventVerb: "クルー勧誘",
+    childGiftLabel: "歓迎パーティ費用",
+    goalName: "英雄",
+    winningLabel: "解析コード",
+  },
+  jobs: [
+    { id: "pilot", name: "パイロット", icon: "🚀", desc: "バランス型。安定した任務をこなす", mult: { income: 1.0, bonus: 1.0, accident: 1.0, salary: 1.0 } },
+    { id: "engineer", name: "エンジニア", icon: "🔧", desc: "高い成果報酬だが気の抜けない毎日", mult: { income: 1.6, bonus: 1.0, accident: 1.2, salary: 1.7 } },
+    { id: "medic", name: "医療官", icon: "💉", desc: "報酬は控えめだが危険を避けて手堅い", mult: { income: 0.85, bonus: 0.8, accident: 0.7, salary: 0.9 } },
+    { id: "scout", name: "偵察兵", icon: "🛰️", desc: "当たれば大きいが波が激しい", mult: { income: 0.9, bonus: 1.6, accident: 1.3, salary: 0.8 } },
+    { id: "scientist", name: "科学者", icon: "🧪", desc: "ハイリスク・ハイリターンな大発見", mult: { income: 1.2, bonus: 1.8, accident: 1.8, salary: 1.3 } },
+    { id: "commander", name: "司令官", icon: "🎖️", desc: "カリスマ次第で成果が乱高下", mult: { income: 0.8, bonus: 2.0, accident: 1.6, salary: 1.1 } },
+  ],
+  homeOptions: [
+    { id: "cruiser", label: "旗艦クルーザー", icon: "🛸", cost: -700, baseValue: 700, desc: "最新技術を詰め込んだ旗艦。資産価値も抜群" },
+    { id: "pod_ship", label: "個人用ポッド船", icon: "🚀", cost: -380, baseValue: 380, desc: "静かな一人用の小型船。堅実な資産に" },
+    { id: "colony_dorm", label: "コロニーの寮", icon: "🏠", cost: -250, baseValue: 250, desc: "仲間と過ごすコロニー暮らし" },
+    { id: "capsule", label: "簡易カプセル", icon: "🛌", cost: -30, baseValue: 0, desc: "身軽なカプセル暮らし。資産にはならない" },
+  ],
+  news: [
+    { text: "新型ワープエンジンの開発成功で銀河経済が拡大", pct: 12 },
+    { text: "小惑星帯の資源枯渇懸念で市場に激震が走る", pct: -10 },
+    { text: "コロニー間交易の好調で相場が堅調に推移", pct: 7 },
+    { text: "宇宙税の増税懸念からクレジットが下落", pct: -8 },
+    { text: "新素材「星屑合金」への期待から相場が急騰", pct: 15 },
+    { text: "大手宙域企業の不正発覚で市場が急落", pct: -14 },
+    { text: "航路整備の影響で輸送関連が上昇", pct: 6 },
+    { text: "銀河評議会の利下げ観測で市場が活気づく", pct: 9 },
+    { text: "未確認信号の増加で様子見ムードが広がる", pct: -5 },
+    { text: "景気後退懸念がじわじわと広がる", pct: -6 },
+    { text: "コロニー人口が増え小売関連が買われる", pct: 5 },
+    { text: "反物質燃料高でエネルギー関連が急伸", pct: 8 },
+  ],
+  desc: {
+    income: ["未踏惑星の資源採掘で成果報酬を得た", "救難信号への対応で謝礼を受け取った", "護送任務が成功し謝礼をもらった", "遺跡の遺物を見つけ換金した", "隊内評価が上がり特別報酬が出た", "司令部から感謝の勲章と金一封を受け取った", "薬草…ではなく発光菌の採取依頼で報酬を得た", "古い星図を売却できた", "討伐部隊への協力金が出た"],
+    expense: ["船体のハッチ修理費を支払った", "簡易カプセルで少し良い個室に泊まった", "解毒剤を大量に購入した", "着陸脚が壊れ修理費がかかった", "宙賊にわずかな燃料代を奪われた", "医療班全員の予防接種代を支払った", "装備の整備代を支払った", "渡航許可の高額な通行料を払った", "検疫ゲートの通過税を取られた"],
+    bonus: ["漂流物の中から金属コンテナを回収した", "商人と交渉して掘り出し物を安く買えた", "古代コインの収集品が高く売れた", "賭け事で思わぬ大勝ちをした", "旅する商船から餞別をもらった", "隠し貨物庫で資源の山を発見した", "謎の泉が願いを叶えクレジットをくれた", "廃棄コロニーの宝物庫を発見した", "行商船から掘り出し物を譲られた"],
+    accident: ["デブリの直撃を受け荷物を失った", "毒性ガスにあたり治療費がかさんだ", "詐欺師に高額な謎の薬を売りつけられた", "隔壁の故障で装備が壊れた", "罠センサーにかかり出費がかさんだ", "酒場の喧嘩に巻き込まれ弁償させられた", "宙賊に因縁をつけられクレジットを渡した", "磁気嵐で野営道具が流された", "デブリ雲に巻かれ遠回りして燃料を使った"],
+    rest: ["長距離航行の疲れで一回休み", "未知の病原体で一回休み", "磁気嵐に閉じ込められ一回休み", "船体が損傷し一回休み", "仲間の看病で一回休み"],
+    treasure: ["伝説の古代エンジン部品", "異星文明の遺物", "賢者の結晶", "呪われた重力石", "失われた旗艦の残骸", "不死鳥座の羽根石", "古の航海日誌", "妖精座の涙の宝石", "巨人型ロボの財宝"],
+  },
+  icon: {
+    income: "💰", expense: "💸", bonus: "🎁", accident: "⚡", rest: "🛌",
+    treasure: "💎", job: "🚀", salary: "💳", lifeevent: "🌌",
+    childevent: "🤝", homepurchase: "🛸", lottery: "🛰️", choice: "🎯",
+  },
+  squareDesc: {
+    job: "任務を選ぼう",
+    home: "居住区を選ぼう",
+    fork: "進む航路を選ぼう",
+    lottery: "座標データを発見",
+    salary: "任務報酬日がやってきた",
+  },
+  lifeEvents: [
+    { idx: 14, icon: "☄️", label: "隕石群との遭遇", desc: "隕石群に遭遇した！回避の結果は…", base: 120 },
+    { idx: 26, icon: "🛰️", label: "謎の衛星の発見", desc: "謎の衛星を発見した！探索の成果はいかに…", base: 220 },
+    { idx: 78, icon: "🕳️", label: "ワームホールへの突入", desc: "未知のワームホールに突入した！運命の分かれ道…", base: 550 },
+    { idx: 92, icon: "👽", label: "異星文明との接触", desc: "異星文明とのコンタクトが発生した！結果は…", base: 850 },
+  ],
+  childEvents: [
+    { idx: 40, label: "第一のクルー", cost: -150 },
+    { idx: 84, label: "第二のクルー", cost: -130 },
+  ],
+  choices: [
+    { idx: 6, squareDesc: "臨時報酬の使い道", options: [
+      { id: "a", label: "貯める", desc: "いざという時のために蓄える", amount: [20, 30] },
+      { id: "b", label: "豪遊する", desc: "気分次第で得することも損することも", amount: [-15, 80] },
+    ] },
+    { idx: 18, squareDesc: "傭兵任務の誘い", options: [
+      { id: "a", label: "断る", desc: "今のクルーで頑張る", amount: [10, 20] },
+      { id: "b", label: "受ける", desc: "うまくいけば大金、しくじれば大損", amount: [-25, 150] },
+    ] },
+    { idx: 30, squareDesc: "資金の使い道", options: [
+      { id: "a", label: "銀行衛星に預ける", desc: "手堅く利子を得る", amount: [30, 50] },
+      { id: "b", label: "怪しい商人の話に乗る", desc: "一攫千金か、丸損か", amount: [-70, 250] },
+    ] },
+    { idx: 42, squareDesc: "別の艦隊からの勧誘", options: [
+      { id: "a", label: "今の艦隊に残る", desc: "安定を選ぶ", amount: [40, 70] },
+      { id: "b", label: "移籍する", desc: "環境が変わり運命が動く", amount: [-100, 300] },
+    ] },
+    { idx: 72, squareDesc: "独立開業のチャンス", options: [
+      { id: "a", label: "見送る", desc: "今のままで手堅く", amount: [60, 100] },
+      { id: "b", label: "自分の船団を持つ", desc: "大きなリターンとリスクが両方待つ", amount: [-180, 600] },
+    ] },
+    { idx: 80, squareDesc: "伝説の装備の噂", options: [
+      { id: "a", label: "我慢する", desc: "節約して蓄える", amount: [80, 120] },
+      { id: "b", label: "思い切って買う", desc: "駄作か、伝説級の掘り出し物か", amount: [-140, 400] },
+    ] },
+    { idx: 87, squareDesc: "先代からの遺産", options: [
+      { id: "a", label: "クレジットで受け取る", desc: "手堅く確実に", amount: [100, 150] },
+      { id: "b", label: "秘宝で受け取る", desc: "化けるかもしれないが手間もかかる", amount: [-90, 500] },
+    ] },
+    { idx: 95, squareDesc: "最後の大冒険", options: [
+      { id: "a", label: "手堅く終える", desc: "安全策で締めくくる", amount: [150, 200] },
+      { id: "b", label: "一発逆転を狙う", desc: "すべてを賭けた大博打", amount: [-250, 900] },
+    ] },
+  ],
+  forkOptions: [
+    { id: "risk", label: "深宇宙探査コース", icon: "🕳️", desc: "危険な深宇宙。大成功も大事故もある波乱の数マス" },
+    { id: "safe", label: "安全航路コース", icon: "🛡️", desc: "安定した航路。少しずつ確実にクレジットが増える" },
+  ],
+  riskTemplate: [
+    { type: "bonus", desc: "危険な航路で財宝の隠し貨物を見つけた", amount: [100, 300] },
+    { type: "accident", desc: "小惑星帯に迷い込み大破した", amount: [-100, -30] },
+    { type: "bonus", desc: "宙域の裏市場で怪しい大取引がまとまった", amount: [80, 250] },
+    { type: "accident", desc: "一か八かの近道で罠にかかった", amount: [-90, -25] },
+    { type: "bonus", desc: "廃棄コロニーで埋もれた財宝を掘り当てた", amount: [90, 280] },
+    { type: "accident", desc: "宙賊の待ち伏せに遭い身包み剥がされた", amount: [-110, -35] },
+    { type: "bonus", desc: "古い星図を頼りに秘密の宝物庫を突き止めた", amount: [110, 320] },
+    { type: "accident", desc: "調子に乗って危険な深部まで踏み込んだ", amount: [-120, -40] },
+  ],
+  safeTemplate: [
+    { type: "income", desc: "安全な航路で着実に任務をこなした", amount: [50, 90] },
+    { type: "income", desc: "堅実に輸送任務をこなした", amount: [40, 80] },
+    { type: "income", desc: "地道な依頼で確実な報酬を得た", amount: [50, 90] },
+    { type: "income", desc: "安全第一で慎重に航行を進めた", amount: [40, 80] },
+    { type: "income", desc: "信頼できる商船と手堅い取引をした", amount: [50, 90] },
+    { type: "income", desc: "コツコツ働いて確実に貯蓄を増やした", amount: [40, 80] },
+    { type: "income", desc: "評判のいい任務をきっちりこなした", amount: [50, 90] },
+    { type: "income", desc: "無理せず着実に航行を進めた", amount: [40, 80] },
+  ],
+  rules: [
+    { icon: "🚀", label: "任務選択マス", text: "サイコロで任務適性がランダムに決定" },
+    { icon: "💳", label: "任務報酬マス", text: "全員が同時に改造費を決める（他のプレイヤーの決定を待ちます）" },
+    { icon: "🌌", label: "宇宙の一大イベントマス", text: "隕石群や異星文明との接触など、出目で財産が変わる" },
+    { icon: "🤝", label: "クルー加入マス", text: "五分五分の運。成功すると他の全員から歓迎パーティ費用がもらえる" },
+    { icon: "🔀", label: "分かれ道マス", text: "深宇宙探査コースか安全航路コースを選べる" },
+    { icon: "🛸", label: "居住区選択マス", text: "ゴール後に売却して精算" },
+    { icon: "🛰️💎", label: "座標データマス／お宝マス", text: "ゴール後の座標解析・換金でお楽しみ" },
+  ],
+};
+
 function buildTheme(cfg) {
   const LIFEEVENT_MAP = {};
   cfg.lifeEvents.forEach((ev) => (LIFEEVENT_MAP[ev.idx] = ev));
@@ -804,6 +958,7 @@ export const THEMES = {
   adventure: buildTheme(ADVENTURE_THEME_CFG),
   idol: buildTheme(IDOL_THEME_CFG),
   school: buildTheme(SCHOOL_THEME_CFG),
+  space: buildTheme(SPACE_THEME_CFG),
 };
 export const DEFAULT_THEME_ID = "money";
 export const THEME_LIST = Object.values(THEMES);
