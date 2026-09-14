@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { BOARD_SIZE, GRID_COLS, ROW_HEIGHT, LANE_OFFSET, basePoint, getTheme } from "./boardData.js";
-import { rollDice, chooseFork, chooseHome, choosePick, submitInvest } from "./roomEngine.js";
+import { rollDice, chooseFork, chooseHome, choosePick, submitInvest, ackLanding } from "./roomEngine.js";
 import { describeToast, signed, amtClass } from "./ui/helpers.js";
 import GameTopBar from "./ui/TopBar.jsx";
 import {
@@ -487,6 +487,9 @@ export default function PlayingScreen({ room, code, uid, onLeaveRoom }) {
   const [revealReady, setRevealReady] = useState(true);
   const [showLog, setShowLog] = useState(false);
   const seenTurnKey = useRef(null);
+  // 「ダイス演出→移動演出」の最中は true。この間は着地演出(トースト/ショーケース)を
+  // 出したり、ゲームを先に進めたりしない(演出用の別エフェクトと競合させないため)。
+  const busyRef = useRef(false);
   const [submitting, setSubmitting] = useState(false);
 
   // turn.roll/fromPos/toPos/path はターンが確定した瞬間から次のプレイヤーの番になるまで
@@ -497,20 +500,17 @@ export default function PlayingScreen({ room, code, uid, onLeaveRoom }) {
     const key = `${turn.actorId}:${turn.roll}:${turn.fromPos}:${turn.toPos}`;
     if (key === seenTurnKey.current) return;
     seenTurnKey.current = key;
+    busyRef.current = true;
 
     const fromPos = turn.fromPos;
     const path = turn.path;
     const actorId = turn.actorId;
     const finalRoll = turn.roll;
-    // ロール検出と同時に届く lastEvent は、着地マスが job/lifeevent/childevent
-    // なら既にその結果を含んでいる(同一トランザクションで解決されるため)。
-    // 着地後にショーケース演出を出すため、ここで値を確保しておく。
-    const revealEvent = lastEvent;
 
     setRevealReady(false);
     setRolling(true);
     let n = 0;
-    const totalTicks = 16; // サイコロを振っている感覚が出るよう、少し長めに転がす
+    const totalTicks = 10; // サイコロを振っている感覚が出る程度に転がす
     const diceTimer = setInterval(() => {
       setDiceFace(DIE_FACE[1 + Math.floor(Math.random() * 6)]);
       sfxDiceTick();
@@ -521,34 +521,50 @@ export default function PlayingScreen({ room, code, uid, onLeaveRoom }) {
         setRolling(false);
         sfxDiceLand();
 
-        // コマをスタート地点から1マスずつ、ゆっくり歩かせる
+        // コマをスタート地点から1マスずつ歩かせる
         setWalking({ playerId: actorId, pos: fromPos });
         let i = 0;
         const stepTimer = setInterval(() => {
           if (i >= path.length) {
             clearInterval(stepTimer);
             setWalking(null);
+            busyRef.current = false;
             setRevealReady(true);
-            if (revealEvent && ["job", "lifeevent", "childevent"].includes(revealEvent.kind)) {
-              setShowcase(revealEvent);
-              setTimeout(() => setShowcase(null), 2200);
-            } else if (revealEvent && ["income", "expense", "bonus", "accident", "pick_result"].includes(revealEvent.kind)) {
-              (revealEvent.amt >= 0 ? sfxCoinGain : sfxCoinLoss)();
-            } else if (revealEvent && (revealEvent.kind === "treasure" || revealEvent.kind === "lottery")) {
-              sfxSparkle();
-            } else if (revealEvent && revealEvent.kind === "goal") {
-              sfxFanfare();
-            }
             return;
           }
           setWalking({ playerId: actorId, pos: path[i] });
           sfxStep();
           i++;
-        }, 1300);
+        }, 550);
       }
-    }, 110);
+    }, 90);
     return () => clearInterval(diceTimer);
-  }, [turn.actorId, turn.roll, turn.fromPos, turn.toPos, lastEvent]);
+  }, [turn.actorId, turn.roll, turn.fromPos, turn.toPos]);
+
+  // マスの結果が確定(turn.status === "landed")したら、移動演出が終わっているのを確認してから
+  // トースト/ショーケースを見せ、少し経ってからゲームを先に進める(ackLanding)。
+  // 分かれ道・マイホーム・二択マスの選択直後もここで拾う(その場合は移動演出を挟まない)。
+  useEffect(() => {
+    if (turn.status !== "landed" || busyRef.current) return;
+    const isShowcase = lastEvent && ["job", "lifeevent", "childevent"].includes(lastEvent.kind);
+    if (isShowcase) {
+      setShowcase(lastEvent);
+    } else if (lastEvent) {
+      if (["income", "expense", "bonus", "accident", "pick_result"].includes(lastEvent.kind)) {
+        (lastEvent.amt >= 0 ? sfxCoinGain : sfxCoinLoss)();
+      } else if (lastEvent.kind === "treasure" || lastEvent.kind === "lottery") {
+        sfxSparkle();
+      } else if (lastEvent.kind === "goal") {
+        sfxFanfare();
+      }
+    }
+    const delay = isShowcase ? 1800 : 1100;
+    const timer = setTimeout(() => {
+      setShowcase(null);
+      ackLanding(code).catch(() => {});
+    }, delay);
+    return () => clearTimeout(timer);
+  }, [turn.status, lastEvent, revealReady, code]);
 
   async function handleRoll() {
     if (!isMyTurn || submitting) return;
@@ -574,6 +590,8 @@ export default function PlayingScreen({ room, code, uid, onLeaveRoom }) {
     turnSub = "全員の投資判断を待っています…";
   } else if (!revealReady) {
     turnSub = "移動中…";
+  } else if (turn.status === "landed") {
+    turnSub = "結果を確認中…";
   } else {
     turnSub = "進行中…";
   }

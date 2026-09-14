@@ -19,6 +19,7 @@ import {
   chooseFork as glChooseFork,
   chooseHome as glChooseHome,
   choosePick as glChoosePick,
+  advanceFromLanding as glAdvanceFromLanding,
   submitInvestDecision as glSubmitInvestDecision,
   startSettlement,
   startLottery,
@@ -172,6 +173,12 @@ export function choosePick(code, playerId, optionId) {
 
 export function submitInvest(code, playerId, amount) {
   return runGameTransaction(code, (state) => glSubmitInvestDecision(state, playerId, amount));
+}
+
+// マスの着地演出(トースト/ショーケース)を見せ終えたら、どのクライアントからでも呼んでゲームを先へ進める。
+// 既に別のクライアントが進めていれば何もしない(冪等)ので、複数人が同時に呼んでも安全。
+export function ackLanding(code) {
+  return runGameTransaction(code, (state) => glAdvanceFromLanding(state));
 }
 
 export function advanceToLottery(code) {

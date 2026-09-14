@@ -136,7 +136,8 @@ function resolveLandingAuto(state, theme, actor, sq, idx) {
       actor.money += bonus;
       setLastEvent(state, { kind: "goal", playerId: actor.id, rank, bonus });
       pushLog(state, `${actor.name}：🏁${rank}着で${theme.labels.goalName}！ +${bonus}${theme.currencyUnit}`, "goal", actor.id);
-      return false;
+      state.turn.status = "landed";
+      return true;
     }
     case "job": {
       if (!actor.job) {
@@ -147,7 +148,8 @@ function resolveLandingAuto(state, theme, actor, sq, idx) {
       } else {
         setLastEvent(state, { kind: "job_done", playerId: actor.id, job: actor.job });
       }
-      return false;
+      state.turn.status = "landed";
+      return true;
     }
     case "lifeevent": {
       const roll = 1 + Math.floor(Math.random() * 6);
@@ -156,7 +158,8 @@ function resolveLandingAuto(state, theme, actor, sq, idx) {
       actor.money += amt;
       setLastEvent(state, { kind: "lifeevent", playerId: actor.id, label: sq.label, icon: sq.icon, desc: sq.desc, roll, amt });
       pushLog(state, `${actor.name}：${sq.icon}${sq.label} ${amt >= 0 ? "+" : ""}${amt}${theme.currencyUnit}`, "lifeevent", actor.id);
-      return false;
+      state.turn.status = "landed";
+      return true;
     }
     case "childevent": {
       const roll = 1 + Math.floor(Math.random() * 6);
@@ -177,27 +180,31 @@ function resolveLandingAuto(state, theme, actor, sq, idx) {
       actor.money += amt + giftTotal;
       setLastEvent(state, { kind: "childevent", playerId: actor.id, label: sq.label, roll, success, amt, giftTotal });
       pushLog(state, `${actor.name}：${sq.label} ${success ? "成功！" : "また挑戦"} ${amt}${theme.currencyUnit}`, "childevent", actor.id);
-      return false;
+      state.turn.status = "landed";
+      return true;
     }
     case "lottery": {
       const ticket = randomTicket();
       actor.lotteryTickets.push(ticket);
       setLastEvent(state, { kind: "lottery", playerId: actor.id, ticket });
       pushLog(state, `${actor.name}：${theme.labels.lotteryItemName}『${ticket}』をゲット`, "lottery", actor.id);
-      return false;
+      state.turn.status = "landed";
+      return true;
     }
     case "treasure": {
       const val = pickAmount(sq.amount);
       actor.cards.push({ name: sq.desc, value: val });
       setLastEvent(state, { kind: "treasure", playerId: actor.id, name: sq.desc, value: val });
       pushLog(state, `${actor.name}：💎『${sq.desc}』(${val}${theme.currencyUnit}相当)`, "treasure", actor.id);
-      return false;
+      state.turn.status = "landed";
+      return true;
     }
     case "rest": {
       actor.rest = 1;
       setLastEvent(state, { kind: "rest", playerId: actor.id, desc: sq.desc });
       pushLog(state, `${actor.name}：${sq.desc}`, "rest", actor.id);
-      return false;
+      state.turn.status = "landed";
+      return true;
     }
     case "income":
     case "expense":
@@ -210,7 +217,8 @@ function resolveLandingAuto(state, theme, actor, sq, idx) {
       actor.money += amt;
       setLastEvent(state, { kind: sq.type, playerId: actor.id, desc: sq.desc, amt });
       pushLog(state, `${actor.name}：${sq.desc} ${amt >= 0 ? "+" : ""}${amt}${theme.currencyUnit}`, sq.type, actor.id);
-      return false;
+      state.turn.status = "landed";
+      return true;
     }
     default: {
       return false;
@@ -321,10 +329,9 @@ export function chooseFork(state, playerId, choiceId) {
   actor.routeChoice[state.turn.choice.forkIdx] = choiceId;
   const opt = theme.forkOptions.find((o) => o.id === choiceId);
   state.turn.choice = null;
-  state.turn.status = "animating";
+  state.turn.status = "landed";
   setLastEvent(state, { kind: "fork_result", playerId: actor.id, option: opt });
   pushLog(state, `${actor.name}：${opt.icon}${opt.label}を選択`, "fork", actor.id);
-  processQueue(state, theme);
   return state;
 }
 
@@ -340,10 +347,9 @@ export function chooseHome(state, playerId, optionId) {
   actor.home = opt;
   actor.money += opt.cost;
   state.turn.choice = null;
-  state.turn.status = "animating";
+  state.turn.status = "landed";
   setLastEvent(state, { kind: "home_result", playerId: actor.id, option: opt });
   pushLog(state, `${actor.name}：${opt.icon}${opt.label}を${theme.labels.homeVerb}`, "homepurchase", actor.id);
-  processQueue(state, theme);
   return state;
 }
 
@@ -360,9 +366,18 @@ export function choosePick(state, playerId, optionId) {
   actor.money += amt;
   const desc = state.turn.choice.desc;
   state.turn.choice = null;
-  state.turn.status = "animating";
+  state.turn.status = "landed";
   setLastEvent(state, { kind: "pick_result", playerId: actor.id, desc, option: opt, amt });
   pushLog(state, `${actor.name}：${desc}『${opt.label}』を選択 ${amt >= 0 ? "+" : ""}${amt}${theme.currencyUnit}`, "choice", actor.id);
+  return state;
+}
+
+// マスの結果を演出(トースト/ショーケース)として見せ終えたクライアントが呼ぶ。
+// 複数クライアントが同時に呼んでも安全なよう、既に進行済みなら何もしない(冪等)。
+export function advanceFromLanding(state) {
+  if (state.turn.status !== "landed") return state;
+  const theme = getTheme(state.themeId);
+  state.turn.status = "animating";
   processQueue(state, theme);
   return state;
 }
