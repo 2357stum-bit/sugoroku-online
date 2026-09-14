@@ -247,6 +247,45 @@
   font-family: "Zen Kaku Gothic New", "Noto Sans JP", sans-serif;
 }
 
+/* ---- 魔法学校双六テーマ: 夜空の紫紺×星のような金色のパレット ---- */
+.sgr-root[data-theme="magicschool"] {
+  --sgr-bg: #0c0a1a;
+  --sgr-board: #171332;
+  --sgr-board-alt: #201a44;
+  --sgr-ink: #ede8fb;
+  --sgr-muted: #9188b8;
+  --sgr-accent: #b388ff;
+  --sgr-accent-dim: rgba(179, 136, 255, 0.16);
+  --sgr-coral: #ff5470;
+  --sgr-coral-dim: rgba(255, 84, 112, 0.16);
+  --sgr-gold: #ffd166;
+  --sgr-gold-dim: rgba(255, 209, 102, 0.18);
+  --sgr-purple: #7c5cff;
+  --sgr-purple-dim: rgba(124, 92, 255, 0.18);
+  --sgr-pink: #ff8fc7;
+  --sgr-pink-dim: rgba(255, 143, 199, 0.16);
+  --sgr-blue: #5dc3ff;
+  --sgr-blue-dim: rgba(93, 195, 255, 0.16);
+  --sgr-bronze: #c9a24d;
+  --sgr-bronze-dim: rgba(201, 162, 77, 0.2);
+  --sgr-sq-normal: #1b1640;
+  --sgr-sq-rest: rgba(0, 229, 208, 0.14);
+  --sgr-sq-salary: var(--sgr-bronze-dim);
+  --sgr-sq-lifeevent: var(--sgr-purple-dim);
+  --sgr-sq-childevent: rgba(0, 229, 208, 0.14);
+  --sgr-sq-home: var(--sgr-bronze-dim);
+  --sgr-line: rgba(179, 136, 255, 0.14);
+  --sgr-shadow: 0 8px 22px rgba(0, 0, 0, 0.5);
+  --sgr-money-pos: #7fd99b;
+  --sgr-money-neg: #e4685d;
+  --sgr-accent-ink: #1a0f38;
+  --sgr-danger-ink: #2b0713;
+  --sgr-heading-font: "Shippori Mincho", serif;
+  --sgr-glow-1: rgba(179, 136, 255, 0.12);
+  --sgr-glow-2: rgba(255, 209, 102, 0.08);
+  font-family: "Zen Maru Gothic", "Noto Sans JP", sans-serif;
+}
+
 .sgr-app {
   max-width: 480px;
   margin: 0 auto;

@@ -235,7 +235,7 @@ export default function SugorokuApp() {
               <div key={r.label}>{r.icon} <b>{r.label}</b>：{r.text}</div>
             ))}
             <div>
-              2〜4人でプレイ可能。はじめの所持{{ G: "ゴールド", Cr: "クレジット" }[theme.currencyUnit] || "金"}は全員{" "}
+              2〜4人でプレイ可能。はじめの所持{{ G: "ゴールド", Cr: "クレジット", 魔石: "魔石" }[theme.currencyUnit] || "金"}は全員{" "}
               <b>{theme.startMoney || START_MONEY}{theme.currencyUnit}</b>
             </div>
           </div>

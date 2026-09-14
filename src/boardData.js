@@ -1012,6 +1012,160 @@ const UNDERWORLD_THEME_CFG = {
   ],
 };
 
+const MAGICSCHOOL_THEME_CFG = {
+  id: "magicschool",
+  name: "魔法学校双六",
+  tagline: "100マスの魔法学院生活を送りながら、魔法を学び、冒険もこなして、大魔法使いを目指そう。",
+  eyebrowIcon: "🪄",
+  css: "magicschool",
+  tokens: ["🪄", "🧹", "🦉", "🐉"],
+  currencyUnit: "魔石",
+  startLabel: "新入生スタート",
+  startIcon: "🏰",
+  goalLabel: "大魔法使い",
+  goalIcon: "🎓",
+  labels: {
+    jobSquareName: "適性魔法",
+    jobGachaTitle: "適性魔法決定の儀！",
+    salaryName: "奨学金支給日",
+    investVerb: "修行",
+    homeSquareName: "寮",
+    homeVerb: "選択",
+    lotteryItemName: "占いの札",
+    lotteryFinaleName: "運命の占い大会",
+    lotteryFinaleVerb: "占う",
+    childEventVerb: "使い魔契約",
+    childGiftLabel: "お祝いの魔法石",
+    goalName: "大魔法使い",
+    winningLabel: "運命の数字",
+  },
+  jobs: [
+    { id: "fire", name: "火魔法使い", icon: "🔥", desc: "バランス型。堅実に力を発揮する", mult: { income: 1.0, bonus: 1.0, accident: 1.0, salary: 1.0 } },
+    { id: "dark", name: "闇魔法使い", icon: "🌑", desc: "高い成果を出すが危険と隣り合わせ", mult: { income: 1.6, bonus: 1.0, accident: 1.2, salary: 1.7 } },
+    { id: "light", name: "光魔法使い", icon: "✨", desc: "成果は控えめだが危険を避けて手堅い", mult: { income: 0.85, bonus: 0.8, accident: 0.7, salary: 0.9 } },
+    { id: "illusion", name: "幻術使い", icon: "🎭", desc: "当たれば大きいが波が激しい", mult: { income: 0.9, bonus: 1.6, accident: 1.3, salary: 0.8 } },
+    { id: "summoner", name: "召喚魔法使い", icon: "🐉", desc: "ハイリスク・ハイリターンな一撃", mult: { income: 1.2, bonus: 1.8, accident: 1.8, salary: 1.3 } },
+    { id: "sage", name: "賢者の秘術使い", icon: "📜", desc: "幸運次第で成果が乱高下", mult: { income: 0.8, bonus: 2.0, accident: 1.6, salary: 1.1 } },
+  ],
+  homeOptions: [
+    { id: "tower", label: "塔の個室", icon: "🗼", cost: -700, baseValue: 700, desc: "見晴らしのいい塔の個室。資産価値も抜群" },
+    { id: "suite", label: "寮の特別室", icon: "🏰", cost: -380, baseValue: 380, desc: "広々とした特別室。堅実な資産に" },
+    { id: "shared", label: "寮の相部屋", icon: "🛏️", cost: -250, baseValue: 250, desc: "仲間と過ごす寮生活" },
+    { id: "attic", label: "屋根裏の小部屋", icon: "🏚️", cost: -30, baseValue: 0, desc: "身軽な屋根裏暮らし。資産にはならない" },
+  ],
+  news: [
+    { text: "新しい魔法薬の開発成功で魔法経済が拡大", pct: 12 },
+    { text: "魔石の枯渇懸念で市場に激震が走る", pct: -10 },
+    { text: "学院対抗魔法大会の好評で取引が堅調に推移", pct: 7 },
+    { text: "魔法省の増税懸念から魔石が下落", pct: -8 },
+    { text: "新素材「星屑結晶」への期待から相場が急騰", pct: 15 },
+    { text: "大魔法使いの不祥事発覚で市場が急落", pct: -14 },
+    { text: "隣国の魔法学院との交流で相場が上昇", pct: 6 },
+    { text: "学院長の後押しで市場が活気づく", pct: 9 },
+    { text: "禁じられた森からの不穏な気配で様子見ムード", pct: -5 },
+    { text: "景気後退の噂がじわじわ広がっている", pct: -6 },
+    { text: "魔法薬の需要が高まり関連品がよく売れている", pct: 5 },
+    { text: "精霊石の高騰でエンチャント関連が急伸", pct: 8 },
+  ],
+  desc: {
+    income: ["魔法薬の調合を頼まれ報酬を受け取った", "図書館の整理を手伝い謝礼をもらった", "後輩への魔法指導で謝礼を受け取った", "学院祭の出店が大盛況で利益が出た", "試験で好成績を出し特待生に選ばれた", "先輩から臨時のお駄賃をもらった", "使い魔の散歩代行で稼いだ", "魔法道具店のアルバイト代をもらった", "お手伝いのご褒美をもらった"],
+    expense: ["杖の修理代を支払った", "魔法薬の材料をまとめ買いした", "教科書代がかかった", "制服のローブを買い直した", "学院祭の衣装代を負担した", "参考書をまとめ買いした", "水晶玉の修理代がかかった", "友達との茶会でお菓子代がかさんだ", "部費(魔法クラブ)の会費を払った"],
+    bonus: ["蚤の市で珍しい魔法具が高く売れた", "懸賞で魔法菓子の詰め合わせが当たった", "先輩から臨時のお祝いをもらった", "落とした杖が届けられ中身が無事だった", "くじ引きで特賞が当たった", "使い魔のお手柄で臨時ボーナスをもらった", "魔石ポイントを換金した", "古い魔導書が高値で売れた", "掃除中に思わぬ魔石を発見した"],
+    accident: ["杖を折ってしまい修理代がかかった", "友達との約束をすっぽかし埋め合わせをした", "水晶玉を割って修理に出した", "魔法クラブの道具を壊して弁償した", "禁じられた魔法薬に手を出し後悔した", "友達に奢りすぎて出費がかさんだ", "先生に見つかり反省文用の羊皮紙代がかかった", "箒がパンクして修理代がかかった", "教材を忘れて買い直した"],
+    rest: ["夜遅くまで魔法の練習をして一回休み", "魔力切れで学院を休み一回休み", "魔法クラブの疲れで一回休み", "学院祭の準備で疲れて一回休み", "魔力の使いすぎで一回休み"],
+    treasure: ["初めてもらった魔法のペンダント", "学院祭で着た手作りローブ", "魔法クラブの大会優勝メダル", "幻の学院長選挙ポスター", "先生からもらった直筆の羊皮紙", "入学式の記念写真", "合唱の儀の指揮棒", "卒業アルバムの試作品", "伝説の先輩からもらったお守り"],
+  },
+  icon: {
+    income: "💰", expense: "💸", bonus: "🎁", accident: "⚡", rest: "🛌",
+    treasure: "💎", job: "🪄", salary: "📜", lifeevent: "🔮",
+    childevent: "🦉", homepurchase: "🏰", lottery: "🃏", choice: "📖",
+  },
+  squareDesc: {
+    job: "適性魔法を決めよう",
+    home: "寮を選ぼう",
+    fork: "進む道を選ぼう",
+    lottery: "占いの札を発見",
+    salary: "奨学金支給日がやってきた",
+  },
+  lifeEvents: [
+    { idx: 14, icon: "🕯️", label: "闇の儀式に遭遇", desc: "謎の儀式に遭遇した！対処の結果は…", base: 120 },
+    { idx: 26, icon: "🏆", label: "魔法大会への出場", desc: "学院対抗魔法大会に出場した！結果は…", base: 220 },
+    { idx: 78, icon: "🐲", label: "禁じられた森での遭遇", desc: "禁じられた森で強大な魔物に遭遇した！運命の分かれ道…", base: 550 },
+    { idx: 92, icon: "👹", label: "闇の魔法使いとの決戦", desc: "闇の魔法使いとの決戦に挑む！勝敗のゆくえは…", base: 850 },
+  ],
+  childEvents: [
+    { idx: 40, label: "使い魔その1", cost: -150 },
+    { idx: 84, label: "使い魔その2", cost: -130 },
+  ],
+  choices: [
+    { idx: 6, squareDesc: "臨時収入の使い道", options: [
+      { id: "a", label: "貯める", desc: "いざという時のために蓄える", amount: [20, 30] },
+      { id: "b", label: "パーッと使う", desc: "気分次第で得することも損することも", amount: [-15, 80] },
+    ] },
+    { idx: 18, squareDesc: "怪しい依頼の誘い", options: [
+      { id: "a", label: "断る", desc: "今の生活を大事にする", amount: [10, 20] },
+      { id: "b", label: "受ける", desc: "うまくいけば大きいが空振りもある", amount: [-25, 150] },
+    ] },
+    { idx: 30, squareDesc: "魔石の使い道", options: [
+      { id: "a", label: "貯蓄する", desc: "コツコツ堅実に増やす", amount: [30, 50] },
+      { id: "b", label: "怪しい儲け話に乗る", desc: "一攫千金か、大損か", amount: [-70, 250] },
+    ] },
+    { idx: 42, squareDesc: "他の魔法クラブからの勧誘", options: [
+      { id: "a", label: "今のクラブに残る", desc: "安定を選ぶ", amount: [40, 70] },
+      { id: "b", label: "移る", desc: "環境が変わり運命が動く", amount: [-100, 300] },
+    ] },
+    { idx: 72, squareDesc: "独自研究のチャンス", options: [
+      { id: "a", label: "見送る", desc: "今のままで手堅く", amount: [60, 100] },
+      { id: "b", label: "研究に打ち込む", desc: "大きなリターンとリスクが両方待つ", amount: [-180, 600] },
+    ] },
+    { idx: 80, squareDesc: "伝説の魔法具の噂", options: [
+      { id: "a", label: "我慢する", desc: "節約して貯蓄にまわす", amount: [80, 120] },
+      { id: "b", label: "思い切って買う", desc: "駄作か、伝説級の掘り出し物か", amount: [-140, 400] },
+    ] },
+    { idx: 87, squareDesc: "先代からの遺産", options: [
+      { id: "a", label: "魔石で受け取る", desc: "手堅く確実に", amount: [100, 150] },
+      { id: "b", label: "秘宝で受け取る", desc: "化けるかもしれないが手間もかかる", amount: [-90, 500] },
+    ] },
+    { idx: 95, squareDesc: "学院生活最後の大勝負", options: [
+      { id: "a", label: "手堅く終える", desc: "安定志向で締めくくる", amount: [150, 200] },
+      { id: "b", label: "一発逆転を狙う", desc: "すべてを賭けた大勝負", amount: [-250, 900] },
+    ] },
+  ],
+  forkOptions: [
+    { id: "risk", label: "禁じられた道", icon: "🌑", desc: "危険な禁断の道。大成功も大失敗もある波乱の数マス" },
+    { id: "safe", label: "修行の道", icon: "🛡️", desc: "地道な修行の道。少しずつ確実に魔石が増える" },
+  ],
+  riskTemplate: [
+    { type: "bonus", desc: "禁じられた道で古の宝物庫を見つけた", amount: [100, 300] },
+    { type: "accident", desc: "強力な魔物に遭遇し大怪我をした", amount: [-100, -30] },
+    { type: "bonus", desc: "闇市場で怪しい大取引がまとまった", amount: [80, 250] },
+    { type: "accident", desc: "一か八かの近道で罠にかかった", amount: [-90, -25] },
+    { type: "bonus", desc: "廃墟の遺跡で埋もれた財宝を掘り当てた", amount: [90, 280] },
+    { type: "accident", desc: "闇の魔法使いの待ち伏せに遭い身包み剥がされた", amount: [-110, -35] },
+    { type: "bonus", desc: "古い魔導書を頼りに秘密の宝物庫を突き止めた", amount: [110, 320] },
+    { type: "accident", desc: "調子に乗って危険な深部まで踏み込んだ", amount: [-120, -40] },
+  ],
+  safeTemplate: [
+    { type: "income", desc: "安全な道で着実に修行をこなした", amount: [50, 90] },
+    { type: "income", desc: "堅実に魔法薬の調合をこなした", amount: [40, 80] },
+    { type: "income", desc: "地道な依頼で確実な報酬を得た", amount: [50, 90] },
+    { type: "income", desc: "安全第一で慎重に修行を進めた", amount: [40, 80] },
+    { type: "income", desc: "信頼できる先生と手堅い契約をした", amount: [50, 90] },
+    { type: "income", desc: "コツコツ修行して確実に力を増やした", amount: [40, 80] },
+    { type: "income", desc: "評判のいい依頼をきっちりこなした", amount: [50, 90] },
+    { type: "income", desc: "無理せず着実に修行を進めた", amount: [40, 80] },
+  ],
+  rules: [
+    { icon: "🪄", label: "適性魔法決定マス", text: "サイコロで適性魔法がランダムに決定" },
+    { icon: "📜", label: "奨学金支給マス", text: "全員が同時に修行費を決める（他のプレイヤーの決定を待ちます）" },
+    { icon: "🔮", label: "学院生活の一大イベントマス", text: "魔法大会や闇の魔法使いとの決戦など、出目で財産が変わる" },
+    { icon: "🦉", label: "使い魔契約マス", text: "五分五分の運。成功すると他の全員からお祝いの魔法石がもらえる" },
+    { icon: "🔀", label: "分かれ道マス", text: "禁じられた道か修行の道を選べる" },
+    { icon: "🏰", label: "寮選択マス", text: "ゴール後に売却して精算" },
+    { icon: "🃏💎", label: "占いの札マス／お宝マス", text: "ゴール後の占い大会・換金でお楽しみ" },
+  ],
+};
+
 function buildTheme(cfg) {
   const LIFEEVENT_MAP = {};
   cfg.lifeEvents.forEach((ev) => (LIFEEVENT_MAP[ev.idx] = ev));
@@ -1125,6 +1279,7 @@ export const THEMES = {
   school: buildTheme(SCHOOL_THEME_CFG),
   space: buildTheme(SPACE_THEME_CFG),
   underworld: buildTheme(UNDERWORLD_THEME_CFG),
+  magicschool: buildTheme(MAGICSCHOOL_THEME_CFG),
 };
 export const DEFAULT_THEME_ID = "money";
 export const THEME_LIST = Object.values(THEMES);
