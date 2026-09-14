@@ -67,6 +67,12 @@ export function pickAmount(range, rng = Math.random) {
   const [min, max] = range;
   return min + Math.floor(rng() * (max - min + 1));
 }
+// income/expense/bonus/accident/treasure/rest マスの文言を、着地するたびにテーマの
+// 文言プールからランダムに1つ選ぶ(固定の順送りにしない)。
+export function randomDesc(theme, type, rng = Math.random) {
+  const pool = theme.desc[type];
+  return pool[Math.floor(rng() * pool.length)];
+}
 export function randomTicket(rng = Math.random) {
   return String(Math.floor(rng() * 10000)).padStart(4, "0");
 }
@@ -717,12 +723,6 @@ function buildTheme(cfg) {
   }
 
   const SQUARES = [];
-  const descCounter = {};
-  function nextDesc(type) {
-    descCounter[type] = (descCounter[type] || 0) + 1;
-    const pool = cfg.desc[type];
-    return pool[(descCounter[type] - 1) % pool.length];
-  }
 
   SQUARES[0] = { type: "start", label: cfg.startLabel, icon: cfg.startIcon };
   SQUARES[4] = { type: "job", icon: cfg.icon.job, desc: cfg.squareDesc.job, forcedStop: true };
@@ -766,7 +766,9 @@ function buildTheme(cfg) {
     }
     const type = PATTERN[patternIdx % PATTERN.length];
     patternIdx++;
-    const sq = { type, icon: cfg.icon[type], desc: nextDesc(type) };
+    // 文言(desc)はここでは固定せず、着地した瞬間にランダムに選ぶ(randomDesc)。
+    // 何度遊んでも同じマスで同じ文言ばかりにならないようにするため。
+    const sq = { type, icon: cfg.icon[type] };
     if (type === "income" || type === "expense" || type === "bonus" || type === "accident" || type === "treasure") {
       sq.amount = scaleRange(type, i);
     }
@@ -780,7 +782,13 @@ function buildTheme(cfg) {
       const bd = BRANCH_MAP[idx];
       const choice = (player.routeChoice && player.routeChoice[bd.forkIdx]) || "safe";
       const picked = choice === "risk" ? bd.risk : bd.safe;
-      return { type: picked.realType || picked.type, icon: picked.icon, desc: picked.desc, amount: picked.amount };
+      // 文言は、位置ごとに固定ではなく、同じ種別(ボーナス/アクシデント/収入)の
+      // テンプレートからランダムに選ぶ(何度遊んでも同じ組み合わせにならないように)。
+      const pool = choice === "risk"
+        ? cfg.riskTemplate.filter((t) => t.type === picked.realType)
+        : cfg.safeTemplate;
+      const desc = pool[Math.floor(Math.random() * pool.length)].desc;
+      return { type: picked.realType || picked.type, icon: picked.icon, desc, amount: picked.amount };
     }
     return sq;
   }

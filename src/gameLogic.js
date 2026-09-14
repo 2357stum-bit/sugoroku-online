@@ -13,6 +13,7 @@ import {
   scaleFlat,
   pickAmount,
   randomTicket,
+  randomDesc,
   getTheme,
   DEFAULT_THEME_ID,
 } from "./boardData.js";
@@ -193,16 +194,18 @@ function resolveLandingAuto(state, theme, actor, sq, idx) {
     }
     case "treasure": {
       const val = pickAmount(sq.amount);
-      actor.cards.push({ name: sq.desc, value: val });
-      setLastEvent(state, { kind: "treasure", playerId: actor.id, name: sq.desc, value: val });
-      pushLog(state, `${actor.name}：💎『${sq.desc}』(${val}${theme.currencyUnit}相当)`, "treasure", actor.id);
+      const name = randomDesc(theme, "treasure");
+      actor.cards.push({ name, value: val });
+      setLastEvent(state, { kind: "treasure", playerId: actor.id, name, value: val });
+      pushLog(state, `${actor.name}：💎『${name}』(${val}${theme.currencyUnit}相当)`, "treasure", actor.id);
       state.turn.status = "landed";
       return true;
     }
     case "rest": {
       actor.rest = 1;
-      setLastEvent(state, { kind: "rest", playerId: actor.id, desc: sq.desc });
-      pushLog(state, `${actor.name}：${sq.desc}`, "rest", actor.id);
+      const desc = randomDesc(theme, "rest");
+      setLastEvent(state, { kind: "rest", playerId: actor.id, desc });
+      pushLog(state, `${actor.name}：${desc}`, "rest", actor.id);
       state.turn.status = "landed";
       return true;
     }
@@ -215,8 +218,9 @@ function resolveLandingAuto(state, theme, actor, sq, idx) {
         amt = Math.round((amt * actor.job.mult[sq.type]) / 10) * 10;
       }
       actor.money += amt;
-      setLastEvent(state, { kind: sq.type, playerId: actor.id, desc: sq.desc, amt });
-      pushLog(state, `${actor.name}：${sq.desc} ${amt >= 0 ? "+" : ""}${amt}${theme.currencyUnit}`, sq.type, actor.id);
+      const desc = randomDesc(theme, sq.type);
+      setLastEvent(state, { kind: sq.type, playerId: actor.id, desc, amt });
+      pushLog(state, `${actor.name}：${desc} ${amt >= 0 ? "+" : ""}${amt}${theme.currencyUnit}`, sq.type, actor.id);
       state.turn.status = "landed";
       return true;
     }
