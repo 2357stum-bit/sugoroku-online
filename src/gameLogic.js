@@ -71,12 +71,14 @@ export function initGameState(players, themeId) {
   };
 }
 
+// 給料マス・対決マスは、通り過ぎる(着地しない)場合でも発生する「通行マス」として扱う。
 function buildQueue(theme, player, fromPos, target) {
-  const salaryHits = [];
+  const tollHits = [];
   for (let i = fromPos + 1; i < target; i++) {
-    if (theme.getSquare(player, i).type === "salary") salaryHits.push(i);
+    const t = theme.getSquare(player, i).type;
+    if (t === "salary" || t === "battle") tollHits.push({ idx: i, sqType: t });
   }
-  const queue = salaryHits.map((idx) => ({ kind: "salary_mid", idx }));
+  const queue = tollHits.map((h) => ({ kind: "toll_mid", idx: h.idx, sqType: h.sqType }));
   queue.push({ kind: "landing", idx: target });
   return queue;
 }
@@ -101,6 +103,44 @@ function openInvestPhase(state, theme, payerId, idx) {
   pushLog(state, `${payer.name}：${theme.labels.salaryName} +${salaryAmt}${theme.currencyUnit}`, "salary", payerId);
 }
 
+// 対決マス: 今いる中で最も裕福な相手と出目を振り合い、大きい方が勝って差分を奪う。
+function resolveBattle(state, theme, actor) {
+  const others = state.players.filter((p) => p.id !== actor.id && !p.finished);
+  if (others.length === 0) {
+    setLastEvent(state, { kind: "battle_none", playerId: actor.id });
+    pushLog(state, `${actor.name}：対決する相手がいなかった`, "battle", actor.id);
+    return;
+  }
+  const target = others.reduce((a, b) => (b.money > a.money ? b : a));
+  const rollA = 1 + Math.floor(Math.random() * 6);
+  const rollB = 1 + Math.floor(Math.random() * 6);
+  let amt = 0;
+  let winnerId = null;
+  if (rollA !== rollB) {
+    const margin = Math.abs(rollA - rollB);
+    winnerId = rollA > rollB ? actor.id : target.id;
+    const loser = winnerId === actor.id ? target : actor;
+    const stake = Math.min(margin * 300, loser.money);
+    if (winnerId === actor.id) {
+      target.money -= stake;
+      actor.money += stake;
+      amt = stake;
+    } else {
+      actor.money -= stake;
+      target.money += stake;
+      amt = -stake;
+    }
+  }
+  const flavor = winnerId == null ? null : randomDesc(theme, winnerId === actor.id ? "battleWin" : "battleLose");
+  setLastEvent(state, { kind: "battle", playerId: actor.id, targetId: target.id, rollA, rollB, amt, winnerId, flavor });
+  if (winnerId == null) {
+    pushLog(state, `${actor.name} vs ${target.name}：${rollA}-${rollB}で引き分け`, "battle", actor.id);
+  } else {
+    const winnerName = winnerId === actor.id ? actor.name : target.name;
+    pushLog(state, `${actor.name} vs ${target.name}：${rollA}-${rollB}で${winnerName}の勝ち！${Math.abs(amt)}${theme.currencyUnit}移動`, "battle", actor.id);
+  }
+}
+
 function resolveLandingAuto(state, theme, actor, sq, idx) {
   switch (sq.type) {
     case "fork": {
@@ -119,6 +159,11 @@ function resolveLandingAuto(state, theme, actor, sq, idx) {
     }
     case "salary": {
       openInvestPhase(state, theme, actor.id, idx);
+      return true;
+    }
+    case "battle": {
+      resolveBattle(state, theme, actor);
+      state.turn.status = "landed";
       return true;
     }
     case "choice": {
@@ -264,9 +309,14 @@ function processQueue(state, theme) {
   while (state.turn.queueIndex < state.turn.queue.length) {
     const step = state.turn.queue[state.turn.queueIndex];
     const actor = findPlayer(state, state.turn.actorId);
-    if (step.kind === "salary_mid") {
-      openInvestPhase(state, theme, actor.id, step.idx);
+    if (step.kind === "toll_mid") {
       state.turn.queueIndex++;
+      if (step.sqType === "battle") {
+        resolveBattle(state, theme, actor);
+        state.turn.status = "landed";
+      } else {
+        openInvestPhase(state, theme, actor.id, step.idx);
+      }
       return;
     }
     if (step.kind === "landing") {

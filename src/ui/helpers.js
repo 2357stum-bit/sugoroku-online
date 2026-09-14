@@ -18,6 +18,7 @@ export const EVENT_BG = {
   goal: "var(--sgr-sq-goal)",
   choice: "var(--sgr-sq-bonus)",
   raid: "var(--sgr-sq-accident)",
+  battle: "var(--sgr-sq-battle)",
 };
 
 export function findPlayerName(players, id) {
@@ -77,6 +78,18 @@ export function describeToast(event, players, theme) {
     }
     case "raid_none":
       return { icon: theme.icon.raid, bg: EVENT_BG.raid, title: `${name}：狙う相手がいなかった` };
+    case "battle": {
+      const targetName = findPlayerName(players, event.targetId);
+      const sub = `🎲${event.rollA} vs 🎲${event.rollB}${event.flavor ? "・" + event.flavor : ""}`;
+      if (event.winnerId == null) {
+        return { icon: theme.icon.battle, bg: EVENT_BG.battle, title: `${name} vs ${targetName}：引き分け`, sub };
+      }
+      return event.winnerId === event.playerId
+        ? { icon: theme.icon.battle, bg: EVENT_BG.battle, title: `${name}：${targetName}に勝って奪った！`, sub, amount: event.amt, unit }
+        : { icon: theme.icon.battle, bg: EVENT_BG.battle, title: `${name}：${targetName}に負けて奪われた…`, sub, amount: event.amt, unit };
+    }
+    case "battle_none":
+      return { icon: theme.icon.battle, bg: EVENT_BG.battle, title: `${name}：対決する相手がいなかった` };
     default:
       return null;
   }

@@ -34,6 +34,7 @@
   --sgr-sq-job: var(--sgr-blue-dim);
   --sgr-sq-goal: var(--sgr-gold-dim);
   --sgr-sq-raid: var(--sgr-coral-dim);
+  --sgr-sq-battle: var(--sgr-gold-dim);
   --sgr-line: rgba(255, 255, 255, 0.09);
   --sgr-shadow: 0 8px 22px rgba(0, 0, 0, 0.4);
   --sgr-money-pos: #00d9a3;
@@ -440,15 +441,21 @@
 .sgr-sq.sgr-raid::before { background: var(--sgr-sq-raid); inset: 0; clip-path: polygon(48% 0%, 60% 32%, 96% 30%, 68% 54%, 80% 90%, 50% 68%, 20% 90%, 32% 54%, 4% 30%, 40% 32%); border: 1.5px solid rgba(255, 84, 112, 0.7); animation: sgrRaidglow 1.6s ease-in-out infinite; }
 .sgr-sq.sgr-raid .sgr-icon { font-size: 17px; }
 
+.sgr-sq.sgr-battle { z-index: 2; }
+.sgr-sq.sgr-battle::before { background: var(--sgr-sq-battle); inset: 0; clip-path: polygon(25% 4%, 75% 4%, 100% 50%, 75% 96%, 25% 96%, 0% 50%); border: 1.5px solid rgba(255, 184, 77, 0.7); animation: sgrBattleglow 1.6s ease-in-out infinite; }
+.sgr-sq.sgr-battle .sgr-icon { font-size: 17px; }
+
 @keyframes sgrShimmer { 0%, 100% { box-shadow: 0 0 0 0 rgba(255, 122, 168, 0); } 50% { box-shadow: 0 0 9px 2px rgba(255, 122, 168, 0.5); } }
 @keyframes sgrShimmer2 { 0%, 100% { box-shadow: 0 0 0 0 rgba(167, 139, 250, 0); } 50% { box-shadow: 0 0 9px 2px rgba(167, 139, 250, 0.5); } }
 @keyframes sgrGoalpulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.06); } }
 @keyframes sgrLifeglow { 0%, 100% { box-shadow: 0 0 0 0 rgba(255, 122, 168, 0); } 50% { box-shadow: 0 0 10px 3px rgba(255, 122, 168, 0.55); } }
 @keyframes sgrChildglow { 0%, 100% { box-shadow: 0 0 0 0 rgba(0, 217, 163, 0); } 50% { box-shadow: 0 0 10px 3px rgba(0, 217, 163, 0.55); } }
 @keyframes sgrRaidglow { 0%, 100% { box-shadow: 0 0 0 0 rgba(255, 84, 112, 0); } 50% { box-shadow: 0 0 10px 3px rgba(255, 84, 112, 0.55); } }
+@keyframes sgrBattleglow { 0%, 100% { box-shadow: 0 0 0 0 rgba(255, 184, 77, 0); } 50% { box-shadow: 0 0 10px 3px rgba(255, 184, 77, 0.55); } }
 @media (prefers-reduced-motion: reduce) {
   .sgr-sq.sgr-treasure::before, .sgr-sq.sgr-goal::before, .sgr-sq.sgr-lifeevent::before,
-  .sgr-sq.sgr-childevent::before, .sgr-sq.sgr-lottery::before, .sgr-sq.sgr-raid::before { animation: none; }
+  .sgr-sq.sgr-childevent::before, .sgr-sq.sgr-lottery::before, .sgr-sq.sgr-raid::before,
+  .sgr-sq.sgr-battle::before { animation: none; }
 }
 
 .sgr-msg-toast { margin: 0 18px 10px; background: var(--sgr-board-alt); border: 1px solid var(--sgr-line); color: var(--sgr-ink); border-radius: 14px; padding: 12px 16px; font-size: 13px; line-height: 1.6; display: flex; align-items: flex-start; gap: 10px; }

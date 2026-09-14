@@ -860,6 +860,9 @@ const UNDERWORLD_THEME_CFG = {
   tokens: ["🦈", "🐺", "🐍", "🦂"],
   currencyUnit: "万円",
   startMoney: 5000,
+  // このテーマだけ「上納日(給料+投資)」を廃止し、代わりに同じマス位置を
+  // 相手との対決マスに変える(サイコロの出目の大きい方が勝ち、勝った側が奪う)。
+  battleInsteadOfSalary: true,
   startLabel: "下っ端スタート",
   startIcon: "🌆",
   goalLabel: "裏社会の帝王",
@@ -916,10 +919,12 @@ const UNDERWORLD_THEME_CFG = {
     treasure: ["伝説の金の延べ棒", "幻のダイヤの指輪", "裏社会の秘宝", "呪われた金貨", "失われた組長の遺産", "闇市の骨董品", "古の裏帳簿", "宝石をあしらった短剣の柄", "巨大商船の財宝"],
     raid: ["闇にまぎれて忍び寄った", "縄張りを荒らして金を狙った", "不意打ちで金庫を狙った", "脅しをかけて金を巻き上げようとした", "隙をついて有り金を狙った"],
     raidFail: ["反撃を受けて逃げ帰った", "見つかって仲間に取り返された", "用心棒に阻まれて失敗した", "返り討ちにあった", "計画がバレて仕返しされた"],
+    battleWin: ["殴り合いの末に叩き伏せた", "睨み合いに勝って主導権を握った", "度胸勝負で相手を黙らせた", "一瞬の隙をついて優位に立った", "根性で相手をねじ伏せた"],
+    battleLose: ["殴り合いの末に叩き伏せられた", "睨み合いに負けて主導権を握られた", "度胸勝負で相手に黙らされた", "一瞬の隙をつかれて劣勢に立たされた", "根性で相手にねじ伏せられた"],
   },
   icon: {
     income: "💰", expense: "💸", bonus: "🎁", accident: "⚡", rest: "🛌",
-    treasure: "💎", job: "🎩", salary: "💴", lifeevent: "🚨",
+    treasure: "💎", job: "🎩", salary: "💴", lifeevent: "🚨", battle: "⚔️",
     childevent: "🤝", homepurchase: "🏢", lottery: "🎟️", choice: "🃏", raid: "🥊",
   },
   squareDesc: {
@@ -928,6 +933,7 @@ const UNDERWORLD_THEME_CFG = {
     fork: "進むルートを選ぼう",
     lottery: "情報屋のネタを発見",
     salary: "上納日がやってきた",
+    battle: "対決の火花が散る",
   },
   lifeEvents: [
     { idx: 14, icon: "🕵️", label: "潜入捜査官との遭遇", desc: "潜入捜査官に目をつけられた！切り抜けられるか…", base: 1200 },
@@ -1002,7 +1008,7 @@ const UNDERWORLD_THEME_CFG = {
   raidIdx: [11, 22, 37, 51, 71, 83, 93, 98],
   rules: [
     { icon: "🎩", label: "役職決定マス", text: "サイコロで組内の役職がランダムに決定" },
-    { icon: "💴", label: "上納日マス", text: "全員が同時に裏取引の金額を決める（他のプレイヤーの決定を待ちます）" },
+    { icon: "⚔️", label: "対決マス", text: "今いる中で最も裕福な相手と対決。追加でサイコロを振り合い、大きい出目の方が勝ち、出目の差に応じた金額を奪う（通り道でも発生）" },
     { icon: "🚨", label: "抗争イベントマス", text: "潜入捜査官や警察のガサ入れなど、出目で財産が変わる" },
     { icon: "🤝", label: "舎弟勧誘マス", text: "五分五分の運。成功すると他の全員から祝儀(みかじめ料)がもらえる" },
     { icon: "🔀", label: "分かれ道マス", text: "抗争ルートか地道なシノギルートを選べる" },
@@ -1234,7 +1240,9 @@ function buildTheme(cfg) {
       continue;
     }
     if (SALARY_SET.has(i)) {
-      SQUARES[i] = { type: "salary", icon: cfg.icon.salary, desc: cfg.squareDesc.salary };
+      SQUARES[i] = cfg.battleInsteadOfSalary
+        ? { type: "battle", icon: cfg.icon.battle, desc: cfg.squareDesc.battle }
+        : { type: "salary", icon: cfg.icon.salary, desc: cfg.squareDesc.salary };
       continue;
     }
     const type = PATTERN[patternIdx % PATTERN.length];
