@@ -17,16 +17,17 @@ export const PART_TIME_RATE = 0.4;
 
 export const RANGE_ENDPOINTS = {
   income: { early: [20, 40], late: [200, 400] },
-  expense: { early: [-40, -20], late: [-400, -200] },
+  expense: { early: [-25, -12], late: [-220, -110] },
   bonus: { early: [10, 50], late: [500, 1000] },
-  accident: { early: [-50, -10], late: [-1000, -500] },
+  accident: { early: [-30, -8], late: [-500, -250] },
   treasure: { early: [30, 80], late: [300, 800] },
 };
 
-export const PATTERN = ["income", "bonus", "expense", "treasure", "rest", "accident",
-  "income", "expense", "bonus", "treasure", "accident", "income"];
+// マイナスマス(expense/accident)は少なめに・プラス系マスを多めに配置する
+export const PATTERN = ["income", "bonus", "expense", "treasure", "rest", "income",
+  "bonus", "treasure", "accident", "income", "bonus", "income"];
 
-export const LIFEEVENT_ROLL_MULT = { 1: -1.5, 2: -1.0, 3: -0.4, 4: 0.4, 5: 1.0, 6: 1.5 };
+export const LIFEEVENT_ROLL_MULT = { 1: -0.8, 2: -0.5, 3: -0.2, 4: 0.4, 5: 1.0, 6: 1.5 };
 export const CHILD_GIFT_TOTAL = 300;
 
 export const HOME_IDX = 52;
@@ -162,35 +163,35 @@ const MONEY_THEME_CFG = {
   choices: [
     { idx: 6, squareDesc: "臨時ボーナスの使い道", options: [
       { id: "a", label: "貯金する", desc: "手堅く将来に備える", amount: [20, 30] },
-      { id: "b", label: "パーッと使う", desc: "気分次第で得することも損することも", amount: [-30, 80] },
+      { id: "b", label: "パーッと使う", desc: "気分次第で得することも損することも", amount: [-15, 80] },
     ] },
     { idx: 18, squareDesc: "副業の誘い", options: [
       { id: "a", label: "断る", desc: "今の生活を大事にする", amount: [10, 20] },
-      { id: "b", label: "受ける", desc: "うまくいけば大きいが空振りもある", amount: [-50, 150] },
+      { id: "b", label: "受ける", desc: "うまくいけば大きいが空振りもある", amount: [-25, 150] },
     ] },
     { idx: 30, squareDesc: "お金の使い道", options: [
       { id: "a", label: "定期預金にする", desc: "コツコツ堅実に増やす", amount: [30, 50] },
-      { id: "b", label: "怪しい儲け話に乗る", desc: "一攫千金か、大損か", amount: [-150, 250] },
+      { id: "b", label: "怪しい儲け話に乗る", desc: "一攫千金か、大損か", amount: [-70, 250] },
     ] },
     { idx: 42, squareDesc: "転職エージェントからの連絡", options: [
       { id: "a", label: "今の職場に残る", desc: "安定を選ぶ", amount: [40, 70] },
-      { id: "b", label: "転職する", desc: "環境が変わり運命が動く", amount: [-200, 300] },
+      { id: "b", label: "転職する", desc: "環境が変わり運命が動く", amount: [-100, 300] },
     ] },
     { idx: 72, squareDesc: "起業のお誘い", options: [
       { id: "a", label: "見送る", desc: "今のままで手堅く", amount: [60, 100] },
-      { id: "b", label: "起業する", desc: "大きなリターンとリスクが両方待つ", amount: [-400, 600] },
+      { id: "b", label: "起業する", desc: "大きなリターンとリスクが両方待つ", amount: [-180, 600] },
     ] },
     { idx: 80, squareDesc: "大きな買い物", options: [
       { id: "a", label: "我慢する", desc: "節約して貯蓄にまわす", amount: [80, 120] },
-      { id: "b", label: "思い切って買う", desc: "散財するか、資産価値が上がるか", amount: [-300, 400] },
+      { id: "b", label: "思い切って買う", desc: "散財するか、資産価値が上がるか", amount: [-140, 400] },
     ] },
     { idx: 87, squareDesc: "遺産相続の選択", options: [
       { id: "a", label: "現金で受け取る", desc: "手堅く確実に", amount: [100, 150] },
-      { id: "b", label: "不動産で受け取る", desc: "化けるかもしれないが手間もかかる", amount: [-200, 500] },
+      { id: "b", label: "不動産で受け取る", desc: "化けるかもしれないが手間もかかる", amount: [-90, 500] },
     ] },
     { idx: 95, squareDesc: "人生最後の大勝負", options: [
       { id: "a", label: "手堅く終える", desc: "安定志向で締めくくる", amount: [150, 200] },
-      { id: "b", label: "一発逆転を狙う", desc: "すべてを賭けた大博打", amount: [-600, 900] },
+      { id: "b", label: "一発逆転を狙う", desc: "すべてを賭けた大博打", amount: [-250, 900] },
     ] },
   ],
   forkOptions: [
@@ -199,13 +200,13 @@ const MONEY_THEME_CFG = {
   ],
   riskTemplate: [
     { type: "bonus", desc: "一攫千金を狙って大勝負に出た", amount: [100, 300] },
-    { type: "accident", desc: "危険な近道で痛い目にあった", amount: [-200, -60] },
+    { type: "accident", desc: "危険な近道で痛い目にあった", amount: [-100, -30] },
     { type: "bonus", desc: "裏路地で怪しい大取引がまとまった", amount: [80, 250] },
-    { type: "accident", desc: "一か八かの賭けに敗れた", amount: [-180, -50] },
+    { type: "accident", desc: "一か八かの賭けに敗れた", amount: [-90, -25] },
     { type: "bonus", desc: "闇市場で掘り出し物を安く仕入れた", amount: [90, 280] },
-    { type: "accident", desc: "危険な賭場ですってしまった", amount: [-220, -70] },
+    { type: "accident", desc: "危険な賭場ですってしまった", amount: [-110, -35] },
     { type: "bonus", desc: "裏で聞いた儲け話に賭けて的中させた", amount: [110, 320] },
-    { type: "accident", desc: "調子に乗って大きく踏み外した", amount: [-240, -80] },
+    { type: "accident", desc: "調子に乗って大きく踏み外した", amount: [-120, -40] },
   ],
   safeTemplate: [
     { type: "income", desc: "安全な道を選び着実に依頼をこなした", amount: [50, 90] },
@@ -316,35 +317,35 @@ const ADVENTURE_THEME_CFG = {
   choices: [
     { idx: 6, squareDesc: "臨時報酬の使い道", options: [
       { id: "a", label: "貯める", desc: "いざという時のために蓄える", amount: [20, 30] },
-      { id: "b", label: "豪遊する", desc: "気分次第で得することも損することも", amount: [-30, 80] },
+      { id: "b", label: "豪遊する", desc: "気分次第で得することも損することも", amount: [-15, 80] },
     ] },
     { idx: 18, squareDesc: "傭兵の誘い", options: [
       { id: "a", label: "断る", desc: "今のパーティで頑張る", amount: [10, 20] },
-      { id: "b", label: "受ける", desc: "うまくいけば大金、しくじれば大損", amount: [-50, 150] },
+      { id: "b", label: "受ける", desc: "うまくいけば大金、しくじれば大損", amount: [-25, 150] },
     ] },
     { idx: 30, squareDesc: "資金の使い道", options: [
       { id: "a", label: "ギルドに預ける", desc: "手堅く利子を得る", amount: [30, 50] },
-      { id: "b", label: "怪しい商人の話に乗る", desc: "一攫千金か、丸損か", amount: [-150, 250] },
+      { id: "b", label: "怪しい商人の話に乗る", desc: "一攫千金か、丸損か", amount: [-70, 250] },
     ] },
     { idx: 42, squareDesc: "別のギルドからの勧誘", options: [
       { id: "a", label: "今のギルドに残る", desc: "安定を選ぶ", amount: [40, 70] },
-      { id: "b", label: "移籍する", desc: "環境が変わり運命が動く", amount: [-200, 300] },
+      { id: "b", label: "移籍する", desc: "環境が変わり運命が動く", amount: [-100, 300] },
     ] },
     { idx: 72, squareDesc: "独立開業のチャンス", options: [
       { id: "a", label: "見送る", desc: "今のままで手堅く", amount: [60, 100] },
-      { id: "b", label: "自分の店を持つ", desc: "大きなリターンとリスクが両方待つ", amount: [-400, 600] },
+      { id: "b", label: "自分の店を持つ", desc: "大きなリターンとリスクが両方待つ", amount: [-180, 600] },
     ] },
     { idx: 80, squareDesc: "伝説の武具の噂", options: [
       { id: "a", label: "我慢する", desc: "節約して蓄える", amount: [80, 120] },
-      { id: "b", label: "思い切って買う", desc: "駄作か、伝説級の掘り出し物か", amount: [-300, 400] },
+      { id: "b", label: "思い切って買う", desc: "駄作か、伝説級の掘り出し物か", amount: [-140, 400] },
     ] },
     { idx: 87, squareDesc: "先代からの遺産", options: [
       { id: "a", label: "金貨で受け取る", desc: "手堅く確実に", amount: [100, 150] },
-      { id: "b", label: "秘宝で受け取る", desc: "化けるかもしれないが手間もかかる", amount: [-200, 500] },
+      { id: "b", label: "秘宝で受け取る", desc: "化けるかもしれないが手間もかかる", amount: [-90, 500] },
     ] },
     { idx: 95, squareDesc: "最後の大冒険", options: [
       { id: "a", label: "手堅く終える", desc: "安全策で締めくくる", amount: [150, 200] },
-      { id: "b", label: "一発逆転を狙う", desc: "すべてを賭けた大博打", amount: [-600, 900] },
+      { id: "b", label: "一発逆転を狙う", desc: "すべてを賭けた大博打", amount: [-250, 900] },
     ] },
   ],
   forkOptions: [
@@ -353,13 +354,13 @@ const ADVENTURE_THEME_CFG = {
   ],
   riskTemplate: [
     { type: "bonus", desc: "危険な近道で財宝の隠し部屋を見つけた", amount: [100, 300] },
-    { type: "accident", desc: "モンスターの巣に迷い込み大怪我をした", amount: [-200, -60] },
+    { type: "accident", desc: "モンスターの巣に迷い込み大怪我をした", amount: [-100, -30] },
     { type: "bonus", desc: "裏路地で怪しい大取引がまとまった", amount: [80, 250] },
-    { type: "accident", desc: "一か八かの近道で罠にかかった", amount: [-180, -50] },
+    { type: "accident", desc: "一か八かの近道で罠にかかった", amount: [-90, -25] },
     { type: "bonus", desc: "廃坑で埋もれた財宝を掘り当てた", amount: [90, 280] },
-    { type: "accident", desc: "野盗の待ち伏せに遭い身包み剥がされた", amount: [-220, -70] },
+    { type: "accident", desc: "野盗の待ち伏せに遭い身包み剥がされた", amount: [-110, -35] },
     { type: "bonus", desc: "古い地図を頼りに秘密の宝物庫を突き止めた", amount: [110, 320] },
-    { type: "accident", desc: "調子に乗って危険な深部まで踏み込んだ", amount: [-240, -80] },
+    { type: "accident", desc: "調子に乗って危険な深部まで踏み込んだ", amount: [-120, -40] },
   ],
   safeTemplate: [
     { type: "income", desc: "安全な街道で着実に依頼をこなした", amount: [50, 90] },
@@ -470,35 +471,35 @@ const IDOL_THEME_CFG = {
   choices: [
     { idx: 6, squareDesc: "臨時収入の使い道", options: [
       { id: "a", label: "貯金する", desc: "将来のために備える", amount: [20, 30] },
-      { id: "b", label: "パーッと使う", desc: "気分次第で得することも損することも", amount: [-30, 80] },
+      { id: "b", label: "パーッと使う", desc: "気分次第で得することも損することも", amount: [-15, 80] },
     ] },
     { idx: 18, squareDesc: "副業案件の誘い", options: [
       { id: "a", label: "断る", desc: "今の活動に専念する", amount: [10, 20] },
-      { id: "b", label: "受ける", desc: "バズれば大きいが空振りもある", amount: [-50, 150] },
+      { id: "b", label: "受ける", desc: "バズれば大きいが空振りもある", amount: [-25, 150] },
     ] },
     { idx: 30, squareDesc: "資金の使い道", options: [
       { id: "a", label: "貯蓄する", desc: "コツコツ堅実に増やす", amount: [30, 50] },
-      { id: "b", label: "怪しい投資話に乗る", desc: "一攫千金か、大損か", amount: [-150, 250] },
+      { id: "b", label: "怪しい投資話に乗る", desc: "一攫千金か、大損か", amount: [-70, 250] },
     ] },
     { idx: 42, squareDesc: "移籍のオファー", options: [
       { id: "a", label: "今の事務所に残る", desc: "安定を選ぶ", amount: [40, 70] },
-      { id: "b", label: "移籍する", desc: "環境が変わり運命が動く", amount: [-200, 300] },
+      { id: "b", label: "移籍する", desc: "環境が変わり運命が動く", amount: [-100, 300] },
     ] },
     { idx: 72, squareDesc: "独立プロデュースの誘い", options: [
       { id: "a", label: "見送る", desc: "今のままで手堅く", amount: [60, 100] },
-      { id: "b", label: "独立する", desc: "大きなリターンとリスクが両方待つ", amount: [-400, 600] },
+      { id: "b", label: "独立する", desc: "大きなリターンとリスクが両方待つ", amount: [-180, 600] },
     ] },
     { idx: 80, squareDesc: "大きな買い物", options: [
       { id: "a", label: "我慢する", desc: "節約して貯蓄にまわす", amount: [80, 120] },
-      { id: "b", label: "思い切って買う", desc: "散財するか、話題になり資産価値が上がるか", amount: [-300, 400] },
+      { id: "b", label: "思い切って買う", desc: "散財するか、話題になり資産価値が上がるか", amount: [-140, 400] },
     ] },
     { idx: 87, squareDesc: "レコード契約の選択", options: [
       { id: "a", label: "契約金で受け取る", desc: "手堅く確実に", amount: [100, 150] },
-      { id: "b", label: "印税契約にする", desc: "化けるかもしれないが手間もかかる", amount: [-200, 500] },
+      { id: "b", label: "印税契約にする", desc: "化けるかもしれないが手間もかかる", amount: [-90, 500] },
     ] },
     { idx: 95, squareDesc: "芸能生活最後の大勝負", options: [
       { id: "a", label: "手堅く終える", desc: "安定志向で締めくくる", amount: [150, 200] },
-      { id: "b", label: "一発逆転を狙う", desc: "すべてを賭けた大勝負", amount: [-600, 900] },
+      { id: "b", label: "一発逆転を狙う", desc: "すべてを賭けた大勝負", amount: [-250, 900] },
     ] },
   ],
   forkOptions: [
@@ -507,13 +508,13 @@ const IDOL_THEME_CFG = {
   ],
   riskTemplate: [
     { type: "bonus", desc: "過激な企画に挑戦して大バズりした", amount: [100, 300] },
-    { type: "accident", desc: "炎上覚悟の発言が裏目に出た", amount: [-200, -60] },
+    { type: "accident", desc: "炎上覚悟の発言が裏目に出た", amount: [-100, -30] },
     { type: "bonus", desc: "際どい写真集が話題騒然になった", amount: [80, 250] },
-    { type: "accident", desc: "一か八かのスキャンダル暴露が逆効果に", amount: [-180, -50] },
+    { type: "accident", desc: "一か八かのスキャンダル暴露が逆効果に", amount: [-90, -25] },
     { type: "bonus", desc: "際どいネタが当たって注目を独占した", amount: [90, 280] },
-    { type: "accident", desc: "過激な発言が大炎上し謝罪に追われた", amount: [-220, -70] },
+    { type: "accident", desc: "過激な発言が大炎上し謝罪に追われた", amount: [-110, -35] },
     { type: "bonus", desc: "炎上覚悟の企画がまさかの神回になった", amount: [110, 320] },
-    { type: "accident", desc: "調子に乗りすぎて評判を落とした", amount: [-240, -80] },
+    { type: "accident", desc: "調子に乗りすぎて評判を落とした", amount: [-120, -40] },
   ],
   safeTemplate: [
     { type: "income", desc: "地道なファンサービスで信頼を積み重ねた", amount: [50, 90] },
@@ -624,35 +625,35 @@ const SCHOOL_THEME_CFG = {
   choices: [
     { idx: 6, squareDesc: "お小遣いの使い道", options: [
       { id: "a", label: "貯金する", desc: "将来のために備える", amount: [20, 30] },
-      { id: "b", label: "パーッと使う", desc: "気分次第で得することも損することも", amount: [-30, 80] },
+      { id: "b", label: "パーッと使う", desc: "気分次第で得することも損することも", amount: [-15, 80] },
     ] },
     { idx: 18, squareDesc: "バイトの誘い", options: [
       { id: "a", label: "断る", desc: "今の生活を大事にする", amount: [10, 20] },
-      { id: "b", label: "受ける", desc: "うまくいけば稼げるが空振りもある", amount: [-50, 150] },
+      { id: "b", label: "受ける", desc: "うまくいけば稼げるが空振りもある", amount: [-25, 150] },
     ] },
     { idx: 30, squareDesc: "お年玉の使い道", options: [
       { id: "a", label: "貯金する", desc: "コツコツ堅実に増やす", amount: [30, 50] },
-      { id: "b", label: "友達との投資ごっこに乗る", desc: "一攫千金か、大損か", amount: [-150, 250] },
+      { id: "b", label: "友達との投資ごっこに乗る", desc: "一攫千金か、大損か", amount: [-70, 250] },
     ] },
     { idx: 42, squareDesc: "部活の掛け持ちの誘い", options: [
       { id: "a", label: "今の部活に専念する", desc: "安定を選ぶ", amount: [40, 70] },
-      { id: "b", label: "掛け持ちする", desc: "環境が変わり運命が動く", amount: [-200, 300] },
+      { id: "b", label: "掛け持ちする", desc: "環境が変わり運命が動く", amount: [-100, 300] },
     ] },
     { idx: 72, squareDesc: "文化祭の出店企画", options: [
       { id: "a", label: "見送る", desc: "今のままで手堅く", amount: [60, 100] },
-      { id: "b", label: "出店する", desc: "大成功か大赤字か", amount: [-400, 600] },
+      { id: "b", label: "出店する", desc: "大成功か大赤字か", amount: [-180, 600] },
     ] },
     { idx: 80, squareDesc: "大きな買い物", options: [
       { id: "a", label: "我慢する", desc: "節約して貯金にまわす", amount: [80, 120] },
-      { id: "b", label: "思い切って買う", desc: "散財するか、みんなに羨ましがられるか", amount: [-300, 400] },
+      { id: "b", label: "思い切って買う", desc: "散財するか、みんなに羨ましがられるか", amount: [-140, 400] },
     ] },
     { idx: 87, squareDesc: "おじいちゃんからのお小遣い", options: [
       { id: "a", label: "現金で受け取る", desc: "手堅く確実に", amount: [100, 150] },
-      { id: "b", label: "株を買ってもらう", desc: "化けるかもしれないが手間もかかる", amount: [-200, 500] },
+      { id: "b", label: "株を買ってもらう", desc: "化けるかもしれないが手間もかかる", amount: [-90, 500] },
     ] },
     { idx: 95, squareDesc: "卒業前最後の賭け", options: [
       { id: "a", label: "手堅く終える", desc: "安定志向で締めくくる", amount: [150, 200] },
-      { id: "b", label: "一発逆転を狙う", desc: "すべてを賭けた大勝負", amount: [-600, 900] },
+      { id: "b", label: "一発逆転を狙う", desc: "すべてを賭けた大勝負", amount: [-250, 900] },
     ] },
   ],
   forkOptions: [
@@ -661,13 +662,13 @@ const SCHOOL_THEME_CFG = {
   ],
   riskTemplate: [
     { type: "bonus", desc: "型破りな企画に挑戦して校内で大バズりした", amount: [100, 300] },
-    { type: "accident", desc: "目立ちすぎて先生に呼び出しをくらった", amount: [-200, -60] },
+    { type: "accident", desc: "目立ちすぎて先生に呼び出しをくらった", amount: [-100, -30] },
     { type: "bonus", desc: "際どい賭け事で友達に勝って大儲けした", amount: [80, 250] },
-    { type: "accident", desc: "一か八かの行動が裏目に出た", amount: [-180, -50] },
+    { type: "accident", desc: "一か八かの行動が裏目に出た", amount: [-90, -25] },
     { type: "bonus", desc: "大胆な行動が評判になり注目を独占した", amount: [90, 280] },
-    { type: "accident", desc: "調子に乗りすぎてトラブルになった", amount: [-220, -70] },
+    { type: "accident", desc: "調子に乗りすぎてトラブルになった", amount: [-110, -35] },
     { type: "bonus", desc: "一発逆転を狙った行動が見事に当たった", amount: [110, 320] },
-    { type: "accident", desc: "調子に乗りすぎて信用を落とした", amount: [-240, -80] },
+    { type: "accident", desc: "調子に乗りすぎて信用を落とした", amount: [-120, -40] },
   ],
   safeTemplate: [
     { type: "income", desc: "真面目にコツコツ勉強して評価された", amount: [50, 90] },
