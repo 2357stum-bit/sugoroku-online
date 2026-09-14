@@ -134,7 +134,7 @@ export async function startGame(code, uid) {
     const data = snap.data();
     if (data.hostUid !== uid) throw new Error("ホストのみ開始できます");
     if (data.status !== "lobby") throw new Error("すでに開始しています");
-    if (data.players.length < 2) throw new Error("2人以上必要です");
+    if (data.players.length < 1) throw new Error("プレイヤーがいません");
     const state = initGameState(data.players.map((p) => ({ ...p })), data.themeId);
     const update = applyGameState({ seq: (data.seq || 0) + 1, updatedAt: serverTimestamp() }, state);
     tx.update(ref, update);

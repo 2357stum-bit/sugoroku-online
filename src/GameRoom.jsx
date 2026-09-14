@@ -54,9 +54,16 @@ function LobbyScreen({ room, code, uid, theme, onLeaveRoom }) {
           </div>
         </div>
         {isHost ? (
-          <button className="sgr-btn" disabled={busy || room.players.length < 2} onClick={handleStart}>
-            {room.players.length < 2 ? "2人以上で開始できます" : busy ? "開始中…" : "ゲームを開始する"}
-          </button>
+          <>
+            <button className="sgr-btn" disabled={busy} onClick={handleStart}>
+              {busy ? "開始中…" : "ゲームを開始する"}
+            </button>
+            {room.players.length < 2 && (
+              <div className="sgr-error" style={{ color: "var(--sgr-muted)" }}>
+                1人でも試しに遊べます。友達を待つ場合はコードを共有してね。
+              </div>
+            )}
+          </>
         ) : (
           <div className="sgr-error" style={{ color: "var(--sgr-muted)" }}>
             ホストが開始するのを待っています…
