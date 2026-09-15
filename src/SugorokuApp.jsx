@@ -34,18 +34,24 @@ function MapPicker({ themeId, onSelect }) {
   return (
     <div className="sgr-field">
       <label>マップを選ぶ</label>
-      <div className="sgr-choice-list">
+      <div className="sgr-map-grid">
         {THEME_LIST.map((t) => (
           <button
             key={t.id}
-            className={"sgr-choice-btn" + (themeId === t.id ? " sgr-choice-active" : "")}
-            onClick={() => onSelect(t.id)}
             type="button"
+            className={"sgr-root sgr-map-card" + (themeId === t.id ? " sgr-map-card-active" : "")}
+            data-theme={t.css}
+            onClick={() => onSelect(t.id)}
           >
-            <span className="sgr-c-icon">{t.eyebrowIcon}</span>
-            <span className="sgr-c-txt">
-              <span className="sgr-c-name">{t.name}</span>
-              <span className="sgr-c-desc">{t.tagline}</span>
+            {themeId === t.id && <span className="sgr-map-card-check">✓</span>}
+            <span className="sgr-map-card-icon">{t.eyebrowIcon}</span>
+            <span className="sgr-map-card-name">{t.name}</span>
+            <span className="sgr-map-card-desc">{t.tagline}</span>
+            <span className="sgr-map-card-swatch">
+              <span style={{ background: "var(--sgr-accent)" }} />
+              <span style={{ background: "var(--sgr-gold)" }} />
+              <span style={{ background: "var(--sgr-coral)" }} />
+              <span style={{ background: "var(--sgr-purple)" }} />
             </span>
           </button>
         ))}
