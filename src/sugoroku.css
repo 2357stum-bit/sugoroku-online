@@ -712,3 +712,57 @@
 @media (max-width: 360px) {
   .sgr-map-grid { grid-template-columns: 1fr; }
 }
+
+/* ---------- 全ステージ通し(シリーズ)モード ---------- */
+.sgr-series-toggle {
+  display: flex; align-items: center; gap: 10px; width: 100%; text-align: left;
+  border: 1.5px solid var(--sgr-line); background: var(--sgr-board-alt); border-radius: 14px;
+  padding: 10px 12px; margin-bottom: 12px; transition: border-color 0.12s, background 0.12s;
+}
+.sgr-series-toggle-active { border-color: var(--sgr-gold); background: var(--sgr-gold-dim); }
+.sgr-series-toggle-icon { font-size: 22px; }
+.sgr-series-toggle-txt { display: flex; flex-direction: column; flex: 1; }
+.sgr-series-toggle-name { font-size: 13px; font-weight: 700; color: var(--sgr-ink); }
+.sgr-series-toggle-desc { font-size: 10.5px; color: var(--sgr-muted); margin-top: 2px; }
+.sgr-series-toggle-switch {
+  width: 34px; height: 20px; border-radius: 10px; background: var(--sgr-line); position: relative;
+  flex-shrink: 0; transition: background 0.15s;
+}
+.sgr-series-toggle-switch::before {
+  content: ""; position: absolute; top: 2px; left: 2px; width: 16px; height: 16px; border-radius: 50%;
+  background: var(--sgr-board); transition: transform 0.15s;
+}
+.sgr-series-toggle-active .sgr-series-toggle-switch { background: var(--sgr-gold); }
+.sgr-series-toggle-active .sgr-series-toggle-switch::before { transform: translateX(14px); background: #fff; }
+
+.sgr-series-order { display: flex; flex-wrap: wrap; gap: 6px; }
+.sgr-series-order-item {
+  display: flex; align-items: center; gap: 4px; font-size: 15px; background: var(--sgr-board-alt);
+  border: 1px solid var(--sgr-line); border-radius: 10px; padding: 5px 8px;
+}
+.sgr-series-order-num { font-size: 10px; font-weight: 700; color: var(--sgr-muted); }
+
+.sgr-series-badge {
+  display: inline-flex; align-items: center; gap: 4px; font-size: 10.5px; font-weight: 700; color: var(--sgr-gold);
+  background: var(--sgr-gold-dim); border-radius: 10px; padding: 3px 8px; margin-top: 4px;
+}
+
+.sgr-standings { display: flex; flex-direction: column; gap: 6px; margin: 10px 0; }
+.sgr-standings-row {
+  display: flex; align-items: center; gap: 8px; background: var(--sgr-board-alt); border: 1px solid var(--sgr-line);
+  border-radius: 10px; padding: 8px 10px; font-size: 12px;
+}
+.sgr-standings-row.sgr-standings-lead { border-color: var(--sgr-gold); background: var(--sgr-gold-dim); }
+.sgr-standings-rank { font-size: 12px; font-weight: 700; color: var(--sgr-muted); width: 18px; text-align: center; }
+.sgr-standings-nm { flex: 1; font-weight: 700; color: var(--sgr-ink); }
+.sgr-standings-pt { font-weight: 700; color: var(--sgr-accent); }
+
+.sgr-champion-block { text-align: center; margin: 10px 0 16px; }
+.sgr-champion-block .sgr-champion-crown { font-size: 44px; display: block; margin-bottom: 6px; }
+.sgr-champion-block .sgr-champion-name { font-size: 20px; font-weight: 700; color: var(--sgr-gold); }
+.sgr-champion-block .sgr-champion-sub { font-size: 12px; color: var(--sgr-muted); margin-top: 4px; }
+
+.sgr-stage-history { display: flex; flex-direction: column; gap: 8px; margin-bottom: 10px; }
+.sgr-stage-history-row { background: var(--sgr-board-alt); border: 1px solid var(--sgr-line); border-radius: 10px; padding: 8px 10px; }
+.sgr-stage-history-head { font-size: 11px; font-weight: 700; color: var(--sgr-muted); margin-bottom: 4px; }
+.sgr-stage-history-line { font-size: 11px; color: var(--sgr-ink); display: flex; justify-content: space-between; }

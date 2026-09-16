@@ -4,6 +4,7 @@ import {
   startGame,
   advanceToLottery,
   advanceToFinal,
+  advanceSeriesStage,
   resetToLobby,
 } from "./roomEngine.js";
 import { getTheme } from "./boardData.js";
@@ -12,6 +13,26 @@ import { getRanking } from "./gameLogic.js";
 import GameTopBar from "./ui/TopBar.jsx";
 import SoundToggle from "./ui/SoundToggle.jsx";
 import { sfxSparkle, sfxJackpot, sfxFanfare } from "./audio.js";
+
+// 全ステージ通しモードの通算得点を、順位が高い順に並べる。
+function seriesStandings(room) {
+  const scores = room.seriesScores || {};
+  return Object.entries(scores)
+    .map(([id, pts]) => {
+      const p = room.players.find((pl) => pl.id === id);
+      return { id, pts, name: p?.name || "?", token: p?.token || "・" };
+    })
+    .sort((a, b) => b.pts - a.pts);
+}
+
+function SeriesBadge({ room }) {
+  if (!room.seriesMode) return null;
+  return (
+    <div className="sgr-series-badge">
+      🏆 第{(room.seriesStage || 0) + 1}/{room.seriesOrder.length}ステージ
+    </div>
+  );
+}
 
 function LobbyScreen({ room, code, uid, theme, onLeaveRoom }) {
   const isHost = room.hostUid === uid;
@@ -40,6 +61,7 @@ function LobbyScreen({ room, code, uid, theme, onLeaveRoom }) {
           <span className="sgr-eyebrow">{theme.eyebrowIcon}</span>
           <h1>ルームで待機中</h1>
           <p>{theme.name}</p>
+          <SeriesBadge room={room} />
         </div>
         <div className="sgr-room-code">
           このコードを友達に共有してね
@@ -99,6 +121,7 @@ function SettlementScreen({ room, code, uid, theme, onLeaveRoom }) {
           <span className="sgr-eyebrow">📋</span>
           <h1>最終精算</h1>
           <p>{theme.labels.investVerb}・{theme.labels.homeSquareName}・お宝カードを精算したよ</p>
+          <SeriesBadge room={room} />
         </div>
         <div>
           {room.players.map((p) => {
@@ -160,6 +183,7 @@ function LotteryScreen({ room, code, uid, theme, onLeaveRoom }) {
         <div className="sgr-title-block">
           <span className="sgr-eyebrow">🎰</span>
           <h1>{theme.labels.lotteryFinaleName}</h1>
+          <SeriesBadge room={room} />
         </div>
         <div className="sgr-winning-number">{theme.labels.winningLabel}：{winningNumber}</div>
         <div className="sgr-lottery-summary">
@@ -197,6 +221,11 @@ function FinalScreen({ room, code, uid, theme, onLeaveRoom }) {
   const [busy, setBusy] = useState(false);
   const unit = theme.currencyUnit;
 
+  const isSeries = !!room.seriesMode;
+  const isLastStage = isSeries && (room.seriesStage || 0) >= room.seriesOrder.length - 1;
+  const standings = isSeries ? seriesStandings(room) : [];
+  const champion = standings[0];
+
   useEffect(() => {
     sfxFanfare();
   }, []);
@@ -207,9 +236,46 @@ function FinalScreen({ room, code, uid, theme, onLeaveRoom }) {
         <SoundToggle />
       </div>
       <div className="sgr-screen">
-        <div style={{ textAlign: "center", fontSize: 38 }}>🏆</div>
-        <h2 style={{ textAlign: "center" }}>{sorted[0].name} の大勝利！</h2>
+        {isSeries && isLastStage ? (
+          <div className="sgr-champion-block">
+            <span className="sgr-champion-crown">🏆</span>
+            <div className="sgr-champion-name">{champion?.token} {champion?.name} が総合優勝！</div>
+            <div className="sgr-champion-sub">全{room.seriesOrder.length}ステージを走り抜いた通算成績</div>
+          </div>
+        ) : (
+          <>
+            <div style={{ textAlign: "center", fontSize: 38 }}>🏆</div>
+            <h2 style={{ textAlign: "center" }}>
+              {sorted[0].name} の{isSeries ? "ステージ勝利" : "大勝利"}！
+            </h2>
+            {isSeries && (
+              <div style={{ textAlign: "center" }}>
+                <SeriesBadge room={room} />
+              </div>
+            )}
+          </>
+        )}
+
+        {isSeries && (
+          <div className="sgr-card">
+            <h2>{isLastStage ? "🏆 総合順位" : "ここまでの総合順位"}</h2>
+            <div className="sgr-standings">
+              {standings.map((s, i) => (
+                <div key={s.id} className={"sgr-standings-row" + (i === 0 ? " sgr-standings-lead" : "")}>
+                  <span className="sgr-standings-rank">{i + 1}位</span>
+                  <span className="sgr-tok">{s.token}</span>
+                  <span className="sgr-standings-nm">{s.name}</span>
+                  <span className="sgr-standings-pt">{s.pts}pt</span>
+                </div>
+              ))}
+            </div>
+          </div>
+        )}
+
         <div className="sgr-rank-list">
+          <h2 style={{ fontSize: 12, color: "var(--sgr-muted)", margin: "0 0 4px" }}>
+            {isSeries ? "このステージの結果" : "最終結果"}
+          </h2>
           {sorted.map((p, i) => (
             <div key={p.id} className="sgr-rank-row">
               <div className="sgr-head">
@@ -226,6 +292,7 @@ function FinalScreen({ room, code, uid, theme, onLeaveRoom }) {
             </div>
           ))}
         </div>
+
         {isHost && (
           <button
             className="sgr-btn"
@@ -233,13 +300,17 @@ function FinalScreen({ room, code, uid, theme, onLeaveRoom }) {
             onClick={async () => {
               setBusy(true);
               try {
-                await resetToLobby(code, uid);
+                if (isSeries && !isLastStage) {
+                  await advanceSeriesStage(code, uid);
+                } else {
+                  await resetToLobby(code, uid);
+                }
               } finally {
                 setBusy(false);
               }
             }}
           >
-            もう一度あそぶ
+            {isSeries && !isLastStage ? "次のステージへ" : isSeries ? "シリーズをもう一度あそぶ" : "もう一度あそぶ"}
           </button>
         )}
         <button className="sgr-btn sgr-secondary sgr-small" onClick={onLeaveRoom}>

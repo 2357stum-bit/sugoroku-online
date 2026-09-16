@@ -66,6 +66,7 @@ export default function SugorokuApp() {
   const [name, setName] = useState(() => localStorage.getItem(NAME_KEY) || "");
   const [tab, setTab] = useState("create");
   const [themeId, setThemeId] = useState(() => localStorage.getItem(THEME_KEY) || DEFAULT_THEME_ID);
+  const [seriesMode, setSeriesMode] = useState(false);
   const [joinCode, setJoinCode] = useState(() => readQuery().get("room") || "");
   const [roomCode, setRoomCode] = useState(() => readQuery().get("room") || localStorage.getItem(ROOM_KEY) || "");
   const [error, setError] = useState("");
@@ -112,7 +113,7 @@ export default function SugorokuApp() {
     setBusy(true);
     setError("");
     try {
-      const code = await createRoom(uid, trimmedName, themeId);
+      const code = await createRoom(uid, trimmedName, themeId, seriesMode);
       localStorage.setItem(ROOM_KEY, code);
       setUrlRoom(code);
       setRoomCode(code);
@@ -209,7 +210,33 @@ export default function SugorokuApp() {
 
             {tab === "create" ? (
               <>
-                <MapPicker themeId={themeId} onSelect={setThemeId} />
+                <button
+                  type="button"
+                  className={"sgr-series-toggle" + (seriesMode ? " sgr-series-toggle-active" : "")}
+                  onClick={() => setSeriesMode((v) => !v)}
+                >
+                  <span className="sgr-series-toggle-icon">🏆</span>
+                  <span className="sgr-series-toggle-txt">
+                    <span className="sgr-series-toggle-name">全ステージ通しで勝負する</span>
+                    <span className="sgr-series-toggle-desc">7マップを順番にプレイし、通算得点で総合優勝を決める</span>
+                  </span>
+                  <span className="sgr-series-toggle-switch" />
+                </button>
+                {seriesMode ? (
+                  <div className="sgr-field">
+                    <label>ステージ順（全7マップ）</label>
+                    <div className="sgr-series-order">
+                      {THEME_LIST.map((t, i) => (
+                        <span key={t.id} className="sgr-series-order-item">
+                          <span className="sgr-series-order-num">{i + 1}</span>
+                          <span>{t.eyebrowIcon}</span>
+                        </span>
+                      ))}
+                    </div>
+                  </div>
+                ) : (
+                  <MapPicker themeId={themeId} onSelect={setThemeId} />
+                )}
                 <button className="sgr-btn" disabled={!canSubmit} onClick={handleCreate}>
                   {busy ? "作成中…" : "新しいルームを作る"}
                 </button>

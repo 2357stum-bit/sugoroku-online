@@ -12,7 +12,7 @@ import {
   deleteDoc,
 } from "firebase/firestore";
 import { db } from "./firebase.js";
-import { MAX_PLAYERS, createPlayer, DEFAULT_THEME_ID } from "./boardData.js";
+import { MAX_PLAYERS, createPlayer, DEFAULT_THEME_ID, THEME_LIST } from "./boardData.js";
 import {
   initGameState,
   rollForPlayer,
@@ -24,6 +24,7 @@ import {
   startSettlement,
   startLottery,
   finishGame,
+  getRanking,
 } from "./gameLogic.js";
 
 const COLLECTION = "sugorokuRooms";
@@ -69,19 +70,26 @@ function applyGameState(update, state) {
   return update;
 }
 
-export async function createRoom(uid, name, themeId) {
+export async function createRoom(uid, name, themeId, seriesMode) {
   let code = randomCode();
   for (let attempt = 0; attempt < 5; attempt++) {
     const snap = await getDoc(roomRef(code));
     if (!snap.exists()) break;
     code = randomCode();
   }
-  const resolvedThemeId = themeId || DEFAULT_THEME_ID;
+  // 「全ステージ通し」モードでは、全マップを固定の順番でプレイして総合得点を競う。
+  const seriesOrder = seriesMode ? THEME_LIST.map((t) => t.id) : null;
+  const resolvedThemeId = seriesMode ? seriesOrder[0] : (themeId || DEFAULT_THEME_ID);
   const host = createPlayer(uid, 0, name, resolvedThemeId);
   const room = {
     code,
     hostUid: uid,
     themeId: resolvedThemeId,
+    seriesMode: !!seriesMode,
+    seriesOrder,
+    seriesStage: 0,
+    seriesScores: {},
+    seriesHistory: [],
     status: "lobby",
     players: [host],
     currentIdx: 0,
@@ -187,22 +195,58 @@ export function advanceToLottery(code) {
   });
 }
 
-export function advanceToFinal(code) {
-  return runGameTransaction(code, (state) => {
-    if (state.status === "lottery") finishGame(state);
+// ロッタリー結果からゲームを終了させる。全ステージ通しモードの場合は、この
+// ステージの順位に応じた得点(1位が最多)を通算スコアに加算し、履歴に残す。
+export async function advanceToFinal(code) {
+  const ref = roomRef(code);
+  await runTransaction(db, async (tx) => {
+    const snap = await tx.get(ref);
+    if (!snap.exists()) throw new Error("ルームが見つかりません");
+    const data = snap.data();
+    const state = extractGameState(data);
+    if (state.status !== "lottery") return; // 既に進行済みなら何もしない(冪等)
+    finishGame(state);
+    const update = applyGameState({ seq: (data.seq || 0) + 1, updatedAt: serverTimestamp() }, state);
+    if (data.seriesMode) {
+      const ranking = getRanking(state.players);
+      const n = ranking.length;
+      const scores = { ...(data.seriesScores || {}) };
+      ranking.forEach((p, i) => {
+        scores[p.id] = (scores[p.id] || 0) + (n - i);
+      });
+      update.seriesScores = scores;
+      update.seriesHistory = [
+        ...(data.seriesHistory || []),
+        {
+          themeId: data.themeId,
+          stage: data.seriesStage || 0,
+          ranking: ranking.map((p, i) => ({ id: p.id, name: p.name, token: p.token, money: p.money, rank: i + 1, points: n - i })),
+        },
+      ];
+    }
+    tx.update(ref, update);
   });
 }
 
-export async function resetToLobby(code, uid) {
+// 「次のステージへ」: 全ステージ通しモードで、このステージの結果を保ったまま
+// 次のマップのロビーへ進む(通算スコア・履歴はそのまま引き継ぐ)。
+export async function advanceSeriesStage(code, uid) {
   const ref = roomRef(code);
   await runTransaction(db, async (tx) => {
     const snap = await tx.get(ref);
     if (!snap.exists()) throw new Error("ルームが見つかりません");
     const data = snap.data();
     if (data.hostUid !== uid) throw new Error("ホストのみ操作できます");
-    const players = data.players.map((p, i) => createPlayer(p.id, i, p.name, data.themeId));
+    if (!data.seriesMode) throw new Error("全ステージ通しモードではありません");
+    if (data.status !== "finished") throw new Error("このステージがまだ終わっていません");
+    const nextStage = (data.seriesStage || 0) + 1;
+    if (nextStage >= data.seriesOrder.length) throw new Error("最後のステージです");
+    const nextThemeId = data.seriesOrder[nextStage];
+    const players = data.players.map((p, i) => createPlayer(p.id, i, p.name, nextThemeId));
     tx.update(ref, {
       players,
+      themeId: nextThemeId,
+      seriesStage: nextStage,
       status: "lobby",
       currentIdx: 0,
       finishOrder: 0,
@@ -215,6 +259,40 @@ export async function resetToLobby(code, uid) {
       seq: (data.seq || 0) + 1,
       updatedAt: serverTimestamp(),
     });
+  });
+}
+
+export async function resetToLobby(code, uid) {
+  const ref = roomRef(code);
+  await runTransaction(db, async (tx) => {
+    const snap = await tx.get(ref);
+    if (!snap.exists()) throw new Error("ルームが見つかりません");
+    const data = snap.data();
+    if (data.hostUid !== uid) throw new Error("ホストのみ操作できます");
+    // 全ステージ通しモードの「もう一度あそぶ」は、シリーズ全体を最初からやり直す。
+    const themeId = data.seriesMode ? data.seriesOrder[0] : data.themeId;
+    const players = data.players.map((p, i) => createPlayer(p.id, i, p.name, themeId));
+    const update = {
+      players,
+      themeId,
+      status: "lobby",
+      currentIdx: 0,
+      finishOrder: 0,
+      marketIndex: 100,
+      turn: null,
+      lastEvent: null,
+      log: [],
+      settlement: null,
+      lottery: null,
+      seq: (data.seq || 0) + 1,
+      updatedAt: serverTimestamp(),
+    };
+    if (data.seriesMode) {
+      update.seriesStage = 0;
+      update.seriesScores = {};
+      update.seriesHistory = [];
+    }
+    tx.update(ref, update);
   });
 }
 
