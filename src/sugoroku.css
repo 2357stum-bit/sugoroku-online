@@ -484,6 +484,9 @@
 .sgr-rules-list { background: var(--sgr-board); border: 1px solid var(--sgr-line); border-radius: 16px; padding: 14px 16px; box-shadow: var(--sgr-shadow); font-size: 11px; line-height: 1.9; color: var(--sgr-muted); }
 .sgr-rules-list b { color: var(--sgr-ink); }
 
+.sgr-shooter-link { display: block; text-align: center; font-size: 12px; color: var(--sgr-muted); text-decoration: none; }
+.sgr-shooter-link:hover { color: var(--sgr-accent); }
+
 /* ---------- game screen ---------- */
 .sgr-game { display: flex; flex-direction: column; flex: 1; }
 .sgr-topbar { display: flex; align-items: center; justify-content: space-between; padding: 14px 18px 6px; }

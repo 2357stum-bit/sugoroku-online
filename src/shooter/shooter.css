@@ -1,0 +1,109 @@
+/* きょうどうシューティング - sugoroku.cssの共通クラス(sgr-root/sgr-app/sgr-card等)に相乗りしつつ、
+   このゲーム専用の見た目(sgt-プレフィックス)とテーマパレットだけをここで定義する */
+
+.sgr-root[data-theme="shooter"] {
+  --sgr-bg: #05070f;
+  --sgr-board: #10152a;
+  --sgr-board-alt: #171d38;
+  --sgr-ink: #eef1ff;
+  --sgr-muted: #8d94b8;
+  --sgr-accent: #34e0ff;
+  --sgr-accent-dim: rgba(52, 224, 255, 0.16);
+  --sgr-coral: #ff5470;
+  --sgr-gold: #ffcc4d;
+  --sgr-purple: #b388ff;
+  --sgr-line: rgba(255, 255, 255, 0.09);
+  --sgr-shadow: 0 8px 22px rgba(0, 0, 0, 0.45);
+  --sgr-heading-font: "Zen Kaku Gothic New", sans-serif;
+}
+
+.sgt-title-block-compact h1 { font-size: 20px; }
+.sgt-title-block-compact p { display: none; }
+
+.sgt-back-link {
+  display: block;
+  text-align: center;
+  font-size: 12px;
+  color: var(--sgr-muted);
+  text-decoration: none;
+}
+.sgt-back-link:hover { color: var(--sgr-accent); }
+
+.sgt-hint-text { font-size: 12px; color: var(--sgr-muted); text-align: center; margin: 4px 0 12px; }
+
+.sgt-room-code {
+  text-align: center;
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: 0.3em;
+  color: var(--sgr-accent);
+  padding: 10px 0;
+}
+
+.sgt-lobby-slots { display: flex; gap: 10px; margin-bottom: 14px; }
+.sgt-slot {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 8px;
+  border-radius: 14px;
+  border: 1px solid var(--sgr-line);
+  background: var(--sgr-board-alt);
+  opacity: 0.55;
+}
+.sgt-slot-filled { opacity: 1; border-color: var(--sgr-accent); }
+.sgt-slot-icon { font-size: 22px; }
+.sgt-slot-name { font-size: 13px; font-weight: 700; color: var(--sgr-ink); }
+.sgt-slot-tag { font-size: 10px; color: var(--sgr-muted); }
+
+.sgt-result-card { text-align: center; }
+.sgt-result-icon { font-size: 44px; margin-bottom: 4px; }
+.sgt-result-title { margin: 0 0 6px; font-size: 20px; color: var(--sgr-ink); }
+.sgt-result-score { margin: 0 0 16px; font-size: 14px; color: var(--sgr-accent); font-weight: 700; }
+.sgt-result-card .sgr-btn { margin-bottom: 10px; }
+
+.sgt-canvas-wrap {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 8px;
+}
+
+.sgt-hud {
+  width: 100%;
+  max-width: 360px;
+  display: flex;
+  justify-content: space-between;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--sgr-ink);
+  padding: 0 4px;
+}
+
+.sgt-boss-label {
+  width: 100%;
+  max-width: 360px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--sgr-purple);
+  font-weight: 700;
+}
+
+.sgt-canvas {
+  width: 100%;
+  max-width: 360px;
+  aspect-ratio: 360 / 640;
+  border-radius: 14px;
+  border: 1px solid var(--sgr-line);
+  box-shadow: var(--sgr-shadow);
+  touch-action: none;
+  background: #050818;
+}
+
+.sgt-hint {
+  font-size: 11px;
+  color: var(--sgr-muted);
+  text-align: center;
+}

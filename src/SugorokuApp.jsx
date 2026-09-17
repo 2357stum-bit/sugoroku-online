@@ -273,6 +273,10 @@ export default function SugorokuApp() {
               <b>{theme.startMoney || START_MONEY}{theme.currencyUnit}</b>
             </div>
           </div>
+
+          <a className="sgr-shooter-link" href="/shooter">
+            🚀 きょうどうシューティングもあそべます →
+          </a>
         </div>
       </div>
     </div>
