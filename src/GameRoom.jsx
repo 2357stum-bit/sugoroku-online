@@ -140,6 +140,9 @@ function SettlementScreen({ room, code, uid, theme, onLeaveRoom }) {
                 <div className="sgr-settle-line">💹 {investLine}</div>
                 <div className="sgr-settle-line">{theme.icon.homepurchase} {homeLine}</div>
                 <div className="sgr-settle-line">💎 {treasureLine}</div>
+                {p.landCount > 0 && (
+                  <div className="sgr-settle-line">{theme.icon.land || "🚩"} 領地{p.landCount}件を売却 → +{p.landSaleValue}{unit}</div>
+                )}
                 {p.cards.length > 0 && (
                   <div className="sgr-settle-detail">{p.cards.map((c) => `${c.name} ${c.value}${unit}`).join("　/　")}</div>
                 )}
@@ -288,6 +291,7 @@ function FinalScreen({ room, code, uid, theme, onLeaveRoom }) {
                 🏁ゴールボーナス +{p.finishBonus}{unit}　／　💹{theme.labels.investVerb} {p.investGain >= 0 ? "+" : ""}{p.investGain}{unit}　／　{theme.icon.homepurchase}{theme.labels.homeSquareName} +{p.homeSaleValue}{unit}
                 <br />
                 💎お宝 +{p.treasureSum}{unit}　／　{theme.icon.lottery}{theme.labels.lotteryItemName} +{p.lotteryReward}{unit}
+                {p.landCount > 0 && <>　／　{theme.icon.land || "🚩"}領地{p.landCount}件 +{p.landSaleValue}{unit}</>}
               </div>
             </div>
           ))}

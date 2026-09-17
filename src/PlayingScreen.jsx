@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { BOARD_SIZE, GRID_COLS, ROW_HEIGHT, LANE_OFFSET, basePoint, getTheme } from "./boardData.js";
-import { rollDice, chooseFork, chooseHome, choosePick, submitInvest, ackLanding } from "./roomEngine.js";
+import { rollDice, chooseFork, chooseHome, choosePick, chooseLand, submitInvest, ackLanding } from "./roomEngine.js";
 import { describeToast, signed, amtClass } from "./ui/helpers.js";
 import GameTopBar from "./ui/TopBar.jsx";
 import {
@@ -85,7 +85,7 @@ function TokenLayer({ theme, players, walking }) {
   ));
 }
 
-function Board({ theme, players, walking }) {
+function Board({ theme, players, walking, landOwners }) {
   const cells = useMemo(() => {
     const list = [];
     for (let idx = 0; idx < BOARD_SIZE; idx++) {
@@ -95,12 +95,16 @@ function Board({ theme, players, walking }) {
         const bd = theme.BRANCH_MAP[idx];
         list.push({ key: `${idx}:risk`, idx, lane: "risk", sq: bd.risk, x: pt.xPct - LANE_OFFSET, y: pt.y });
         list.push({ key: `${idx}:safe`, idx, lane: "safe", sq: bd.safe, x: pt.xPct + LANE_OFFSET, y: pt.y });
+      } else if (sq.type === "land") {
+        const ownerId = landOwners?.[idx];
+        const owner = ownerId ? players.find((p) => p.id === ownerId) : null;
+        list.push({ key: `${idx}:none`, idx, lane: null, sq, x: pt.xPct, y: pt.y, ownerToken: owner?.token });
       } else {
         list.push({ key: `${idx}:none`, idx, lane: null, sq, x: pt.xPct, y: pt.y });
       }
     }
     return list;
-  }, [theme]);
+  }, [theme, players, landOwners]);
 
   const roadPoints = useMemo(() => {
     const pts = [];
@@ -137,11 +141,11 @@ function Board({ theme, players, walking }) {
           <div
             key={c.key}
             ref={c.key === activeKey ? activeCellRef : null}
-            className={"sgr-sq sgr-" + c.sq.type + (c.lane ? " sgr-lane-" + c.lane : "")}
+            className={"sgr-sq sgr-" + c.sq.type + (c.lane ? " sgr-lane-" + c.lane : "") + (c.ownerToken ? " sgr-land-owned" : "")}
             style={{ left: c.x + "%", top: c.y }}
           >
             <div className="sgr-num">{c.idx}</div>
-            <div className="sgr-icon">{c.sq.icon || "・"}</div>
+            <div className="sgr-icon">{c.ownerToken || c.sq.icon || "・"}</div>
           </div>
         ))}
         <TokenLayer theme={theme} players={players} walking={walking} />
@@ -329,6 +333,66 @@ function HomeChoiceOverlay({ code, uid, theme }) {
               </span>
             </button>
           ))}
+        </div>
+      </div>
+    </div>
+  );
+}
+
+function LandChoiceOverlay({ code, uid, choice, myMoney, theme }) {
+  const [busy, setBusy] = useState(false);
+  const unit = theme.currencyUnit;
+  const afford = myMoney >= choice.cost;
+  return (
+    <div className="sgr-ovl sgr-show">
+      <div className="sgr-ovl-card">
+        <div className="sgr-ovl-illust" style={{ background: "var(--sgr-sq-home)" }}>
+          <span style={{ fontSize: 28 }}>{theme.icon.land}</span>
+        </div>
+        <h2>未開の領地を発見！</h2>
+        <p className="sgr-ovl-lead">
+          購入すると、以後ここに他のプレイヤーが止まるたびに通行料が入るよ（あなたの手持ち: {myMoney}{unit}）
+        </p>
+        <div className="sgr-choice-list">
+          <button
+            className="sgr-choice-btn"
+            disabled={busy || !afford}
+            onClick={async () => {
+              sfxChoiceClick();
+              setBusy(true);
+              try {
+                await chooseLand(code, uid, true);
+              } finally {
+                setBusy(false);
+              }
+            }}
+          >
+            <span className="sgr-c-icon">{theme.icon.land}</span>
+            <span className="sgr-c-txt">
+              <span className="sgr-c-name">購入する</span>
+              <span className="sgr-c-desc">{afford ? "この土地を自分の領地にする" : "手持ちが足りない…"}</span>
+              <span className="sgr-c-cost">購入費用 {choice.cost}{unit}</span>
+            </span>
+          </button>
+          <button
+            className="sgr-choice-btn"
+            disabled={busy}
+            onClick={async () => {
+              sfxChoiceClick();
+              setBusy(true);
+              try {
+                await chooseLand(code, uid, false);
+              } finally {
+                setBusy(false);
+              }
+            }}
+          >
+            <span className="sgr-c-icon">🚶</span>
+            <span className="sgr-c-txt">
+              <span className="sgr-c-name">見送る</span>
+              <span className="sgr-c-desc">購入せずに先へ進む</span>
+            </span>
+          </button>
         </div>
       </div>
     </div>
@@ -559,7 +623,7 @@ export default function PlayingScreen({ room, code, uid, onLeaveRoom }) {
     if (isShowcase) {
       setShowcase(lastEvent);
     } else if (lastEvent) {
-      if (["income", "expense", "bonus", "accident", "pick_result", "raid", "battle"].includes(lastEvent.kind)) {
+      if (["income", "expense", "bonus", "accident", "pick_result", "raid", "battle", "land_toll"].includes(lastEvent.kind)) {
         (lastEvent.amt >= 0 ? sfxCoinGain : sfxCoinLoss)();
       } else if (lastEvent.kind === "treasure" || lastEvent.kind === "lottery") {
         sfxSparkle();
@@ -594,6 +658,7 @@ export default function PlayingScreen({ room, code, uid, onLeaveRoom }) {
     if (turn.choice?.type === "fork") turnSub = "分かれ道を選んでいます…";
     else if (turn.choice?.type === "home") turnSub = `${theme.labels.homeSquareName}を選んでいます…`;
     else if (turn.choice?.type === "pick") turnSub = `${turn.choice.desc}を検討中…`;
+    else if (turn.choice?.type === "land_buy") turnSub = "領地の購入を検討中…";
     else turnSub = "選んでいます…";
   } else if (turn.status === "awaiting_invest") {
     turnSub = "全員の投資判断を待っています…";
@@ -623,7 +688,7 @@ export default function PlayingScreen({ room, code, uid, onLeaveRoom }) {
         </div>
       </div>
 
-      <Board theme={theme} players={players} walking={walking} />
+      <Board theme={theme} players={players} walking={walking} landOwners={room.landOwners} />
 
       {revealReady && <Toast event={lastEvent} players={players} theme={theme} />}
 
@@ -642,6 +707,9 @@ export default function PlayingScreen({ room, code, uid, onLeaveRoom }) {
       )}
       {revealReady && turn.status === "awaiting_choice" && turn.choice?.type === "pick" && turn.actorId === uid && (
         <ChoiceSquareOverlay code={code} uid={uid} choice={turn.choice} theme={theme} />
+      )}
+      {revealReady && turn.status === "awaiting_choice" && turn.choice?.type === "land_buy" && turn.actorId === uid && me && (
+        <LandChoiceOverlay code={code} uid={uid} choice={turn.choice} myMoney={me.money} theme={theme} />
       )}
       {revealReady && turn.status === "awaiting_invest" && turn.invest && turn.invest.pending.includes(uid) && me && (
         <InvestOverlay code={code} uid={uid} invest={turn.invest} players={players} myMoney={me.money} theme={theme} />

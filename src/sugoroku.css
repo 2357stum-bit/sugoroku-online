@@ -287,6 +287,45 @@
   font-family: "Zen Maru Gothic", "Noto Sans JP", sans-serif;
 }
 
+/* ---- 王国開拓双六テーマ: 深緑の大地×領地の金色のパレット ---- */
+.sgr-root[data-theme="kingdom"] {
+  --sgr-bg: #0d1408;
+  --sgr-board: #16220f;
+  --sgr-board-alt: #1e2e14;
+  --sgr-ink: #eaf0df;
+  --sgr-muted: #93a381;
+  --sgr-accent: #7cb342;
+  --sgr-accent-dim: rgba(124, 179, 66, 0.16);
+  --sgr-coral: #d1483f;
+  --sgr-coral-dim: rgba(209, 72, 63, 0.16);
+  --sgr-gold: #d4af37;
+  --sgr-gold-dim: rgba(212, 175, 55, 0.18);
+  --sgr-purple: #8b6fb3;
+  --sgr-purple-dim: rgba(139, 111, 179, 0.16);
+  --sgr-pink: #d98fa6;
+  --sgr-pink-dim: rgba(217, 143, 166, 0.16);
+  --sgr-blue: #5b9bd1;
+  --sgr-blue-dim: rgba(91, 155, 209, 0.16);
+  --sgr-bronze: #b08d57;
+  --sgr-bronze-dim: rgba(176, 141, 87, 0.2);
+  --sgr-sq-normal: #1b2814;
+  --sgr-sq-rest: rgba(63, 174, 122, 0.16);
+  --sgr-sq-salary: var(--sgr-bronze-dim);
+  --sgr-sq-lifeevent: var(--sgr-coral-dim);
+  --sgr-sq-childevent: rgba(63, 174, 122, 0.16);
+  --sgr-sq-home: var(--sgr-bronze-dim);
+  --sgr-line: rgba(124, 179, 66, 0.14);
+  --sgr-shadow: 0 8px 22px rgba(0, 0, 0, 0.5);
+  --sgr-money-pos: #7fd99b;
+  --sgr-money-neg: #e4685d;
+  --sgr-accent-ink: #0a1f05;
+  --sgr-danger-ink: #2b0906;
+  --sgr-heading-font: "Shippori Mincho", serif;
+  --sgr-glow-1: rgba(124, 179, 66, 0.12);
+  --sgr-glow-2: rgba(212, 175, 55, 0.08);
+  font-family: "Zen Maru Gothic", "Noto Sans JP", sans-serif;
+}
+
 /* ---- テーマごとの盤面(マス目の下に敷く)装飾背景。CSSのみで表現し、画像は使わない ---- */
 .sgr-board {
   background-image:
@@ -369,6 +408,14 @@
     radial-gradient(1.2px 1.2px at 85% 60%, rgba(255, 255, 255, 0.6), transparent),
     radial-gradient(ellipse 420px 320px at 30% 12%, rgba(179, 136, 255, 0.1), transparent 60%),
     radial-gradient(ellipse 340px 320px at 80% 82%, rgba(255, 209, 102, 0.08), transparent 60%);
+}
+
+.sgr-root[data-theme="kingdom"] .sgr-board {
+  background-image:
+    repeating-linear-gradient(60deg, rgba(212, 175, 55, 0.05) 0px, rgba(212, 175, 55, 0.05) 1px, transparent 1px, transparent 24px),
+    repeating-linear-gradient(-60deg, rgba(124, 179, 66, 0.05) 0px, rgba(124, 179, 66, 0.05) 1px, transparent 1px, transparent 24px),
+    radial-gradient(ellipse 420px 320px at 20% 10%, rgba(124, 179, 66, 0.1), transparent 60%),
+    radial-gradient(ellipse 360px 320px at 85% 78%, rgba(212, 175, 55, 0.09), transparent 60%);
 }
 
 .sgr-app {
@@ -541,6 +588,11 @@
 .sgr-sq.sgr-battle::before { background-color: var(--sgr-sq-battle); inset: 0; clip-path: polygon(25% 4%, 75% 4%, 100% 50%, 75% 96%, 25% 96%, 0% 50%); border: 1.5px solid rgba(255, 184, 77, 0.7); animation: sgrBattleglow 1.6s ease-in-out infinite; }
 .sgr-sq.sgr-battle .sgr-icon { font-size: 17px; }
 
+.sgr-sq.sgr-land { z-index: 2; }
+.sgr-sq.sgr-land::before { background-color: var(--sgr-sq-home); inset: 0; clip-path: polygon(20% 0%, 80% 0%, 80% 62%, 50% 100%, 20% 62%); border: 1.5px solid rgba(199, 159, 101, 0.6); }
+.sgr-sq.sgr-land .sgr-icon { font-size: 16px; }
+.sgr-sq.sgr-land.sgr-land-owned::before { border: 1.5px solid var(--sgr-gold); animation: sgrLandGlow 1.8s ease-in-out infinite; }
+
 @keyframes sgrShimmer { 0%, 100% { box-shadow: 0 0 0 0 rgba(255, 122, 168, 0); } 50% { box-shadow: 0 0 9px 2px rgba(255, 122, 168, 0.5); } }
 @keyframes sgrShimmer2 { 0%, 100% { box-shadow: 0 0 0 0 rgba(167, 139, 250, 0); } 50% { box-shadow: 0 0 9px 2px rgba(167, 139, 250, 0.5); } }
 @keyframes sgrGoalpulse { 0%, 100% { transform: scale(1); } 50% { transform: scale(1.06); } }
@@ -548,10 +600,11 @@
 @keyframes sgrChildglow { 0%, 100% { box-shadow: 0 0 0 0 rgba(0, 217, 163, 0); } 50% { box-shadow: 0 0 10px 3px rgba(0, 217, 163, 0.55); } }
 @keyframes sgrRaidglow { 0%, 100% { box-shadow: 0 0 0 0 rgba(255, 84, 112, 0); } 50% { box-shadow: 0 0 10px 3px rgba(255, 84, 112, 0.55); } }
 @keyframes sgrBattleglow { 0%, 100% { box-shadow: 0 0 0 0 rgba(255, 184, 77, 0); } 50% { box-shadow: 0 0 10px 3px rgba(255, 184, 77, 0.55); } }
+@keyframes sgrLandGlow { 0%, 100% { box-shadow: 0 0 0 0 rgba(255, 184, 77, 0); } 50% { box-shadow: 0 0 9px 3px rgba(255, 184, 77, 0.6); } }
 @media (prefers-reduced-motion: reduce) {
   .sgr-sq.sgr-treasure::before, .sgr-sq.sgr-goal::before, .sgr-sq.sgr-lifeevent::before,
   .sgr-sq.sgr-childevent::before, .sgr-sq.sgr-lottery::before, .sgr-sq.sgr-raid::before,
-  .sgr-sq.sgr-battle::before { animation: none; }
+  .sgr-sq.sgr-battle::before, .sgr-sq.sgr-land.sgr-land-owned::before { animation: none; }
 }
 
 .sgr-msg-toast { margin: 0 18px 10px; background: var(--sgr-board-alt); border: 1px solid var(--sgr-line); color: var(--sgr-ink); border-radius: 14px; padding: 12px 16px; font-size: 13px; line-height: 1.6; display: flex; align-items: flex-start; gap: 10px; }

@@ -68,7 +68,16 @@ export function initGameState(players, themeId) {
     log: [],
     settlement: null,
     lottery: null,
+    landOwners: {}, // 「領地マス」の所有者(マス番号→プレイヤーid)。領地マスのないテーマでは未使用。
   };
+}
+
+const BASE_LAND_COST = 120;
+function landCost(idx) {
+  return scaleFlat(BASE_LAND_COST, idx);
+}
+function landToll(idx) {
+  return Math.round((landCost(idx) * 0.5) / 10) * 10;
 }
 
 // 給料マス・対決マスは、通り過ぎる(着地しない)場合でも発生する「通行マス」として扱う。
@@ -259,6 +268,33 @@ function resolveLandingAuto(state, theme, actor, sq, idx) {
       state.turn.status = "landed";
       return true;
     }
+    case "land": {
+      if (!state.landOwners) state.landOwners = {};
+      const ownerId = state.landOwners[idx];
+      if (!ownerId) {
+        // 誰の土地でもない → 購入するか選べる
+        const cost = landCost(idx);
+        state.turn.choice = { type: "land_buy", idx, cost };
+        state.turn.status = "awaiting_choice";
+        setLastEvent(state, { kind: "land_wait", playerId: actor.id, desc: sq.desc });
+        pushLog(state, `${actor.name}：${sq.desc} を検討中…`, "land", actor.id);
+        return true;
+      }
+      if (ownerId === actor.id) {
+        setLastEvent(state, { kind: "land_own", playerId: actor.id });
+        pushLog(state, `${actor.name}：自分の領地に到着した`, "land", actor.id);
+        state.turn.status = "landed";
+        return true;
+      }
+      const owner = findPlayer(state, ownerId);
+      const toll = Math.min(landToll(idx), actor.money);
+      actor.money -= toll;
+      owner.money += toll;
+      setLastEvent(state, { kind: "land_toll", playerId: actor.id, ownerId, ownerName: owner.name, amt: -toll });
+      pushLog(state, `${actor.name}：${owner.name}の領地で通行料 ${toll}${theme.currencyUnit} を払った`, "land", actor.id);
+      state.turn.status = "landed";
+      return true;
+    }
     case "lottery": {
       const ticket = randomTicket();
       actor.lotteryTickets.push(ticket);
@@ -437,6 +473,29 @@ export function chooseHome(state, playerId, optionId) {
   return state;
 }
 
+export function chooseLand(state, playerId, buy) {
+  if (state.turn.status !== "awaiting_choice" || !state.turn.choice || state.turn.choice.type !== "land_buy") {
+    throw new Error("土地購入のタイミングではありません");
+  }
+  if (state.turn.actorId !== playerId) throw new Error("あなたの選択ではありません");
+  const theme = getTheme(state.themeId);
+  const actor = findPlayer(state, playerId);
+  const { idx, cost } = state.turn.choice;
+  const bought = !!buy && actor.money >= cost;
+  if (bought) {
+    actor.money -= cost;
+    if (!state.landOwners) state.landOwners = {};
+    state.landOwners[idx] = playerId;
+  }
+  state.turn.choice = null;
+  state.turn.status = "landed";
+  setLastEvent(state, { kind: "land_result", playerId: actor.id, idx, cost, bought });
+  pushLog(state, bought
+    ? `${actor.name}：領地を ${cost}${theme.currencyUnit} で購入した！`
+    : `${actor.name}：領地の購入を見送った`, "land", actor.id);
+  return state;
+}
+
 export function choosePick(state, playerId, optionId) {
   if (state.turn.status !== "awaiting_choice" || !state.turn.choice || state.turn.choice.type !== "pick") {
     throw new Error("選択のタイミングではありません");
@@ -510,6 +569,14 @@ export function startSettlement(state) {
 
     p.treasureSum = p.cards.reduce((s, c) => s + c.value, 0);
     p.money += p.treasureSum;
+
+    // 領地マスのあるテーマでは、保有していた領地をここでまとめて売却精算する。
+    const ownedIdx = Object.entries(state.landOwners || {})
+      .filter(([, ownerId]) => ownerId === p.id)
+      .map(([idx]) => Number(idx));
+    p.landCount = ownedIdx.length;
+    p.landSaleValue = ownedIdx.reduce((sum, idx) => sum + Math.round((landCost(idx) * 0.8) / 10) * 10, 0);
+    p.money += p.landSaleValue;
   });
   state.settlement = { computedAt: Date.now() };
   setLastEvent(state, { kind: "settlement" });

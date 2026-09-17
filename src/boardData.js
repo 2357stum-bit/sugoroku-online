@@ -1172,6 +1172,165 @@ const MAGICSCHOOL_THEME_CFG = {
   ],
 };
 
+const KINGDOM_THEME_CFG = {
+  id: "kingdom",
+  name: "王国開拓双六",
+  tagline: "100マスの大地を旅しながら土地を買い占め、通行料で財を築いて、大陸随一の領主を目指せ。",
+  eyebrowIcon: "🏰",
+  css: "kingdom",
+  tokens: ["🐴", "⛏️", "🌾", "🦅"],
+  currencyUnit: "資源",
+  startLabel: "開拓団スタート",
+  startIcon: "🏕️",
+  goalLabel: "大陸の覇者",
+  goalIcon: "👑",
+  labels: {
+    jobSquareName: "役割",
+    jobGachaTitle: "役割決定の儀",
+    salaryName: "徴税日",
+    investVerb: "開発投資",
+    homeSquareName: "拠点",
+    homeVerb: "建設",
+    lotteryItemName: "地図の欠片",
+    lotteryFinaleName: "運命の秘宝発掘",
+    lotteryFinaleVerb: "発掘",
+    childEventVerb: "同盟締結",
+    childGiftLabel: "同盟祝賀金",
+    goalName: "覇者",
+    winningLabel: "秘宝の座標",
+  },
+  jobs: [
+    { id: "pioneer", name: "開拓者", icon: "🪓", desc: "バランス型。堅実に土地を切り拓く", mult: { income: 1.0, bonus: 1.0, accident: 1.0, salary: 1.0 } },
+    { id: "merchant", name: "商人", icon: "💼", desc: "高い交易益だが危険と隣り合わせ", mult: { income: 1.6, bonus: 1.0, accident: 1.2, salary: 1.7 } },
+    { id: "artisan", name: "職人", icon: "🔨", desc: "実入りは控えめだが手堅い", mult: { income: 0.85, bonus: 0.8, accident: 0.7, salary: 0.9 } },
+    { id: "scout", name: "斥候", icon: "🦅", desc: "当たれば大きいが波が激しい", mult: { income: 0.9, bonus: 1.6, accident: 1.3, salary: 0.8 } },
+    { id: "strategist", name: "軍師", icon: "🧠", desc: "ハイリスク・ハイリターンな献策", mult: { income: 1.2, bonus: 1.8, accident: 1.8, salary: 1.3 } },
+    { id: "lord", name: "領主", icon: "👑", desc: "カリスマ次第で成果が乱高下", mult: { income: 0.8, bonus: 2.0, accident: 1.6, salary: 1.1 } },
+  ],
+  homeOptions: [
+    { id: "castle", label: "壮麗な城", icon: "🏰", cost: -700, baseValue: 700, desc: "領地の象徴となる城。資産価値も抜群" },
+    { id: "manor", label: "荘園屋敷", icon: "🏡", cost: -380, baseValue: 380, desc: "広々とした荘園の屋敷。堅実な資産に" },
+    { id: "outpost", label: "開拓の砦", icon: "🛖", cost: -250, baseValue: 250, desc: "仲間と過ごす開拓の砦暮らし" },
+    { id: "tent", label: "野営テント", icon: "⛺", cost: -30, baseValue: 0, desc: "身軽なテント暮らし。資産にはならない" },
+  ],
+  news: [
+    { text: "新しい交易路の開通で王国経済が拡大している", pct: 12 },
+    { text: "凶作の噂で市場に激震が走る", pct: -10 },
+    { text: "隣国との友好条約で取引が堅調に推移", pct: 7 },
+    { text: "重税への不満から資源価値が下落", pct: -8 },
+    { text: "新鉱脈の発見への期待から相場が急騰", pct: 15 },
+    { text: "大商会の不正発覚で市場が急落", pct: -14 },
+    { text: "街道整備の効果で輸送関連が上昇", pct: 6 },
+    { text: "王城の後押しで市場が活気づく", pct: 9 },
+    { text: "辺境の不穏な噂で様子見ムードが広がる", pct: -5 },
+    { text: "景気後退の噂がじわじわ広がっている", pct: -6 },
+    { text: "人口が増え小売関連が買われる", pct: 5 },
+    { text: "資源価格の高騰で採掘関連が急伸", pct: 8 },
+  ],
+  desc: {
+    income: ["交易路の関税収入を得た", "豊作で収穫物を売って稼いだ", "護送任務が成功し謝礼をもらった", "遺跡の遺物を見つけ換金した", "領内の評価が上がり特別報酬が出た", "王から感謝の褒賞をもらった", "薬草採取の依頼で報酬を得た", "古い地図を売却できた", "討伐部隊への協力金が出た"],
+    expense: ["砦の修理費を支払った", "宿場で少し良い部屋に泊まった", "毒消し草を大量に購入した", "荷馬車の車輪が壊れ修理費がかかった", "野盗にわずかな路銀を奪われた", "教会でパーティ全員の祝福を受けた", "装備の手入れ代を支払った", "渡し船の高額な渡航料を払った", "関所の通行税を取られた"],
+    bonus: ["道端で落とし物の財布を拾った", "商人と交渉して掘り出し物を安く買えた", "古代コインの収集品が高く売れた", "賭け事で思わぬ大勝ちをした", "旅人から餞別をもらった", "隠し部屋で資源の山を発見した", "泉が願いを叶え資源をくれた", "廃墟の宝物庫を発見した", "行商人から掘り出し物を譲られた"],
+    accident: ["モンスターの奇襲を受け荷物を落とした", "毒沼にはまり薬代がかさんだ", "詐欺師に高額な怪しい薬を売りつけられた", "崖から滑落し装備が壊れた", "呪いの罠にかかり出費がかさんだ", "酒場の喧嘩に巻き込まれ弁償させられた", "ならず者に因縁をつけられ資源を渡した", "嵐で野営道具が流された", "霧に巻かれ遠回りして路銀を使った"],
+    rest: ["長旅の疲れで一回休み", "モンスターの毒で一回休み", "吹雪に閉じ込められ一回休み", "馬が脚を痛め一回休み", "仲間の看病で一回休み"],
+    treasure: ["伝説の聖剣", "古代竜のうろこ", "賢者の石", "呪われた指輪", "失われた王家の秘宝", "不死鳥の羽根", "古の魔導書", "妖精の涙の宝石", "巨人の財宝"],
+  },
+  icon: {
+    income: "💰", expense: "💸", bonus: "🎁", accident: "⚡", rest: "🛌",
+    treasure: "💎", job: "🪓", salary: "🏦", lifeevent: "🌋",
+    childevent: "🤝", homepurchase: "🏰", lottery: "🗺️", choice: "📜", land: "🚩",
+  },
+  squareDesc: {
+    job: "役割を決めよう",
+    home: "拠点を築こう",
+    fork: "進む道を選ぼう",
+    lottery: "地図の欠片を発見",
+    salary: "徴税日がやってきた",
+    land: "未開の土地がある",
+  },
+  lifeEvents: [
+    { idx: 14, icon: "⚔️", label: "山賊の襲撃", desc: "山賊に襲撃された！応戦の結果は…", base: 120 },
+    { idx: 26, icon: "🌾", label: "大豊作", desc: "領内で大豊作が起きた！収穫高は…", base: 220 },
+    { idx: 78, icon: "🔥", label: "隣国との大規模な戦", desc: "隣国との大規模な戦が勃発した！勝敗は…", base: 550 },
+    { idx: 92, icon: "👑", label: "王位継承をめぐる政変", desc: "王位継承をめぐる政変が起きた！結果は…", base: 850 },
+  ],
+  childEvents: [
+    { idx: 40, label: "第一の同盟国", cost: -150 },
+    { idx: 84, label: "第二の同盟国", cost: -130 },
+  ],
+  choices: [
+    { idx: 6, squareDesc: "臨時収入の使い道", options: [
+      { id: "a", label: "貯める", desc: "いざという時のために蓄える", amount: [20, 30] },
+      { id: "b", label: "豪遊する", desc: "気分次第で得することも損することも", amount: [-15, 80] },
+    ] },
+    { idx: 18, squareDesc: "傭兵の誘い", options: [
+      { id: "a", label: "断る", desc: "今の陣営で頑張る", amount: [10, 20] },
+      { id: "b", label: "受ける", desc: "うまくいけば大きいが空振りもある", amount: [-25, 150] },
+    ] },
+    { idx: 30, squareDesc: "資金の使い道", options: [
+      { id: "a", label: "貯蓄する", desc: "コツコツ堅実に増やす", amount: [30, 50] },
+      { id: "b", label: "怪しい儲け話に乗る", desc: "一攫千金か、大損か", amount: [-70, 250] },
+    ] },
+    { idx: 42, squareDesc: "他の陣営からの勧誘", options: [
+      { id: "a", label: "今の陣営に残る", desc: "安定を選ぶ", amount: [40, 70] },
+      { id: "b", label: "移る", desc: "環境が変わり運命が動く", amount: [-100, 300] },
+    ] },
+    { idx: 72, squareDesc: "独立開業のチャンス", options: [
+      { id: "a", label: "見送る", desc: "今のままで手堅く", amount: [60, 100] },
+      { id: "b", label: "開業する", desc: "大きなリターンとリスクが両方待つ", amount: [-180, 600] },
+    ] },
+    { idx: 80, squareDesc: "伝説の名品の噂", options: [
+      { id: "a", label: "我慢する", desc: "節約して蓄える", amount: [80, 120] },
+      { id: "b", label: "思い切って買う", desc: "駄作か、伝説級の掘り出し物か", amount: [-140, 400] },
+    ] },
+    { idx: 87, squareDesc: "先代からの遺産", options: [
+      { id: "a", label: "資源で受け取る", desc: "手堅く確実に", amount: [100, 150] },
+      { id: "b", label: "秘宝で受け取る", desc: "化けるかもしれないが手間もかかる", amount: [-90, 500] },
+    ] },
+    { idx: 95, squareDesc: "最後の大勝負", options: [
+      { id: "a", label: "手堅く終える", desc: "安全策で締めくくる", amount: [150, 200] },
+      { id: "b", label: "一発逆転を狙う", desc: "すべてを賭けた大博打", amount: [-250, 900] },
+    ] },
+  ],
+  forkOptions: [
+    { id: "risk", label: "辺境開拓ルート", icon: "🌋", desc: "危険な辺境。大成功も大災害もある波乱の数マス" },
+    { id: "safe", label: "街道整備ルート", icon: "🛡️", desc: "安定した街道。少しずつ確実に資源が増える" },
+  ],
+  riskTemplate: [
+    { type: "bonus", desc: "危険な辺境で財宝の隠し部屋を見つけた", amount: [100, 300] },
+    { type: "accident", desc: "モンスターの巣に迷い込み大怪我をした", amount: [-100, -30] },
+    { type: "bonus", desc: "裏路地で怪しい大取引がまとまった", amount: [80, 250] },
+    { type: "accident", desc: "一か八かの近道で罠にかかった", amount: [-90, -25] },
+    { type: "bonus", desc: "廃坑で埋もれた財宝を掘り当てた", amount: [90, 280] },
+    { type: "accident", desc: "野盗の待ち伏せに遭い身包み剥がされた", amount: [-110, -35] },
+    { type: "bonus", desc: "古い地図を頼りに秘密の宝物庫を突き止めた", amount: [110, 320] },
+    { type: "accident", desc: "調子に乗って危険な深部まで踏み込んだ", amount: [-120, -40] },
+  ],
+  safeTemplate: [
+    { type: "income", desc: "安全な街道で着実に依頼をこなした", amount: [50, 90] },
+    { type: "income", desc: "堅実に荷運びの仕事をこなした", amount: [40, 80] },
+    { type: "income", desc: "地道な依頼で確実な報酬を得た", amount: [50, 90] },
+    { type: "income", desc: "安全第一で慎重に旅を進めた", amount: [40, 80] },
+    { type: "income", desc: "信頼できる商人と手堅い取引をした", amount: [50, 90] },
+    { type: "income", desc: "コツコツ働いて確実に貯蓄を増やした", amount: [40, 80] },
+    { type: "income", desc: "評判のいい仕事をきっちりこなした", amount: [50, 90] },
+    { type: "income", desc: "無理せず着実に歩を進めた", amount: [40, 80] },
+  ],
+  // 「領地マス」: 誰も所有していなければ購入でき、以後そのマスに止まった他プレイヤーから
+  // 通行料を徴収できる(自分の土地なら何も起きない)。他のマップにはない専用の位置。
+  landIdx: [2, 10, 22, 29, 37, 44, 50, 73, 79, 85, 91, 98],
+  rules: [
+    { icon: "🪓", label: "役割決定マス", text: "サイコロで役割がランダムに決定" },
+    { icon: "🏦", label: "徴税日マス", text: "全員が同時に開発投資額を決める（他のプレイヤーの決定を待ちます）" },
+    { icon: "🌋", label: "王国の一大イベントマス", text: "山賊の襲撃や政変など、出目で財産が変わる" },
+    { icon: "🤝", label: "同盟締結マス", text: "五分五分の運。成功すると他の全員から同盟祝賀金がもらえる" },
+    { icon: "🔀", label: "分かれ道マス", text: "辺境開拓ルートか街道整備ルートを選べる" },
+    { icon: "🚩", label: "領地マス", text: "空き地なら購入できる。他人の領地に止まると通行料を払う。ゴール後に売却して精算" },
+    { icon: "🏰", label: "拠点選択マス", text: "ゴール後に売却して精算" },
+    { icon: "🗺️💎", label: "地図の欠片マス／お宝マス", text: "ゴール後の秘宝発掘・換金でお楽しみ" },
+  ],
+};
+
 function buildTheme(cfg) {
   const LIFEEVENT_MAP = {};
   cfg.lifeEvents.forEach((ev) => (LIFEEVENT_MAP[ev.idx] = ev));
@@ -1231,6 +1390,10 @@ function buildTheme(cfg) {
       SQUARES[i] = { type: "raid", icon: cfg.icon.raid, forcedStop: true };
       continue;
     }
+    if ((cfg.landIdx || []).includes(i)) {
+      SQUARES[i] = { type: "land", icon: cfg.icon.land, desc: cfg.squareDesc.land, forcedStop: true };
+      continue;
+    }
     if (i === HOME_IDX) {
       SQUARES[i] = { type: "homepurchase", icon: cfg.icon.homepurchase, desc: cfg.squareDesc.home, forcedStop: true };
       continue;
@@ -1288,6 +1451,7 @@ export const THEMES = {
   space: buildTheme(SPACE_THEME_CFG),
   underworld: buildTheme(UNDERWORLD_THEME_CFG),
   magicschool: buildTheme(MAGICSCHOOL_THEME_CFG),
+  kingdom: buildTheme(KINGDOM_THEME_CFG),
 };
 export const DEFAULT_THEME_ID = "money";
 export const THEME_LIST = Object.values(THEMES);

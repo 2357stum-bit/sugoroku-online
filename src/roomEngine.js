@@ -19,6 +19,7 @@ import {
   chooseFork as glChooseFork,
   chooseHome as glChooseHome,
   choosePick as glChoosePick,
+  chooseLand as glChooseLand,
   advanceFromLanding as glAdvanceFromLanding,
   submitInvestDecision as glSubmitInvestDecision,
   startSettlement,
@@ -53,6 +54,7 @@ function extractGameState(data) {
     log: data.log || [],
     settlement: data.settlement,
     lottery: data.lottery,
+    landOwners: data.landOwners || {},
   };
 }
 
@@ -67,6 +69,7 @@ function applyGameState(update, state) {
   update.log = state.log;
   update.settlement = state.settlement;
   update.lottery = state.lottery;
+  update.landOwners = state.landOwners || {};
   return update;
 }
 
@@ -177,6 +180,10 @@ export function chooseHome(code, playerId, optionId) {
 
 export function choosePick(code, playerId, optionId) {
   return runGameTransaction(code, (state) => glChoosePick(state, playerId, optionId));
+}
+
+export function chooseLand(code, playerId, buy) {
+  return runGameTransaction(code, (state) => glChooseLand(state, playerId, buy));
 }
 
 export function submitInvest(code, playerId, amount) {

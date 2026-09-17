@@ -19,6 +19,7 @@ export const EVENT_BG = {
   choice: "var(--sgr-sq-bonus)",
   raid: "var(--sgr-sq-accident)",
   battle: "var(--sgr-sq-battle)",
+  land: "var(--sgr-sq-home)",
 };
 
 export function findPlayerName(players, id) {
@@ -90,6 +91,16 @@ export function describeToast(event, players, theme) {
     }
     case "battle_none":
       return { icon: theme.icon.battle, bg: EVENT_BG.battle, title: `${name}：対決する相手がいなかった` };
+    case "land_wait":
+      return { icon: theme.icon.land, bg: EVENT_BG.land, title: `${name}さんが${event.desc}を検討中…` };
+    case "land_own":
+      return { icon: theme.icon.land, bg: EVENT_BG.land, title: `${name}：自分の領地に到着した` };
+    case "land_toll":
+      return { icon: theme.icon.land, bg: EVENT_BG.land, title: `${name}：${event.ownerName}の領地で通行料を払った`, amount: event.amt, unit };
+    case "land_result":
+      return event.bought
+        ? { icon: theme.icon.land, bg: EVENT_BG.land, title: `${name}：領地を購入した！`, sub: "他の人が止まると通行料が入るよ", amount: -event.cost, unit }
+        : { icon: theme.icon.land, bg: EVENT_BG.land, title: `${name}：領地の購入を見送った` };
     default:
       return null;
   }
