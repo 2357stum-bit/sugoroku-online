@@ -108,20 +108,54 @@ export function sfxJackpot() {
 // ---- BGM ----
 // "ambient": ロビーや結果画面向けの、ゆったりした4つのコードパッド(8秒ごとに切替)。
 // "play": プレイ中向けの、少しテンポの速いコード進行 + 軽いパルス(リズム感)を重ねる。
-const BGM_CHORDS = [
-  [130.81, 164.81, 196.0], // C3 E3 G3
-  [146.83, 174.61, 220.0], // D3 F3 A3
-  [110.0, 146.83, 174.61], // A2 D3 F3
-  [130.81, 155.56, 196.0], // C3 Eb3 G3
-];
-const PLAY_CHORDS = [
-  [164.81, 196.0, 246.94], // E3 G3 B3
-  [196.0, 246.94, 293.66], // G3 B3 D4
-  [146.83, 174.61, 220.0], // D3 F3 A3
-  [174.61, 220.0, 261.63], // F3 A3 C4
-];
+// コード進行(4つ1組)はマップのテーマごとに変える(setBgmTheme で切り替える)。
+const THEME_CHORDS = {
+  money: [
+    [130.81, 164.81, 196.0], // C3 E3 G3
+    [146.83, 174.61, 220.0], // D3 F3 A3
+    [110.0, 146.83, 174.61], // A2 D3 F3
+    [130.81, 155.56, 196.0], // C3 Eb3 G3
+  ],
+  adventure: [
+    [146.83, 174.61, 220.0], // D3 F3 A3 (Dm)
+    [174.61, 220.0, 261.63], // F3 A3 C4 (F)
+    [116.54, 146.83, 174.61], // Bb2 D3 F3 (Bb)
+    [130.81, 164.81, 196.0], // C3 E3 G3 (C)
+  ],
+  idol: [
+    [261.63, 329.63, 392.0], // C4 E4 G4
+    [174.61, 220.0, 261.63], // F3 A3 C4
+    [196.0, 246.94, 293.66], // G3 B3 D4
+    [220.0, 261.63, 329.63], // A3 C4 E4 (Am)
+  ],
+  school: [
+    [196.0, 246.94, 293.66], // G3 B3 D4
+    [130.81, 164.81, 196.0], // C3 E3 G3
+    [146.83, 185.0, 220.0], // D3 F#3 A3
+    [164.81, 196.0, 246.94], // E3 G3 B3 (Em)
+  ],
+  space: [
+    [130.81, 196.0, 261.63], // C3 G3 C4 (open 5th)
+    [110.0, 164.81, 220.0], // A2 E3 A3
+    [87.31, 130.81, 174.61], // F2 C3 F3
+    [98.0, 146.83, 196.0], // G2 D3 G3
+  ],
+  underworld: [
+    [130.81, 155.56, 184.99], // C3 Eb3 F#3 (不穏な響き)
+    [110.0, 130.81, 155.56], // A2 C3 Eb3
+    [87.31, 103.83, 130.81], // F2 Ab2 C3
+    [98.0, 116.54, 138.59], // G2 Bb2 C#3
+  ],
+  magicschool: [
+    [146.83, 185.0, 220.0], // D3 F#3 A3
+    [110.0, 138.59, 164.81], // A2 C#3 E3
+    [164.81, 207.65, 246.94], // E3 G#3 B3
+    [123.47, 155.56, 185.0], // B2 D#3 F#3
+  ],
+};
 
 let bgmMode = "ambient";
+let bgmTheme = "money";
 let pulseTimer = null;
 
 function stopBgmOscs() {
@@ -165,7 +199,7 @@ function playBgmChord() {
   }
   stopBgmOscs();
   const isPlay = bgmMode === "play";
-  const chords = isPlay ? PLAY_CHORDS : BGM_CHORDS;
+  const chords = THEME_CHORDS[bgmTheme] || THEME_CHORDS.money;
   const duration = isPlay ? 4.5 : 8;
   const chord = chords[bgmIndex % chords.length];
   bgmIndex++;
@@ -198,6 +232,13 @@ export function stopBgm() {
   if (bgmTimer) clearTimeout(bgmTimer);
   if (pulseTimer) clearTimeout(pulseTimer);
   stopBgmOscs();
+}
+
+// マップ(テーマ)ごとにBGMのコード進行を切り替える。次のコード切り替わりの
+// タイミングから反映される(鳴っている音を途中で切らないため)。
+export function setBgmTheme(themeId) {
+  if (!THEME_CHORDS[themeId] || bgmTheme === themeId) return;
+  bgmTheme = themeId;
 }
 
 // プレイ中は少しテンポの速い曲調 + パルスに切り替える。それ以外は落ち着いた曲調に戻す。

@@ -5,7 +5,7 @@ import { createRoom, joinRoom } from "./roomEngine.js";
 import { THEME_LIST, DEFAULT_THEME_ID, START_MONEY, getTheme } from "./boardData.js";
 import GameRoom from "./GameRoom.jsx";
 import SoundToggle from "./ui/SoundToggle.jsx";
-import { primeAudio } from "./audio.js";
+import { primeAudio, setBgmTheme } from "./audio.js";
 
 const NAME_KEY = "sgr_name";
 const ROOM_KEY = "sgr_room";
@@ -101,6 +101,7 @@ export default function SugorokuApp() {
 
   useEffect(() => {
     localStorage.setItem(THEME_KEY, themeId);
+    setBgmTheme(themeId);
   }, [themeId]);
 
   const trimmedName = name.trim() || "プレイヤー";
