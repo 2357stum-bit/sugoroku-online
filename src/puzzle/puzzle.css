@@ -1,0 +1,133 @@
+/* きょうどうパズル - sugoroku.cssの共通クラスに相乗りしつつ、盤面表示とテーマパレットだけをここで定義する */
+
+.sgr-root[data-theme="puzzle"] {
+  --sgr-bg: #0c0f0a;
+  --sgr-board: #171d13;
+  --sgr-board-alt: #202a19;
+  --sgr-ink: #eef3e6;
+  --sgr-muted: #94a583;
+  --sgr-accent: #9ee047;
+  --sgr-accent-dim: rgba(158, 224, 71, 0.16);
+  --sgr-coral: #ff8a5c;
+  --sgr-gold: #ffd166;
+  --sgr-purple: #7fd8c9;
+  --sgr-line: rgba(255, 255, 255, 0.09);
+  --sgr-shadow: 0 8px 22px rgba(0, 0, 0, 0.45);
+  --sgr-heading-font: "Zen Kaku Gothic New", sans-serif;
+}
+
+.pzl-title-block-compact h1 { font-size: 18px; }
+.pzl-title-block-compact p { display: none; }
+
+.pzl-back-link {
+  display: block;
+  text-align: center;
+  font-size: 12px;
+  color: var(--sgr-muted);
+  text-decoration: none;
+}
+.pzl-back-link:hover { color: var(--sgr-accent); }
+
+.pzl-hint-text { font-size: 12px; color: var(--sgr-muted); text-align: center; margin: 4px 0 12px; }
+
+.pzl-room-code {
+  text-align: center;
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: 0.3em;
+  color: var(--sgr-accent);
+  padding: 10px 0;
+}
+
+.pzl-lobby-slots { display: flex; gap: 10px; margin-bottom: 10px; }
+.pzl-slot {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 8px;
+  border-radius: 14px;
+  border: 1px solid var(--sgr-line);
+  background: var(--sgr-board-alt);
+  opacity: 0.55;
+}
+.pzl-slot-filled { opacity: 1; border-color: var(--sgr-accent); }
+.pzl-slot-icon { font-size: 22px; }
+.pzl-slot-name { font-size: 13px; font-weight: 700; color: var(--sgr-ink); }
+.pzl-slot-tag { font-size: 10px; color: var(--sgr-muted); }
+
+.pzl-result-card { text-align: center; }
+.pzl-result-icon { font-size: 44px; margin-bottom: 4px; }
+.pzl-result-title { margin: 0 0 6px; font-size: 20px; color: var(--sgr-ink); }
+.pzl-result-score { margin: 0 0 16px; font-size: 14px; color: var(--sgr-accent); font-weight: 700; }
+.pzl-result-card .sgr-btn { margin-bottom: 10px; }
+
+.pzl-wrap { display: flex; flex-direction: column; align-items: center; gap: 8px; }
+
+.pzl-topbar {
+  width: 100%;
+  display: flex;
+  justify-content: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--sgr-ink);
+}
+
+.pzl-board {
+  display: flex;
+  flex-direction: column;
+  border-radius: 12px;
+  overflow: hidden;
+  border: 1px solid var(--sgr-line);
+  box-shadow: var(--sgr-shadow);
+  background: #05070f;
+}
+
+.pzl-row { display: flex; }
+
+.pzl-cell {
+  width: 38px;
+  height: 38px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  position: relative;
+  font-size: 20px;
+  flex-shrink: 0;
+}
+
+.pzl-wall { background: #05070a; box-shadow: inset 0 0 0 1px rgba(255, 255, 255, 0.05); }
+.pzl-floor { background: var(--sgr-board-alt); }
+.pzl-target { background: var(--sgr-gold); background: color-mix(in srgb, var(--sgr-gold) 35%, var(--sgr-board-alt)); }
+.pzl-door-closed { background: rgba(255, 84, 112, 0.35); }
+.pzl-door-open { background: rgba(158, 224, 71, 0.28); }
+
+.pzl-switch-mark { position: absolute; font-size: 14px; color: var(--sgr-purple); opacity: 0.85; }
+.pzl-box { font-size: 20px; filter: drop-shadow(0 2px 3px rgba(0, 0, 0, 0.5)); }
+.pzl-box-placed { filter: drop-shadow(0 0 6px var(--sgr-accent)); }
+.pzl-player { font-size: 20px; z-index: 2; }
+.pzl-player-0.pzl-me, .pzl-player-1.pzl-me { filter: drop-shadow(0 0 5px var(--sgr-accent)); }
+
+.pzl-hint { font-size: 11px; color: var(--sgr-muted); text-align: center; max-width: 320px; }
+
+.pzl-dpad {
+  display: grid;
+  grid-template-columns: 44px 44px 44px;
+  grid-template-rows: 44px 44px;
+  gap: 6px;
+  margin-top: 4px;
+}
+.pzl-dpad-btn {
+  border: 1px solid var(--sgr-line);
+  background: var(--sgr-board-alt);
+  color: var(--sgr-ink);
+  border-radius: 10px;
+  font-size: 16px;
+  cursor: pointer;
+}
+.pzl-dpad-btn:active { background: var(--sgr-accent-dim); }
+.pzl-dpad-up { grid-column: 2; grid-row: 1; }
+.pzl-dpad-left { grid-column: 1; grid-row: 2; }
+.pzl-dpad-right { grid-column: 3; grid-row: 2; }
+.pzl-dpad-down { grid-column: 2; grid-row: 2; }

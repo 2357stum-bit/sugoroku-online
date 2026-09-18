@@ -1,13 +1,22 @@
 import { useEffect, useMemo, useState } from "react";
 import "../sugoroku.css";
-import "./shooter.css";
+import "./puzzle.css";
 import { authReady } from "../firebase.js";
-import { createRoom, joinRoom, subscribeRoom, startGame, resetToLobby, deleteRoom } from "./shooterRoom.js";
-import { createInitialState } from "./shooterEngine.js";
-import GameCanvas from "./GameCanvas.jsx";
+import {
+  createRoom,
+  joinRoom,
+  subscribeRoom,
+  startGame,
+  resetLevel,
+  nextLevel,
+  backToLobby,
+  deleteRoom,
+} from "./puzzleRoom.js";
+import { LEVELS, getLevelList } from "./puzzleEngine.js";
+import PuzzleBoard from "./PuzzleBoard.jsx";
 
-const NAME_KEY = "sgt_name";
-const ROOM_KEY = "sgt_room";
+const NAME_KEY = "pzl_name";
+const ROOM_KEY = "pzl_room";
 
 function readQuery() {
   try {
@@ -28,37 +37,37 @@ function setUrlRoom(code) {
   }
 }
 
-function Lobby({ room, uid, myName, onStart, onLeave, busy }) {
+function Lobby({ room, uid, onStart, onLeave, busy }) {
   const isHost = room.hostUid === uid;
-  const hostReady = !!room.hostUid;
   const guestReady = !!room.guestUid;
-  const canStart = isHost && hostReady && guestReady && !busy;
+  const levelIdx = LEVELS.findIndex((l) => l.id === room.levelId);
 
   return (
     <div className="sgr-card">
       <div className="sgr-field">
         <label>ルームコード</label>
-        <div className="sgt-room-code">{room.code}</div>
-        <p className="sgt-hint-text">このコードを相方に伝えて「コードで参加」してもらおう</p>
+        <div className="pzl-room-code">{room.code}</div>
+        <p className="pzl-hint-text">このコードを相方に伝えて「コードで参加」してもらおう</p>
       </div>
-      <div className="sgt-lobby-slots">
-        <div className={"sgt-slot" + (hostReady ? " sgt-slot-filled" : "")}>
-          <span className="sgt-slot-icon">🧑‍🚀</span>
-          <span className="sgt-slot-name">{room.hostName || "..."}</span>
-          <span className="sgt-slot-tag">ホスト</span>
+      <div className="pzl-lobby-slots">
+        <div className="pzl-slot pzl-slot-filled">
+          <span className="pzl-slot-icon">🧑</span>
+          <span className="pzl-slot-name">{room.hostName || "..."}</span>
+          <span className="pzl-slot-tag">ホスト</span>
         </div>
-        <div className={"sgt-slot" + (guestReady ? " sgt-slot-filled" : "")}>
-          <span className="sgt-slot-icon">{guestReady ? "🧑‍🚀" : "⏳"}</span>
-          <span className="sgt-slot-name">{room.guestName || "参加待ち…"}</span>
-          <span className="sgt-slot-tag">ゲスト</span>
+        <div className={"pzl-slot" + (guestReady ? " pzl-slot-filled" : "")}>
+          <span className="pzl-slot-icon">{guestReady ? "🧑‍🦰" : "⏳"}</span>
+          <span className="pzl-slot-name">{room.guestName || "参加待ち…"}</span>
+          <span className="pzl-slot-tag">ゲスト</span>
         </div>
       </div>
+      <p className="pzl-hint-text">さいしょのステージ: {LEVELS[Math.max(levelIdx, 0)]?.name || LEVELS[0].name}</p>
       {isHost ? (
-        <button className="sgr-btn" disabled={!canStart} onClick={onStart}>
+        <button className="sgr-btn" disabled={!guestReady || busy} onClick={onStart}>
           {!guestReady ? "相方の参加を待っています…" : busy ? "開始中…" : "ゲーム開始"}
         </button>
       ) : (
-        <p className="sgt-hint-text">ホストが開始するのを待っています…</p>
+        <p className="pzl-hint-text">ホストが開始するのを待っています…</p>
       )}
       <button className="sgr-btn sgr-secondary" onClick={onLeave}>
         退出する
@@ -67,19 +76,31 @@ function Lobby({ room, uid, myName, onStart, onLeave, busy }) {
   );
 }
 
-function ResultScreen({ result, score, room, uid, onRematch, onLeave, busy }) {
+function ClearScreen({ room, uid, onNext, onReplay, onLeave, busy }) {
   const isHost = room.hostUid === uid;
+  const levelIdx = LEVELS.findIndex((l) => l.id === room.levelId);
+  const isLast = levelIdx === LEVELS.length - 1;
+
   return (
-    <div className="sgr-card sgt-result-card">
-      <div className="sgt-result-icon">{result === "victory" ? "🏆" : "💥"}</div>
-      <h2 className="sgt-result-title">{result === "victory" ? "ボス撃破！" : "全滅…"}</h2>
-      <p className="sgt-result-score">スコア {score}</p>
+    <div className="sgr-card pzl-result-card">
+      <div className="pzl-result-icon">🎉</div>
+      <h2 className="pzl-result-title">ステージクリア！</h2>
+      <p className="pzl-result-score">てかず {room.game?.moves ?? 0}</p>
       {isHost ? (
-        <button className="sgr-btn" disabled={busy} onClick={onRematch}>
-          {busy ? "準備中…" : "もう一度あそぶ"}
-        </button>
+        <>
+          {!isLast ? (
+            <button className="sgr-btn" disabled={busy} onClick={onNext}>
+              {busy ? "準備中…" : "次のステージへ"}
+            </button>
+          ) : (
+            <p className="pzl-hint-text">全ステージクリア！おめでとう🎊</p>
+          )}
+          <button className="sgr-btn sgr-secondary" disabled={busy} onClick={onReplay}>
+            もう一度あそぶ
+          </button>
+        </>
       ) : (
-        <p className="sgt-hint-text">ホストが「もう一度あそぶ」を選ぶとロビーに戻ります</p>
+        <p className="pzl-hint-text">ホストの操作を待っています…</p>
       )}
       <button className="sgr-btn sgr-secondary" onClick={onLeave}>
         退出する
@@ -88,7 +109,7 @@ function ResultScreen({ result, score, room, uid, onRematch, onLeave, busy }) {
   );
 }
 
-export default function ShooterApp() {
+export default function PuzzleApp() {
   const [uid, setUid] = useState(null);
   const [authError, setAuthError] = useState(null);
   const [name, setName] = useState(() => localStorage.getItem(NAME_KEY) || "");
@@ -98,14 +119,13 @@ export default function ShooterApp() {
   const [room, setRoom] = useState(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const [localResult, setLocalResult] = useState(null);
 
   useEffect(() => {
     authReady.then((user) => setUid(user.uid)).catch((e) => setAuthError(e));
   }, []);
 
   useEffect(() => {
-    document.title = "きょうどうシューティング オンライン";
+    document.title = "きょうどうパズル オンライン";
   }, []);
 
   useEffect(() => {
@@ -134,12 +154,9 @@ export default function ShooterApp() {
     return unsub;
   }, [roomCode]);
 
-  useEffect(() => {
-    if (room?.status === "lobby") setLocalResult(null);
-  }, [room?.status]);
-
   const trimmedName = name.trim() || "プレイヤー";
   const canSubmit = useMemo(() => !!uid && !busy, [uid, busy]);
+  const levelMeta = room?.game ? LEVELS.find((l) => l.id === room.game.levelId) : null;
 
   async function handleCreate() {
     if (!canSubmit) return;
@@ -184,7 +201,6 @@ export default function ShooterApp() {
     setUrlRoom(null);
     setRoomCode("");
     setRoom(null);
-    setLocalResult(null);
   }
 
   async function handleStart() {
@@ -192,8 +208,7 @@ export default function ShooterApp() {
     setBusy(true);
     setError("");
     try {
-      const uids = [room.hostUid, room.guestUid].filter(Boolean);
-      await startGame(room.code, uid, createInitialState(uids));
+      await startGame(room.code, uid);
     } catch (e) {
       setError(e.message || "開始に失敗しました");
     } finally {
@@ -201,13 +216,25 @@ export default function ShooterApp() {
     }
   }
 
-  async function handleRematch() {
+  async function handleNext() {
     if (!room) return;
     setBusy(true);
     setError("");
     try {
-      await resetToLobby(room.code, uid);
-      setLocalResult(null);
+      await nextLevel(room.code, uid);
+    } catch (e) {
+      setError(e.message || "次のステージへ進めませんでした");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleReplay() {
+    if (!room) return;
+    setBusy(true);
+    setError("");
+    try {
+      await resetLevel(room.code, uid);
     } catch (e) {
       setError(e.message || "リセットに失敗しました");
     } finally {
@@ -215,13 +242,9 @@ export default function ShooterApp() {
     }
   }
 
-  function handleGameResult(result, score) {
-    setLocalResult({ result, score });
-  }
-
   if (authError) {
     return (
-      <div className="sgr-root" data-theme="shooter">
+      <div className="sgr-root" data-theme="puzzle">
         <div className="sgr-app">
           <div className="sgr-screen">
             <div className="sgr-title-block">
@@ -236,31 +259,21 @@ export default function ShooterApp() {
 
   if (roomCode && room) {
     const isHost = room.hostUid === uid;
-    const showResult = localResult || room.status === "ended";
+    const myIdx = isHost ? 0 : 1;
     return (
-      <div className="sgr-root" data-theme="shooter">
+      <div className="sgr-root" data-theme="puzzle">
         <div className="sgr-app">
           <div className="sgr-screen">
-            <div className="sgr-title-block sgt-title-block-compact">
-              <span className="sgr-eyebrow">🚀</span>
-              <h1>きょうどうシューティング</h1>
+            <div className="sgr-title-block pzl-title-block-compact">
+              <span className="sgr-eyebrow">🧩</span>
+              <h1>きょうどうパズル{levelMeta ? ` - ${levelMeta.name}` : ""}</h1>
             </div>
-            {room.status === "lobby" && (
-              <Lobby room={room} uid={uid} myName={trimmedName} onStart={handleStart} onLeave={handleLeaveRoom} busy={busy} />
+            {room.status === "lobby" && <Lobby room={room} uid={uid} onStart={handleStart} onLeave={handleLeaveRoom} busy={busy} />}
+            {room.status === "playing" && room.game && (
+              <PuzzleBoard room={room} code={room.code} uid={uid} myIdx={myIdx} hint={levelMeta?.hint} />
             )}
-            {room.status === "playing" && !localResult && (
-              <GameCanvas room={room} code={room.code} uid={uid} isHost={isHost} onResult={handleGameResult} />
-            )}
-            {showResult && (
-              <ResultScreen
-                result={localResult?.result || (room.hostState?.result ?? "gameover")}
-                score={localResult?.score ?? room.hostState?.score ?? 0}
-                room={room}
-                uid={uid}
-                onRematch={handleRematch}
-                onLeave={handleLeaveRoom}
-                busy={busy}
-              />
+            {room.status === "cleared" && (
+              <ClearScreen room={room} uid={uid} onNext={handleNext} onReplay={handleReplay} onLeave={handleLeaveRoom} busy={busy} />
             )}
             <div className="sgr-error">{error}</div>
           </div>
@@ -270,13 +283,13 @@ export default function ShooterApp() {
   }
 
   return (
-    <div className="sgr-root" data-theme="shooter">
+    <div className="sgr-root" data-theme="puzzle">
       <div className="sgr-app">
         <div className="sgr-screen">
           <div className="sgr-title-block">
-            <span className="sgr-eyebrow">🚀</span>
-            <h1>きょうどうシューティング オンライン</h1>
-            <p>相方と2人で参加して、迫りくる敵をかわしながらボスを倒そう。</p>
+            <span className="sgr-eyebrow">🧩</span>
+            <h1>きょうどうパズル オンライン</h1>
+            <p>相方と2人で同じ盤面を見ながら、箱を目的地まで押していこう。</p>
           </div>
 
           <div className="sgr-card">
@@ -324,17 +337,17 @@ export default function ShooterApp() {
           </div>
 
           <div className="sgr-rules-list">
-            <div>🚀 <b>操作</b>：矢印キー/WASD、またはドラッグで自機を移動。弾は自動発射。</div>
-            <div>🤝 <b>人数</b>：2人協力プレイ。ホストが部屋を作り、ゲストがコードで参加する。</div>
-            <div>👹 <b>目標</b>：迫りくる敵をかわし、最後に現れるボスを倒せばクリア。</div>
-            <div>❤️ <b>ライフ</b>：3ライフ制。全員のライフが尽きるとゲームオーバー。</div>
+            <div>🧩 <b>操作</b>：矢印キー/WASD、または画面下の十字ボタンで移動。</div>
+            <div>🤝 <b>人数</b>：2人協力プレイ。同じ盤面を見ながら箱を押し合う。</div>
+            <div>◆ <b>スイッチ</b>：誰か(箱でも可)が乗っている間だけ、対応する扉が開く。</div>
+            <div>📦 <b>目標</b>：すべての箱を目的地(黄色いマス)まで運べばクリア。</div>
           </div>
 
-          <a className="sgt-back-link" href="/">
+          <a className="pzl-back-link" href="/">
             ← すごろくオンラインへ戻る
           </a>
-          <a className="sgt-back-link" href="/puzzle">
-            🧩 きょうどうパズルもあそべます →
+          <a className="pzl-back-link" href="/shooter">
+            🚀 きょうどうシューティングもあそべます →
           </a>
         </div>
       </div>
