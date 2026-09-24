@@ -112,3 +112,8 @@
 }
 
 .gly-hint { font-size: 11px; color: var(--sgr-muted); text-align: center; }
+
+.gly-stage-card { text-align: center; }
+.gly-stage-icon { font-size: 44px; margin-bottom: 4px; }
+.gly-stage-title { margin: 0 0 10px; font-size: 18px; color: var(--sgr-ink); }
+.gly-stage-card .sgr-btn { margin-top: 6px; }

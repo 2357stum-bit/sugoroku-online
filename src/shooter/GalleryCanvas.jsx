@@ -1,14 +1,5 @@
 import { useEffect, useRef, useState } from "react";
-import {
-  FIELD_W,
-  FIELD_H,
-  STAGES,
-  TOTAL_DURATION,
-  getStageAt,
-  getActiveTargets,
-  tryHit,
-  FIRE_COOLDOWN_MS,
-} from "./galleryEngine.js";
+import { FIELD_W, FIELD_H, STAGES, getActiveTargets, tryHit, FIRE_COOLDOWN_MS } from "./galleryEngine.js";
 import { publishScore, markFinished } from "./galleryRoom.js";
 
 const PUBLISH_MS = 250;
@@ -95,58 +86,56 @@ function drawPopups(ctx, popups, now) {
   ctx.globalAlpha = 1;
 }
 
+// 各ステージは「スタート」ボタンを押した瞬間からそのステージだけの時間を計測する
+// (前のステージの時間は引き継がない)。phase: "ready"(開始待ち) -> "playing"(プレイ中)
+// -> "cleared"(結果表示、次へボタン待ち)。
 export default function GalleryCanvas({ room, code, uid, onFinished }) {
   const canvasRef = useRef(null);
   const roomRef = useRef(room);
-  // 経過時間は端末のシステム時計(Date.now())をサーバーのタイムスタンプと突き合わせて
-  // 毎フレーム計算するのではなく、ゲーム開始を検知した瞬間に一度だけ基準点(anchor)を
-  // 決め、以後は端末内で単調増加するperformance.now()の差分だけで進める。
-  // こうすることで、端末の時計がずれている(実時刻と合っていない)場合でも、
-  // 「開始した瞬間からの経過時間」自体は正しく計測できる。
-  const anchorRef = useRef(null); // { baseElapsedMs, baseLocalTime }
+  const stageStartRef = useRef(null); // このステージを開始したperformance.now()
   const reticleRef = useRef({ x: FIELD_W / 2, y: FIELD_H / 2 });
   const keysRef = useRef({});
   const hitIdsRef = useRef(new Set());
   const comboRef = useRef(0);
-  const scoreRef = useRef(0);
+  const scoreRef = useRef(0); // 全ステージ通算スコア
   const popupsRef = useRef([]);
   const lastFireRef = useRef(-Infinity);
   const lastPublishRef = useRef(0);
-  const finishedRef = useRef(false);
   const rafRef = useRef(null);
   const lastTsRef = useRef(null);
-  const [hud, setHud] = useState({ score: 0, combo: 0, stageIdx: 0, stageName: "", timeLeftMs: TOTAL_DURATION, opponentScore: null });
+  const [stageIdx, setStageIdx] = useState(0);
+  const [phase, setPhase] = useState("ready"); // "ready" | "playing" | "cleared"
+  const [hud, setHud] = useState({ score: 0, combo: 0, timeLeftMs: STAGES[0].duration, opponentScore: null });
+
+  const stage = STAGES[stageIdx];
+  const isLastStage = stageIdx === STAGES.length - 1;
 
   useEffect(() => {
     roomRef.current = room;
   }, [room]);
 
-  useEffect(() => {
-    if (anchorRef.current) return; // 基準点は最初の1回だけ決める
-    let baseElapsedMs = 0;
-    if (room.startedAt && typeof room.startedAt.toMillis === "function") {
-      // 再読み込みなどで既に始まっている試合に戻ってきた場合は、サーバー時刻を
-      // 目安にどこまで進んでいたかを推定する(あくまで初期値。端末時計がずれて
-      // いても、0〜制限時間の範囲にクランプするので暴走はしない)。
-      const guess = Date.now() - room.startedAt.toMillis();
-      if (Number.isFinite(guess)) baseElapsedMs = clamp(guess, 0, TOTAL_DURATION - 1);
-    }
-    anchorRef.current = { baseElapsedMs, baseLocalTime: performance.now() };
-  }, [room.startedAt]);
-
   function currentElapsed() {
-    if (!anchorRef.current) return null;
-    return anchorRef.current.baseElapsedMs + (performance.now() - anchorRef.current.baseLocalTime);
+    if (!stageStartRef.current) return null;
+    return performance.now() - stageStartRef.current;
+  }
+
+  function startStage() {
+    hitIdsRef.current = new Set();
+    comboRef.current = 0;
+    lastFireRef.current = -Infinity;
+    lastTsRef.current = null;
+    stageStartRef.current = performance.now();
+    setHud((h) => ({ score: scoreRef.current, combo: 0, timeLeftMs: stage.duration, opponentScore: h.opponentScore }));
+    setPhase("playing");
   }
 
   function fireAt(px, py, now) {
+    if (phase !== "playing") return;
     const elapsed = currentElapsed();
     if (elapsed == null) return;
     if (now - lastFireRef.current < FIRE_COOLDOWN_MS) return;
     lastFireRef.current = now;
-    const info = getStageAt(elapsed);
-    if (!info) return;
-    const result = tryHit(info.stage, info.localElapsed, hitIdsRef.current, comboRef.current, px, py);
+    const result = tryHit(stage, elapsed, hitIdsRef.current, comboRef.current, px, py);
     if (result) {
       hitIdsRef.current.add(result.id);
       comboRef.current = result.combo;
@@ -182,7 +171,7 @@ export default function GalleryCanvas({ room, code, uid, onFinished }) {
       el.removeEventListener("pointerdown", onDown);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [phase, stageIdx]);
 
   useEffect(() => {
     const onKeyDown = (e) => {
@@ -206,9 +195,10 @@ export default function GalleryCanvas({ room, code, uid, onFinished }) {
       window.removeEventListener("keyup", onKeyUp);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, []);
+  }, [phase, stageIdx]);
 
   useEffect(() => {
+    if (phase !== "playing") return;
     const ctx = canvasRef.current.getContext("2d");
 
     const loop = (ts) => {
@@ -228,31 +218,20 @@ export default function GalleryCanvas({ room, code, uid, onFinished }) {
       }
 
       const elapsed = currentElapsed();
-      if (elapsed == null) {
-        ctx.fillStyle = "#0a0e13";
-        ctx.fillRect(0, 0, FIELD_W, FIELD_H);
-        ctx.fillStyle = "#eef1ff";
-        ctx.font = "16px sans-serif";
-        ctx.textAlign = "center";
-        ctx.fillText("準備中…", FIELD_W / 2, FIELD_H / 2);
-        rafRef.current = requestAnimationFrame(loop);
-        return;
-      }
 
-      const info = getStageAt(elapsed);
-
-      if (!info) {
-        if (!finishedRef.current) {
-          finishedRef.current = true;
+      if (elapsed >= stage.duration) {
+        publishScore(code, uid, scoreRef.current).catch(() => {});
+        if (isLastStage) {
           markFinished(code, uid, scoreRef.current).catch(() => {});
           onFinished(scoreRef.current);
         }
+        setPhase("cleared");
         return;
       }
 
-      drawBackground(ctx, info.stage.id, elapsed);
-      const active = getActiveTargets(info.stage, info.localElapsed, hitIdsRef.current);
-      for (const t of active) drawTarget(ctx, info.stage.id, t, info.localElapsed);
+      drawBackground(ctx, stage.id, elapsed);
+      const active = getActiveTargets(stage, elapsed, hitIdsRef.current);
+      for (const t of active) drawTarget(ctx, stage.id, t, elapsed);
       drawPopups(ctx, popupsRef.current, performance.now());
       popupsRef.current = popupsRef.current.filter((p) => performance.now() - p.bornAt < 700);
       drawReticle(ctx, reticleRef.current.x, reticleRef.current.y);
@@ -264,13 +243,10 @@ export default function GalleryCanvas({ room, code, uid, onFinished }) {
 
       const currentRoom = roomRef.current;
       const otherUid = currentRoom.hostUid === uid ? currentRoom.guestUid : currentRoom.hostUid;
-      const stageIdx = STAGES.findIndex((s) => s.id === info.stage.id);
       setHud({
         score: scoreRef.current,
         combo: comboRef.current,
-        stageIdx,
-        stageName: info.stage.name,
-        timeLeftMs: TOTAL_DURATION - elapsed,
+        timeLeftMs: stage.duration - elapsed,
         opponentScore: otherUid ? currentRoom.scores?.[otherUid] ?? 0 : null,
       });
 
@@ -282,10 +258,50 @@ export default function GalleryCanvas({ room, code, uid, onFinished }) {
       if (rafRef.current) cancelAnimationFrame(rafRef.current);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
-  }, [code, uid]);
+  }, [phase, stageIdx]);
 
-  const stageTimeLeft = Math.max(0, hud.timeLeftMs);
-  const secLeft = Math.ceil(stageTimeLeft / 1000);
+  function handleNextStage() {
+    if (isLastStage) return;
+    setStageIdx((i) => i + 1);
+    setPhase("ready");
+  }
+
+  const secLeft = Math.ceil(Math.max(0, hud.timeLeftMs) / 1000);
+  const opponentScore = hud.opponentScore ?? (room.hostUid === uid ? room.scores?.[room.guestUid] : room.scores?.[room.hostUid]);
+
+  if (phase === "ready") {
+    return (
+      <div className="sgr-card gly-stage-card">
+        <div className="gly-stage-icon">{STAGE_THEME[stage.id]?.icon || "🎯"}</div>
+        <h2 className="gly-stage-title">
+          ステージ {stageIdx + 1}/{STAGES.length}: {stage.name}
+        </h2>
+        <p className="gly-hint-text">{stage.hint}</p>
+        <p className="gly-hint-text">制限時間 {stage.duration / 1000}秒 ／ これまでのスコア {scoreRef.current.toLocaleString()}</p>
+        <button className="sgr-btn" onClick={startStage}>
+          スタート
+        </button>
+      </div>
+    );
+  }
+
+  if (phase === "cleared") {
+    return (
+      <div className="sgr-card gly-stage-card">
+        <div className="gly-stage-icon">✅</div>
+        <h2 className="gly-stage-title">ステージ{stageIdx + 1} クリア！</h2>
+        <p className="gly-hint-text">通算スコア {scoreRef.current.toLocaleString()}</p>
+        {opponentScore != null && <p className="gly-hint-text">相手のスコア {opponentScore.toLocaleString()}</p>}
+        {!isLastStage ? (
+          <button className="sgr-btn" onClick={handleNextStage}>
+            つぎのステージへ
+          </button>
+        ) : (
+          <p className="gly-hint-text">けっかを集計しています…</p>
+        )}
+      </div>
+    );
+  }
 
   return (
     <div className="gly-wrap">
@@ -295,11 +311,9 @@ export default function GalleryCanvas({ room, code, uid, onFinished }) {
         <span>のこり {secLeft}秒</span>
       </div>
       <div className="gly-stage-label">
-        ステージ {Math.max(hud.stageIdx, 0) + 1}/{STAGES.length}: {hud.stageName}
+        ステージ {stageIdx + 1}/{STAGES.length}: {stage.name}
       </div>
-      {hud.opponentScore != null && (
-        <div className="gly-opponent">相手のスコア {hud.opponentScore.toLocaleString()}</div>
-      )}
+      {opponentScore != null && <div className="gly-opponent">相手のスコア {opponentScore.toLocaleString()}</div>}
       <canvas ref={canvasRef} width={FIELD_W} height={FIELD_H} className="gly-canvas" />
       <p className="gly-hint">狙った場所をタップ/クリック、または矢印キー+スペースで発射</p>
     </div>

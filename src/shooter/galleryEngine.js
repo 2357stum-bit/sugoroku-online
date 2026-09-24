@@ -10,11 +10,13 @@ export const FIELD_H = 640;
 export const HIT_RADIUS = 30;
 export const FIRE_COOLDOWN_MS = 90;
 
+const STAGE_DURATION = 30000; // 各ステージ30秒
+
 function genStage1() {
   // もくばのまと: 3x4のマス目にポップアップする木馬の的
   const cols = [90, 180, 270];
   const rows = [150, 260, 370, 480];
-  const duration = 40000;
+  const duration = STAGE_DURATION;
   const interval = 2200;
   const ttl = 1500;
   const spawns = [];
@@ -37,7 +39,7 @@ function genStage1() {
 
 function genStage2() {
   // ロボットたいせん: 左右から流れてくる的。だんだん間隔が短くなる
-  const duration = 40000;
+  const duration = STAGE_DURATION;
   const rows = [180, 280, 380, 480];
   const spawns = [];
   let t = 0;
@@ -62,13 +64,13 @@ function genStage2() {
 }
 
 function genStage3() {
-  // きょうりゅうのふうせん: 下から昇ってくる風船 + ラスト8秒はフィナーレ(ビッグターゲット+ボーナスの雨)
-  const duration = 40000;
+  // きょうりゅうのふうせん: 下から昇ってくる風船 + ラスト6秒はフィナーレ(ビッグターゲット+ボーナスの雨)
+  const duration = STAGE_DURATION;
   const cols = [60, 130, 200, 270, 330];
   const spawns = [];
   let t = 0;
   let i = 0;
-  const mainEnd = duration - 8000;
+  const mainEnd = duration - 6000;
   while (t < mainEnd) {
     const x = cols[i % cols.length];
     const speed = 70 + (i % 4) * 15; // px/秒
@@ -83,7 +85,7 @@ function genStage3() {
     i++;
   }
   const finaleStart = mainEnd;
-  spawns.push({ t: finaleStart + 300, x: FIELD_W / 2, y: FIELD_H / 2, r: 46, points: 1500, ttl: 6500, vx: 0, vy: 0, kind: "finale" });
+  spawns.push({ t: finaleStart + 300, x: FIELD_W / 2, y: FIELD_H / 2, r: 46, points: 1500, ttl: 4800, vx: 0, vy: 0, kind: "finale" });
   let fi = 0;
   for (let ft = finaleStart + 600; ft < duration - 400; ft += 400) {
     const x = 40 + ((fi * 53) % (FIELD_W - 80));
@@ -101,33 +103,15 @@ const RAW_STAGES = [
   { id: 3, name: "きょうりゅうのふうせん", hint: "上昇する風船を撃て。ラストはフィナーレ！", ...genStage3() },
 ];
 
-// 各的に一意なIDを振り、ステージ開始オフセット(累積時間)を計算しておく
-export const STAGES = (() => {
-  let offset = 0;
-  return RAW_STAGES.map((s) => {
-    const spawns = s.spawns.map((sp, i) => ({ ...sp, id: `${s.id}-${i}` }));
-    const stage = { ...s, spawns, startOffset: offset };
-    offset += s.duration;
-    return stage;
-  });
-})();
+// 各的に一意なIDを振っておく。各ステージは「スタート」を押した瞬間から
+// 独立して0msからカウントする(前のステージの時間を引きずらない)ので、
+// 以前のような累積オフセット/全体タイムラインの計算は不要。
+export const STAGES = RAW_STAGES.map((s) => ({
+  ...s,
+  spawns: s.spawns.map((sp, i) => ({ ...sp, id: `${s.id}-${i}` })),
+}));
 
 export const TOTAL_DURATION = STAGES.reduce((sum, s) => sum + s.duration, 0);
-
-// 全体の経過時間(ms)から、今どのステージの何ms目かを返す。終了していたらnull
-export function getStageAt(elapsedMs) {
-  if (elapsedMs >= TOTAL_DURATION) return null;
-  // 経過時間が負(呼び出し側の基準点計算のずれなど)でも、開始前ではなく
-  // 「ステージ1の開始直後」として扱う(nullを返すと「終了」と誤解されるため)
-  const clamped = Math.max(0, elapsedMs);
-  for (const stage of STAGES) {
-    const local = clamped - stage.startOffset;
-    if (local >= 0 && local < stage.duration) {
-      return { stage, localElapsed: local };
-    }
-  }
-  return null;
-}
 
 function targetPos(spawn, localElapsedMs) {
   const dt = localElapsedMs - spawn.t;
