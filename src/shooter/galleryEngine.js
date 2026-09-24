@@ -150,29 +150,35 @@ function genStageRobot() {
 }
 
 function genStageDuck() {
-  // ④ アヒルのぎょうれつ: テンポの速い、左右・斜めから流れてくるアヒルの的
+  // ④ アヒルのぎょうれつ: 3〜4羽がひとまとまりの「列」になって、波状に左右から
+  // やってくる。ロボットたいせん(1体ずつ・複数レーンにバラけて流れる)とは違い、
+  // 群れごと連続で撃ち抜く「波」のリズムがこのステージの持ち味。
+  // 列の先頭(進行方向側)は本体、最後尾は小さくて高得点。
   const duration = STAGE_DURATION;
-  const rows = [190, 280, 370, 460];
+  const rows = [220, 340, 460];
   const spawns = [];
-  let t = 200;
-  let i = 0;
-  while (t < duration - 1200) {
-    const row = rows[i % rows.length];
-    const dir = i % 2 === 0 ? 1 : -1;
-    const speed = 130 + (i % 6) * 16; // px/秒、速め
+  let t = 500;
+  let wave = 0;
+  while (t < duration - 1500) {
+    const row = rows[wave % rows.length];
+    const dir = wave % 2 === 0 ? 1 : -1;
+    const speed = 150 + Math.min(wave, 10) * 7; // px/秒。波を重ねるごとに少しずつ速く
     const startX = dir === 1 ? -20 : FIELD_W + 20;
-    const small = i % 3 === 1;
-    const isDiagonal = i % 8 === 5;
-    const vyPerSec = isDiagonal ? (i % 2 === 0 ? 55 : -55) : 0;
-    const travelMs = ((FIELD_W + 40) / speed) * 1000;
-    spawns.push({
-      t, x: startX, y: row, r: small ? 12 : 17,
-      points: small ? 260 : 140, ttl: travelMs,
-      vx: (dir * speed) / 1000, vy: vyPerSec / 1000, kind: isDiagonal ? "diagonal" : "duck",
-      wobble: !isDiagonal ? { amp: 11, freq: 1.9, axis: "y" } : null,
-    });
-    t += Math.max(220, 480 - i * 6);
-    i++;
+    const groupSize = wave % 3 === 2 ? 4 : 3;
+    const gapPx = 44; // 列内の間隔
+    const wobble = { amp: 10, freq: 1.6, axis: "y" }; // 同じtを共有するので群れ全体が同期して上下に揺れる
+    for (let g = 0; g < groupSize; g++) {
+      const offset = dir === 1 ? -g * gapPx : g * gapPx;
+      const travelMs = ((FIELD_W + 40 + Math.abs(offset)) / speed) * 1000;
+      const isLast = g === groupSize - 1;
+      spawns.push({
+        t, x: startX + offset, y: row, r: isLast ? 12 : 17,
+        points: isLast ? 260 : 150, ttl: travelMs,
+        vx: (dir * speed) / 1000, vy: 0, kind: "duck", wobble,
+      });
+    }
+    t += Math.max(700, 1500 - wave * 60); // 波と波の間隔がだんだん短くなる
+    wave++;
   }
   spawns.sort((a, b) => a.t - b.t);
   return {
