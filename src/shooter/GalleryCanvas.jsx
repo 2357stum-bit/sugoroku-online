@@ -1,16 +1,18 @@
 import { useEffect, useRef, useState } from "react";
-import { FIELD_W, FIELD_H, STAGES, getActiveTargets, tryHit, FIRE_COOLDOWN_MS } from "./galleryEngine.js";
+import { FIELD_W, FIELD_H, STAGES, getActiveTargets, tryHit, getBonusWindow, FIRE_COOLDOWN_MS } from "./galleryEngine.js";
 import { publishScore, markFinished } from "./galleryRoom.js";
 
 const PUBLISH_MS = 250;
 const RETICLE_KEY_SPEED = 340; // px/秒(キーボード操作時)
+const PROJECTILE_MS = 110;
+const GUN_ORIGIN = { x: FIELD_W / 2, y: FIELD_H - 6 };
 
 const STAGE_THEME = {
   1: { icon: "🐴", small: "🎯", grad: ["#3a2a1a", "#1c130c"] },
   2: { icon: "🤖", small: "🛸", grad: ["#0c1c2e", "#050b16"] },
   3: { icon: "🎈", small: "⭐", grad: ["#123", "#0a1024"] },
 };
-const KIND_ICON = { finale: "🦖", bonus: "⭐" };
+const KIND_ICON = { finale: "🦖", bonus: "⭐", bonusWave: "⭐" };
 
 function clamp(v, lo, hi) {
   return Math.max(lo, Math.min(hi, v));
@@ -34,23 +36,89 @@ function drawBackground(ctx, stageId, t) {
 }
 
 function drawTarget(ctx, stageId, target, elapsedForPulse) {
+  if (target.kind === "secret") {
+    const pulse = 1 + 0.18 * Math.sin(elapsedForPulse / 130);
+    ctx.save();
+    ctx.translate(target.x, target.y);
+    ctx.beginPath();
+    ctx.arc(0, 0, target.r * pulse + 7, 0, Math.PI * 2);
+    ctx.strokeStyle = "rgba(255, 209, 102, 0.9)";
+    ctx.lineWidth = 3;
+    ctx.stroke();
+    ctx.beginPath();
+    ctx.arc(0, 0, target.r, 0, Math.PI * 2);
+    ctx.fillStyle = "rgba(255, 209, 102, 0.35)";
+    ctx.fill();
+    ctx.font = `${Math.round(target.r * 1.4)}px sans-serif`;
+    ctx.textAlign = "center";
+    ctx.textBaseline = "middle";
+    ctx.fillText("🎁", 0, 1);
+    ctx.restore();
+    return;
+  }
   const theme = STAGE_THEME[stageId] || STAGE_THEME[1];
   const icon = KIND_ICON[target.kind] || (target.points >= 250 ? theme.small : theme.icon);
   let r = target.r;
   if (target.kind === "finale") r *= 1 + 0.05 * Math.sin(elapsedForPulse / 150);
+  const isBonus = target.kind === "bonusWave";
   ctx.save();
   ctx.translate(target.x, target.y);
   ctx.beginPath();
   ctx.arc(0, 0, r, 0, Math.PI * 2);
-  ctx.fillStyle = target.kind === "finale" ? "rgba(255, 209, 102, 0.28)" : "rgba(255,255,255,0.14)";
+  ctx.fillStyle = target.kind === "finale" || isBonus ? "rgba(255, 209, 102, 0.28)" : "rgba(255,255,255,0.14)";
   ctx.fill();
-  ctx.strokeStyle = "rgba(255,255,255,0.55)";
+  ctx.strokeStyle = isBonus ? "rgba(255, 209, 102, 0.85)" : "rgba(255,255,255,0.55)";
   ctx.lineWidth = 2;
   ctx.stroke();
   ctx.font = `${Math.round(r * 1.3)}px sans-serif`;
   ctx.textAlign = "center";
   ctx.textBaseline = "middle";
   ctx.fillText(icon, 0, 1);
+  ctx.restore();
+}
+
+function drawFx(ctx, list, now) {
+  for (const p of list) {
+    const age = now - p.bornAt;
+    if (age > p.durMs) continue;
+    const t = age / p.durMs;
+    ctx.globalAlpha = 1 - t;
+    ctx.strokeStyle = p.color;
+    ctx.lineWidth = p.width;
+    ctx.beginPath();
+    ctx.arc(p.x, p.y, p.r0 + t * p.grow, 0, Math.PI * 2);
+    ctx.stroke();
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawProjectiles(ctx, list, now) {
+  for (const p of list) {
+    const age = now - p.bornAt;
+    if (age > PROJECTILE_MS) continue;
+    const t = age / PROJECTILE_MS;
+    const x = p.fromX + (p.toX - p.fromX) * t;
+    const y = p.fromY + (p.toY - p.fromY) * t;
+    ctx.fillStyle = "#9ee047";
+    ctx.globalAlpha = 0.9;
+    ctx.beginPath();
+    ctx.arc(x, y, 4, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+function drawBonusBanner(ctx, bornAt, now) {
+  if (bornAt == null) return;
+  const age = now - bornAt;
+  if (age > 1400) return;
+  const alpha = age < 200 ? age / 200 : age > 1100 ? Math.max(0, (1400 - age) / 300) : 1;
+  ctx.save();
+  ctx.globalAlpha = alpha;
+  ctx.fillStyle = "rgba(255, 209, 102, 0.95)";
+  ctx.font = "bold 20px sans-serif";
+  ctx.textAlign = "center";
+  ctx.fillText("🎉 ボーナスチャンス！", FIELD_W / 2, 86);
   ctx.restore();
 }
 
@@ -99,13 +167,17 @@ export default function GalleryCanvas({ room, code, uid, onFinished }) {
   const comboRef = useRef(0);
   const scoreRef = useRef(0); // 全ステージ通算スコア
   const popupsRef = useRef([]);
+  const fxRef = useRef([]); // 命中/ハズレの演出(リング)
+  const projectilesRef = useRef([]); // 発射の演出(実際の命中判定とは独立した見た目だけの弾)
+  const bonusTriggeredAtRef = useRef(null); // このステージの隠し的を撃った経過時間(ms)。まだなら null
+  const bonusBannerAtRef = useRef(null); // ボーナスバナーを表示し始めたperformance.now()
   const lastFireRef = useRef(-Infinity);
   const lastPublishRef = useRef(0);
   const rafRef = useRef(null);
   const lastTsRef = useRef(null);
   const [stageIdx, setStageIdx] = useState(0);
   const [phase, setPhase] = useState("ready"); // "ready" | "playing" | "cleared"
-  const [hud, setHud] = useState({ score: 0, combo: 0, timeLeftMs: STAGES[0].duration, opponentScore: null });
+  const [hud, setHud] = useState({ score: 0, combo: 0, timeLeftMs: STAGES[0].duration, opponentScore: null, bonusActive: false });
 
   const stage = STAGES[stageIdx];
   const isLastStage = stageIdx === STAGES.length - 1;
@@ -122,10 +194,15 @@ export default function GalleryCanvas({ room, code, uid, onFinished }) {
   function startStage() {
     hitIdsRef.current = new Set();
     comboRef.current = 0;
+    bonusTriggeredAtRef.current = null;
+    bonusBannerAtRef.current = null;
+    popupsRef.current = [];
+    fxRef.current = [];
+    projectilesRef.current = [];
     lastFireRef.current = -Infinity;
     lastTsRef.current = null;
     stageStartRef.current = performance.now();
-    setHud((h) => ({ score: scoreRef.current, combo: 0, timeLeftMs: stage.duration, opponentScore: h.opponentScore }));
+    setHud((h) => ({ score: scoreRef.current, combo: 0, timeLeftMs: stage.duration, opponentScore: h.opponentScore, bonusActive: false }));
     setPhase("playing");
   }
 
@@ -135,14 +212,21 @@ export default function GalleryCanvas({ room, code, uid, onFinished }) {
     if (elapsed == null) return;
     if (now - lastFireRef.current < FIRE_COOLDOWN_MS) return;
     lastFireRef.current = now;
-    const result = tryHit(stage, elapsed, hitIdsRef.current, comboRef.current, px, py);
+    projectilesRef.current.push({ fromX: GUN_ORIGIN.x, fromY: GUN_ORIGIN.y, toX: px, toY: py, bornAt: now });
+    const result = tryHit(stage, elapsed, hitIdsRef.current, comboRef.current, px, py, bonusTriggeredAtRef.current);
     if (result) {
       hitIdsRef.current.add(result.id);
       comboRef.current = result.combo;
       scoreRef.current += result.gained;
-      popupsRef.current.push({ x: px, y: py, text: `+${result.gained}`, bornAt: performance.now() });
+      popupsRef.current.push({ x: px, y: py, text: `+${result.gained}`, bornAt: now });
+      fxRef.current.push({ x: px, y: py, bornAt: now, color: "#ffd166", width: 3, r0: 8, grow: 22, durMs: 380 });
+      if (result.triggerBonus) {
+        bonusTriggeredAtRef.current = elapsed;
+        bonusBannerAtRef.current = now;
+      }
     } else {
       comboRef.current = 0;
+      fxRef.current.push({ x: px, y: py, bornAt: now, color: "rgba(200,200,200,0.7)", width: 2, r0: 4, grow: 10, durMs: 220 });
     }
   }
 
@@ -229,18 +313,26 @@ export default function GalleryCanvas({ room, code, uid, onFinished }) {
         return;
       }
 
+      const bonusTriggeredAt = bonusTriggeredAtRef.current;
       drawBackground(ctx, stage.id, elapsed);
-      const active = getActiveTargets(stage, elapsed, hitIdsRef.current);
+      const active = getActiveTargets(stage, elapsed, hitIdsRef.current, bonusTriggeredAt);
       for (const t of active) drawTarget(ctx, stage.id, t, elapsed);
-      drawPopups(ctx, popupsRef.current, performance.now());
-      popupsRef.current = popupsRef.current.filter((p) => performance.now() - p.bornAt < 700);
+      const now = performance.now();
+      drawProjectiles(ctx, projectilesRef.current, now);
+      projectilesRef.current = projectilesRef.current.filter((p) => now - p.bornAt < PROJECTILE_MS);
+      drawFx(ctx, fxRef.current, now);
+      fxRef.current = fxRef.current.filter((p) => now - p.bornAt < p.durMs);
+      drawPopups(ctx, popupsRef.current, now);
+      popupsRef.current = popupsRef.current.filter((p) => now - p.bornAt < 700);
       drawReticle(ctx, reticleRef.current.x, reticleRef.current.y);
+      drawBonusBanner(ctx, bonusBannerAtRef.current, now);
 
       if (ts - lastPublishRef.current >= PUBLISH_MS) {
         lastPublishRef.current = ts;
         publishScore(code, uid, scoreRef.current).catch(() => {});
       }
 
+      const bonusActive = bonusTriggeredAt != null && elapsed < bonusTriggeredAt + getBonusWindow(stage);
       const currentRoom = roomRef.current;
       const otherUid = currentRoom.hostUid === uid ? currentRoom.guestUid : currentRoom.hostUid;
       setHud({
@@ -248,6 +340,7 @@ export default function GalleryCanvas({ room, code, uid, onFinished }) {
         combo: comboRef.current,
         timeLeftMs: stage.duration - elapsed,
         opponentScore: otherUid ? currentRoom.scores?.[otherUid] ?? 0 : null,
+        bonusActive,
       });
 
       rafRef.current = requestAnimationFrame(loop);
@@ -312,6 +405,7 @@ export default function GalleryCanvas({ room, code, uid, onFinished }) {
       </div>
       <div className="gly-stage-label">
         ステージ {stageIdx + 1}/{STAGES.length}: {stage.name}
+        {hud.bonusActive && <span className="gly-bonus-tag"> 🎉ボーナス中！</span>}
       </div>
       {opponentScore != null && <div className="gly-opponent">相手のスコア {opponentScore.toLocaleString()}</div>}
       <canvas ref={canvasRef} width={FIELD_W} height={FIELD_H} className="gly-canvas" />

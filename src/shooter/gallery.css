@@ -82,6 +82,8 @@
 .gly-combo { color: var(--sgr-gold); font-size: 12px; animation: glyPulse 0.6s ease-in-out infinite alternate; }
 @keyframes glyPulse { from { opacity: 0.7; } to { opacity: 1; } }
 
+.gly-bonus-tag { color: var(--sgr-gold); font-weight: 700; animation: glyPulse 0.5s ease-in-out infinite alternate; }
+
 .gly-stage-label {
   width: 100%;
   max-width: 360px;
