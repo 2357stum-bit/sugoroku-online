@@ -13,6 +13,7 @@ import {
   deleteDoc,
 } from "firebase/firestore";
 import { db } from "../firebase.js";
+import { withRetry } from "../firestoreRetry.js";
 
 const COLLECTION = "galleryRooms";
 const CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // 見間違えやすい文字は除外
@@ -28,39 +29,43 @@ function roomRef(code) {
 }
 
 export async function createRoom(uid, name) {
-  let code = randomCode();
-  for (let attempt = 0; attempt < 5; attempt++) {
-    const snap = await getDoc(roomRef(code));
-    if (!snap.exists()) break;
-    code = randomCode();
-  }
-  const room = {
-    code,
-    hostUid: uid,
-    hostName: name,
-    guestUid: null,
-    guestName: null,
-    status: "lobby", // lobby -> playing -> finished
-    startedAt: null,
-    scores: {},
-    finished: {},
-    createdAt: serverTimestamp(),
-    updatedAt: serverTimestamp(),
-  };
-  await setDoc(roomRef(code), room);
-  return code;
+  return withRetry(async () => {
+    let code = randomCode();
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const snap = await getDoc(roomRef(code));
+      if (!snap.exists()) break;
+      code = randomCode();
+    }
+    const room = {
+      code,
+      hostUid: uid,
+      hostName: name,
+      guestUid: null,
+      guestName: null,
+      status: "lobby", // lobby -> playing -> finished
+      startedAt: null,
+      scores: {},
+      finished: {},
+      createdAt: serverTimestamp(),
+      updatedAt: serverTimestamp(),
+    };
+    await setDoc(roomRef(code), room);
+    return code;
+  });
 }
 
 export async function joinRoom(code, uid, name) {
-  const ref = roomRef(code);
-  const snap = await getDoc(ref);
-  if (!snap.exists()) throw new Error("ルームが見つかりません");
-  const data = snap.data();
-  if (data.hostUid === uid || data.guestUid === uid) return code; // 再参加はそのまま許可
-  if (data.status !== "lobby") throw new Error("すでにゲームが始まっています");
-  if (data.guestUid) throw new Error("満員です（最大2人）");
-  await updateDoc(ref, { guestUid: uid, guestName: name, updatedAt: serverTimestamp() });
-  return code;
+  return withRetry(async () => {
+    const ref = roomRef(code);
+    const snap = await getDoc(ref);
+    if (!snap.exists()) throw new Error("ルームが見つかりません");
+    const data = snap.data();
+    if (data.hostUid === uid || data.guestUid === uid) return code; // 再参加はそのまま許可
+    if (data.status !== "lobby") throw new Error("すでにゲームが始まっています");
+    if (data.guestUid) throw new Error("満員です（最大2人）");
+    await updateDoc(ref, { guestUid: uid, guestName: name, updatedAt: serverTimestamp() });
+    return code;
+  });
 }
 
 export function subscribeRoom(code, onChange, onError) {
@@ -72,18 +77,20 @@ export function subscribeRoom(code, onChange, onError) {
 }
 
 export async function startGame(code, uid) {
-  const ref = roomRef(code);
-  const snap = await getDoc(ref);
-  if (!snap.exists()) throw new Error("ルームが見つかりません");
-  const data = snap.data();
-  if (data.hostUid !== uid) throw new Error("ホストのみ開始できます");
-  if (data.status !== "lobby") throw new Error("すでに開始しています");
-  await updateDoc(ref, {
-    status: "playing",
-    startedAt: serverTimestamp(),
-    scores: {},
-    finished: {},
-    updatedAt: serverTimestamp(),
+  return withRetry(async () => {
+    const ref = roomRef(code);
+    const snap = await getDoc(ref);
+    if (!snap.exists()) throw new Error("ルームが見つかりません");
+    const data = snap.data();
+    if (data.hostUid !== uid) throw new Error("ホストのみ開始できます");
+    if (data.status !== "lobby") throw new Error("すでに開始しています");
+    await updateDoc(ref, {
+      status: "playing",
+      startedAt: serverTimestamp(),
+      scores: {},
+      finished: {},
+      updatedAt: serverTimestamp(),
+    });
   });
 }
 
@@ -97,24 +104,28 @@ export function markFinished(code, uid, score) {
 }
 
 export async function resetToLobby(code, uid) {
-  const ref = roomRef(code);
-  const snap = await getDoc(ref);
-  if (!snap.exists()) throw new Error("ルームが見つかりません");
-  const data = snap.data();
-  if (data.hostUid !== uid) throw new Error("ホストのみ操作できます");
-  await updateDoc(ref, {
-    status: "lobby",
-    startedAt: null,
-    scores: {},
-    finished: {},
-    updatedAt: serverTimestamp(),
+  return withRetry(async () => {
+    const ref = roomRef(code);
+    const snap = await getDoc(ref);
+    if (!snap.exists()) throw new Error("ルームが見つかりません");
+    const data = snap.data();
+    if (data.hostUid !== uid) throw new Error("ホストのみ操作できます");
+    await updateDoc(ref, {
+      status: "lobby",
+      startedAt: null,
+      scores: {},
+      finished: {},
+      updatedAt: serverTimestamp(),
+    });
   });
 }
 
 export async function deleteRoom(code, uid) {
-  const ref = roomRef(code);
-  const snap = await getDoc(ref);
-  if (snap.exists() && snap.data().hostUid === uid) {
-    await deleteDoc(ref);
-  }
+  return withRetry(async () => {
+    const ref = roomRef(code);
+    const snap = await getDoc(ref);
+    if (snap.exists() && snap.data().hostUid === uid) {
+      await deleteDoc(ref);
+    }
+  });
 }
