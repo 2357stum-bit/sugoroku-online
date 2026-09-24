@@ -323,17 +323,22 @@ export function tryHit(stage, localElapsedMs, hitIds, combo, px, py, bonusTrigge
   return { id: best.id, points: best.points, combo: nextCombo, gained, kind: best.kind, triggerBonus: best.kind === "secret" };
 }
 
-// 全5ステージ通算スコアによる7段階ランク。しっかり狙って隠し的/ボーナスも
-// 拾えるくらいの「かなり上手いプレイ」でおよそ14万点前後に達する想定で、
-// そのあたりを上位ランクの目安にしている。
+// 全5ステージ通算スコアによる7段階ランク。閾値は「どのくらいの取り組み方で
+// 届くか」を基準にシミュレーションで較正した:
+//   ①②かけだし/みならい: 下手でもクリアできるレベル
+//   ③じょうずさん: 普通にプレイすれば届く
+//   ④たつじん: コツ(隠し的を積極的に狙う、コンボを維持する)をつかめば届く
+//   ⑤チャンピオン: しっかり頑張れば届く
+//   ⑥スーパースター: 真剣に取り組めば届く
+//   ⑦でんせつ: やり込んでほぼパーフェクトに近づけないと届かない
 export const RANKS = [
   { min: 0, emoji: "🎈", title: "かけだし" },
-  { min: 20000, emoji: "🎯", title: "みならい" },
-  { min: 45000, emoji: "🥈", title: "じょうずさん" },
-  { min: 70000, emoji: "🥇", title: "たつじん" },
-  { min: 95000, emoji: "🏆", title: "チャンピオン" },
-  { min: 120000, emoji: "🌟", title: "スーパースター" },
-  { min: 145000, emoji: "👑", title: "でんせつ" },
+  { min: 14000, emoji: "🎯", title: "みならい" },
+  { min: 42000, emoji: "🥈", title: "じょうずさん" },
+  { min: 62000, emoji: "🥇", title: "たつじん" },
+  { min: 82000, emoji: "🏆", title: "チャンピオン" },
+  { min: 100000, emoji: "🌟", title: "スーパースター" },
+  { min: 130000, emoji: "👑", title: "でんせつ" },
 ];
 
 export function getRank(totalScore) {
