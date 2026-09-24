@@ -376,7 +376,7 @@ export default function PuzzleApp() {
             ← すごろくオンラインへ戻る
           </a>
           <a className="pzl-back-link" href="/shooter">
-            🚀 きょうどうシューティングもあそべます →
+            🎪 おもちゃ箱シューティングギャラリーもあそべます →
           </a>
         </div>
       </div>

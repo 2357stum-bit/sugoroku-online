@@ -1,8 +1,7 @@
-// シューティング(協力ボス戦) - Firestoreを介したルーム作成/参加/進行のラッパー。
-// すごろく側の roomEngine.js とは異なり、ここでは毎フレームに近い頻度で書き込みが
-// 発生するため、Firestoreトランザクションは使わず(競合の起きようがないため)
-// 直接 updateDoc/setDoc で書き込む。ホストだけが「正」の状態(hostState)を書き、
-// ゲストは自分の位置(guestInput)だけを書く、という役割分担で競合を避けている。
+// おもちゃ箱シューティングギャラリー - Firestoreを介したルーム作成/参加/進行のラッパー。
+// このゲームは的の出現スケジュールが完全に決定的なので、旧シューティングのような
+// 「ホストだけが正の状態を計算する」方式は不要。2人ともローカルで同じエンジンを
+// 実行して同じ的を狙い、自分のスコアだけを scores.<uid> に書き込み合う(競合しない)。
 
 import {
   doc,
@@ -15,7 +14,7 @@ import {
 } from "firebase/firestore";
 import { db } from "../firebase.js";
 
-const COLLECTION = "shooterRooms";
+const COLLECTION = "galleryRooms";
 const CODE_CHARS = "ABCDEFGHJKLMNPQRSTUVWXYZ23456789"; // 見間違えやすい文字は除外
 
 function randomCode(len = 4) {
@@ -41,9 +40,10 @@ export async function createRoom(uid, name) {
     hostName: name,
     guestUid: null,
     guestName: null,
-    status: "lobby", // lobby -> playing -> ended
-    hostState: null,
-    guestInput: null,
+    status: "lobby", // lobby -> playing -> finished
+    startedAt: null,
+    scores: {},
+    finished: {},
     createdAt: serverTimestamp(),
     updatedAt: serverTimestamp(),
   };
@@ -59,11 +59,7 @@ export async function joinRoom(code, uid, name) {
   if (data.hostUid === uid || data.guestUid === uid) return code; // 再参加はそのまま許可
   if (data.status !== "lobby") throw new Error("すでにゲームが始まっています");
   if (data.guestUid) throw new Error("満員です（最大2人）");
-  await updateDoc(ref, {
-    guestUid: uid,
-    guestName: name,
-    updatedAt: serverTimestamp(),
-  });
+  await updateDoc(ref, { guestUid: uid, guestName: name, updatedAt: serverTimestamp() });
   return code;
 }
 
@@ -75,7 +71,7 @@ export function subscribeRoom(code, onChange, onError) {
   );
 }
 
-export async function startGame(code, uid, initialState) {
+export async function startGame(code, uid) {
   const ref = roomRef(code);
   const snap = await getDoc(ref);
   if (!snap.exists()) throw new Error("ルームが見つかりません");
@@ -84,29 +80,22 @@ export async function startGame(code, uid, initialState) {
   if (data.status !== "lobby") throw new Error("すでに開始しています");
   await updateDoc(ref, {
     status: "playing",
-    hostState: initialState,
-    guestInput: null,
+    startedAt: serverTimestamp(),
+    scores: {},
+    finished: {},
     updatedAt: serverTimestamp(),
   });
 }
 
-// ホストが毎フレーム(実際は数十msおきに間引いて)呼ぶ。トランザクション不要
-// (この値を書くのは常にホストだけなので競合しない)。
-export function publishHostState(code, state) {
-  return updateDoc(roomRef(code), { hostState: state, updatedAt: serverTimestamp() });
+// プレイ中、数百msおきに間引いて自分のスコアを書き込む(他人のフィールドには触れないので競合しない)。
+export function publishScore(code, uid, score) {
+  return updateDoc(roomRef(code), { [`scores.${uid}`]: score });
 }
 
-// ゲストが自分の位置を報告する。
-export function publishGuestInput(code, x, y) {
-  return updateDoc(roomRef(code), { guestInput: { x, y, at: Date.now() } });
+export function markFinished(code, uid, score) {
+  return updateDoc(roomRef(code), { [`scores.${uid}`]: score, [`finished.${uid}`]: true });
 }
 
-// ホストがゲームを終えたら呼ぶ(結果画面へ)。
-export function endGame(code) {
-  return updateDoc(roomRef(code), { status: "ended", updatedAt: serverTimestamp() });
-}
-
-// もう一度あそぶ: ロビーに戻す。
 export async function resetToLobby(code, uid) {
   const ref = roomRef(code);
   const snap = await getDoc(ref);
@@ -115,8 +104,9 @@ export async function resetToLobby(code, uid) {
   if (data.hostUid !== uid) throw new Error("ホストのみ操作できます");
   await updateDoc(ref, {
     status: "lobby",
-    hostState: null,
-    guestInput: null,
+    startedAt: null,
+    scores: {},
+    finished: {},
     updatedAt: serverTimestamp(),
   });
 }

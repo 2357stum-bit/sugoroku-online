@@ -1,13 +1,13 @@
 import { useEffect, useMemo, useState } from "react";
 import "../sugoroku.css";
-import "./shooter.css";
+import "./gallery.css";
 import { authReady } from "../firebase.js";
-import { createRoom, joinRoom, subscribeRoom, startGame, resetToLobby, deleteRoom } from "./shooterRoom.js";
-import { createInitialState } from "./shooterEngine.js";
-import GameCanvas from "./GameCanvas.jsx";
+import { createRoom, joinRoom, subscribeRoom, startGame, resetToLobby, deleteRoom } from "./galleryRoom.js";
+import { STAGES } from "./galleryEngine.js";
+import GalleryCanvas from "./GalleryCanvas.jsx";
 
-const NAME_KEY = "sgt_name";
-const ROOM_KEY = "sgt_room";
+const NAME_KEY = "gly_name";
+const ROOM_KEY = "gly_room";
 
 function readQuery() {
   try {
@@ -28,37 +28,36 @@ function setUrlRoom(code) {
   }
 }
 
-function Lobby({ room, uid, myName, onStart, onLeave, busy }) {
+function Lobby({ room, uid, onStart, onLeave, busy }) {
   const isHost = room.hostUid === uid;
   const hostReady = !!room.hostUid;
   const guestReady = !!room.guestUid;
-  const canStart = isHost && hostReady && !busy;
 
   return (
     <div className="sgr-card">
       <div className="sgr-field">
         <label>ルームコード</label>
-        <div className="sgt-room-code">{room.code}</div>
-        <p className="sgt-hint-text">このコードを相方に伝えて「コードで参加」してもらおう(ひとりでもプレイできます)</p>
+        <div className="gly-room-code">{room.code}</div>
+        <p className="gly-hint-text">このコードを相方に伝えて「コードで参加」してもらおう(ひとりでもプレイできます)</p>
       </div>
-      <div className="sgt-lobby-slots">
-        <div className={"sgt-slot" + (hostReady ? " sgt-slot-filled" : "")}>
-          <span className="sgt-slot-icon">🧑‍🚀</span>
-          <span className="sgt-slot-name">{room.hostName || "..."}</span>
-          <span className="sgt-slot-tag">ホスト</span>
+      <div className="gly-lobby-slots">
+        <div className={"gly-slot" + (hostReady ? " gly-slot-filled" : "")}>
+          <span className="gly-slot-icon">🎪</span>
+          <span className="gly-slot-name">{room.hostName || "..."}</span>
+          <span className="gly-slot-tag">ホスト</span>
         </div>
-        <div className={"sgt-slot" + (guestReady ? " sgt-slot-filled" : "")}>
-          <span className="sgt-slot-icon">{guestReady ? "🧑‍🚀" : "⏳"}</span>
-          <span className="sgt-slot-name">{room.guestName || "参加待ち…"}</span>
-          <span className="sgt-slot-tag">ゲスト</span>
+        <div className={"gly-slot" + (guestReady ? " gly-slot-filled" : "")}>
+          <span className="gly-slot-icon">{guestReady ? "🎪" : "⏳"}</span>
+          <span className="gly-slot-name">{room.guestName || "参加待ち…"}</span>
+          <span className="gly-slot-tag">ゲスト</span>
         </div>
       </div>
       {isHost ? (
-        <button className="sgr-btn" disabled={!canStart} onClick={onStart}>
-          {busy ? "開始中…" : guestReady ? "ゲーム開始" : "ひとりで始める"}
+        <button className="sgr-btn" disabled={busy} onClick={onStart}>
+          {busy ? "開始中…" : guestReady ? "ゲーム開始(同時スタート)" : "ひとりで始める"}
         </button>
       ) : (
-        <p className="sgt-hint-text">ホストが開始するのを待っています…</p>
+        <p className="gly-hint-text">ホストが開始するのを待っています…</p>
       )}
       <button className="sgr-btn sgr-secondary" onClick={onLeave}>
         退出する
@@ -67,19 +66,33 @@ function Lobby({ room, uid, myName, onStart, onLeave, busy }) {
   );
 }
 
-function ResultScreen({ result, score, room, uid, onRematch, onLeave, busy }) {
+function ResultScreen({ myScore, room, uid, onRematch, onLeave, busy }) {
   const isHost = room.hostUid === uid;
+  const otherUid = room.hostUid === uid ? room.guestUid : room.hostUid;
+  const otherName = room.hostUid === uid ? room.guestName : room.hostName;
+  const otherScore = otherUid ? room.scores?.[otherUid] ?? 0 : null;
+  const otherFinished = otherUid ? !!room.finished?.[otherUid] : true;
+  const isWin = otherScore != null && myScore > otherScore;
+  const isTie = otherScore != null && myScore === otherScore;
+
   return (
-    <div className="sgr-card sgt-result-card">
-      <div className="sgt-result-icon">{result === "victory" ? "🏆" : "💥"}</div>
-      <h2 className="sgt-result-title">{result === "victory" ? "ボス撃破！" : "全滅…"}</h2>
-      <p className="sgt-result-score">スコア {score}</p>
+    <div className="sgr-card gly-result-card">
+      <div className="gly-result-icon">{otherScore == null ? "🎯" : isWin ? "🏆" : isTie ? "🤝" : "🥈"}</div>
+      <h2 className="gly-result-title">
+        {otherScore == null ? "プレイ終了！" : isWin ? "あなたの勝ち！" : isTie ? "引き分け！" : "あと一歩！"}
+      </h2>
+      <p className="gly-result-score">あなたのスコア {myScore.toLocaleString()}</p>
+      {otherUid && (
+        <p className="gly-result-score gly-result-score-sub">
+          {otherName || "相手"}のスコア {otherFinished ? otherScore.toLocaleString() : "計測中…"}
+        </p>
+      )}
       {isHost ? (
         <button className="sgr-btn" disabled={busy} onClick={onRematch}>
           {busy ? "準備中…" : "もう一度あそぶ"}
         </button>
       ) : (
-        <p className="sgt-hint-text">ホストが「もう一度あそぶ」を選ぶとロビーに戻ります</p>
+        <p className="gly-hint-text">ホストが「もう一度あそぶ」を選ぶとロビーに戻ります</p>
       )}
       <button className="sgr-btn sgr-secondary" onClick={onLeave}>
         退出する
@@ -88,7 +101,7 @@ function ResultScreen({ result, score, room, uid, onRematch, onLeave, busy }) {
   );
 }
 
-export default function ShooterApp() {
+export default function GalleryApp() {
   const [uid, setUid] = useState(null);
   const [authError, setAuthError] = useState(null);
   const [name, setName] = useState(() => localStorage.getItem(NAME_KEY) || "");
@@ -98,14 +111,14 @@ export default function ShooterApp() {
   const [room, setRoom] = useState(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const [localResult, setLocalResult] = useState(null);
+  const [localScore, setLocalScore] = useState(null);
 
   useEffect(() => {
     authReady.then((user) => setUid(user.uid)).catch((e) => setAuthError(e));
   }, []);
 
   useEffect(() => {
-    document.title = "きょうどうシューティング オンライン";
+    document.title = "おもちゃ箱シューティングギャラリー";
   }, []);
 
   useEffect(() => {
@@ -135,7 +148,7 @@ export default function ShooterApp() {
   }, [roomCode]);
 
   useEffect(() => {
-    if (room?.status === "lobby") setLocalResult(null);
+    if (room?.status === "lobby") setLocalScore(null);
   }, [room?.status]);
 
   const trimmedName = name.trim() || "プレイヤー";
@@ -163,7 +176,7 @@ export default function ShooterApp() {
     setError("");
     try {
       const code = await createRoom(uid, trimmedName);
-      await startGame(code, uid, createInitialState([uid]));
+      await startGame(code, uid);
       localStorage.setItem(ROOM_KEY, code);
       setUrlRoom(code);
       setRoomCode(code);
@@ -201,7 +214,7 @@ export default function ShooterApp() {
     setUrlRoom(null);
     setRoomCode("");
     setRoom(null);
-    setLocalResult(null);
+    setLocalScore(null);
   }
 
   async function handleStart() {
@@ -209,8 +222,7 @@ export default function ShooterApp() {
     setBusy(true);
     setError("");
     try {
-      const uids = [room.hostUid, room.guestUid].filter(Boolean);
-      await startGame(room.code, uid, createInitialState(uids));
+      await startGame(room.code, uid);
     } catch (e) {
       setError(e.message || "開始に失敗しました");
     } finally {
@@ -224,7 +236,7 @@ export default function ShooterApp() {
     setError("");
     try {
       await resetToLobby(room.code, uid);
-      setLocalResult(null);
+      setLocalScore(null);
     } catch (e) {
       setError(e.message || "リセットに失敗しました");
     } finally {
@@ -232,13 +244,13 @@ export default function ShooterApp() {
     }
   }
 
-  function handleGameResult(result, score) {
-    setLocalResult({ result, score });
+  function handleFinished(score) {
+    setLocalScore(score);
   }
 
   if (authError) {
     return (
-      <div className="sgr-root" data-theme="shooter">
+      <div className="sgr-root" data-theme="gallery">
         <div className="sgr-app">
           <div className="sgr-screen">
             <div className="sgr-title-block">
@@ -252,26 +264,22 @@ export default function ShooterApp() {
   }
 
   if (roomCode && room) {
-    const isHost = room.hostUid === uid;
-    const showResult = localResult || room.status === "ended";
+    const showResult = localScore != null;
     return (
-      <div className="sgr-root" data-theme="shooter">
+      <div className="sgr-root" data-theme="gallery">
         <div className="sgr-app">
           <div className="sgr-screen">
-            <div className="sgr-title-block sgt-title-block-compact">
-              <span className="sgr-eyebrow">🚀</span>
-              <h1>きょうどうシューティング</h1>
+            <div className="sgr-title-block gly-title-block-compact">
+              <span className="sgr-eyebrow">🎪</span>
+              <h1>おもちゃ箱シューティングギャラリー</h1>
             </div>
-            {room.status === "lobby" && (
-              <Lobby room={room} uid={uid} myName={trimmedName} onStart={handleStart} onLeave={handleLeaveRoom} busy={busy} />
-            )}
-            {room.status === "playing" && !localResult && (
-              <GameCanvas room={room} code={room.code} uid={uid} isHost={isHost} onResult={handleGameResult} />
+            {room.status === "lobby" && <Lobby room={room} uid={uid} onStart={handleStart} onLeave={handleLeaveRoom} busy={busy} />}
+            {room.status === "playing" && !showResult && (
+              <GalleryCanvas room={room} code={room.code} uid={uid} onFinished={handleFinished} />
             )}
             {showResult && (
               <ResultScreen
-                result={localResult?.result || (room.hostState?.result ?? "gameover")}
-                score={localResult?.score ?? room.hostState?.score ?? 0}
+                myScore={localScore}
                 room={room}
                 uid={uid}
                 onRematch={handleRematch}
@@ -287,13 +295,13 @@ export default function ShooterApp() {
   }
 
   return (
-    <div className="sgr-root" data-theme="shooter">
+    <div className="sgr-root" data-theme="gallery">
       <div className="sgr-app">
         <div className="sgr-screen">
           <div className="sgr-title-block">
-            <span className="sgr-eyebrow">🚀</span>
-            <h1>きょうどうシューティング オンライン</h1>
-            <p>相方と2人で参加して、迫りくる敵をかわしながらボスを倒そう。</p>
+            <span className="sgr-eyebrow">🎪</span>
+            <h1>おもちゃ箱シューティングギャラリー</h1>
+            <p>全{STAGES.length}ステージのおもちゃの的当てを撃ちまくって、ハイスコアを目指そう。2人で同時プレイしてスコアを競うこともできる。</p>
           </div>
 
           <div className="sgr-card">
@@ -346,16 +354,16 @@ export default function ShooterApp() {
           </div>
 
           <div className="sgr-rules-list">
-            <div>🚀 <b>操作</b>：矢印キー/WASD、またはドラッグで自機を移動。弾は自動発射。</div>
-            <div>🤝 <b>人数</b>：1人でも2人協力プレイでもOK。2人の場合はホストが部屋を作り、ゲストがコードで参加する。</div>
-            <div>👹 <b>目標</b>：迫りくる敵をかわし、最後に現れるボスを倒せばクリア。</div>
-            <div>❤️ <b>ライフ</b>：3ライフ制。全員のライフが尽きるとゲームオーバー。</div>
+            <div>🎯 <b>操作</b>：狙った場所をタップ/クリックで発射(または矢印キー+スペース)。</div>
+            <div>🎪 <b>人数</b>：1人でハイスコア狙いもよし、2人同時プレイでスコアを競うのもよし。</div>
+            <div>🏆 <b>目標</b>：全{STAGES.length}ステージ、制限時間内にできるだけ多くの的を撃ち抜いて高得点を狙おう。</div>
+            <div>🔥 <b>コンボ</b>：連続ヒットで得点倍率アップ。外すとコンボはリセット。</div>
           </div>
 
-          <a className="sgt-back-link" href="/">
+          <a className="gly-back-link" href="/">
             ← すごろくオンラインへ戻る
           </a>
-          <a className="sgt-back-link" href="/puzzle">
+          <a className="gly-back-link" href="/puzzle">
             🧩 きょうどうパズルもあそべます →
           </a>
         </div>

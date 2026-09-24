@@ -1,0 +1,114 @@
+/* おもちゃ箱シューティングギャラリー - sugoroku.cssの共通クラスに相乗りしつつ、
+   カーニバル的なテーマパレットと盤面・HUDのスタイルだけをここで定義する */
+
+.sgr-root[data-theme="gallery"] {
+  --sgr-bg: #12070a;
+  --sgr-board: #241014;
+  --sgr-board-alt: #33161b;
+  --sgr-ink: #fdf1e8;
+  --sgr-muted: #c79f8f;
+  --sgr-accent: #ffd166;
+  --sgr-accent-dim: rgba(255, 209, 102, 0.18);
+  --sgr-coral: #ff5470;
+  --sgr-gold: #ffd166;
+  --sgr-purple: #9ee047;
+  --sgr-line: rgba(255, 255, 255, 0.09);
+  --sgr-shadow: 0 8px 22px rgba(0, 0, 0, 0.45);
+  --sgr-heading-font: "Zen Kaku Gothic New", sans-serif;
+}
+
+.gly-title-block-compact h1 { font-size: 16px; }
+.gly-title-block-compact p { display: none; }
+
+.gly-back-link {
+  display: block;
+  text-align: center;
+  font-size: 12px;
+  color: var(--sgr-muted);
+  text-decoration: none;
+}
+.gly-back-link:hover { color: var(--sgr-accent); }
+
+.gly-hint-text { font-size: 12px; color: var(--sgr-muted); text-align: center; margin: 4px 0 12px; }
+
+.gly-room-code {
+  text-align: center;
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: 0.3em;
+  color: var(--sgr-accent);
+  padding: 10px 0;
+}
+
+.gly-lobby-slots { display: flex; gap: 10px; margin-bottom: 14px; }
+.gly-slot {
+  flex: 1;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  gap: 4px;
+  padding: 14px 8px;
+  border-radius: 14px;
+  border: 1px solid var(--sgr-line);
+  background: var(--sgr-board-alt);
+  opacity: 0.55;
+}
+.gly-slot-filled { opacity: 1; border-color: var(--sgr-accent); }
+.gly-slot-icon { font-size: 22px; }
+.gly-slot-name { font-size: 13px; font-weight: 700; color: var(--sgr-ink); }
+.gly-slot-tag { font-size: 10px; color: var(--sgr-muted); }
+
+.gly-result-card { text-align: center; }
+.gly-result-icon { font-size: 44px; margin-bottom: 4px; }
+.gly-result-title { margin: 0 0 6px; font-size: 20px; color: var(--sgr-ink); }
+.gly-result-score { margin: 0 0 4px; font-size: 16px; color: var(--sgr-accent); font-weight: 700; }
+.gly-result-score-sub { font-size: 13px; color: var(--sgr-muted); font-weight: 500; margin-bottom: 16px; }
+.gly-result-card .sgr-btn { margin-bottom: 10px; }
+
+.gly-wrap { display: flex; flex-direction: column; align-items: center; gap: 6px; }
+
+.gly-hud {
+  width: 100%;
+  max-width: 360px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-size: 13px;
+  font-weight: 700;
+  color: var(--sgr-ink);
+  padding: 0 4px;
+}
+
+.gly-combo { color: var(--sgr-gold); font-size: 12px; animation: glyPulse 0.6s ease-in-out infinite alternate; }
+@keyframes glyPulse { from { opacity: 0.7; } to { opacity: 1; } }
+
+.gly-stage-label {
+  width: 100%;
+  max-width: 360px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--sgr-muted);
+}
+
+.gly-opponent {
+  width: 100%;
+  max-width: 360px;
+  text-align: center;
+  font-size: 11px;
+  color: var(--sgr-purple);
+  font-weight: 700;
+}
+
+.gly-canvas {
+  width: 100%;
+  max-width: 360px;
+  aspect-ratio: 360 / 640;
+  border-radius: 14px;
+  border: 1px solid var(--sgr-line);
+  box-shadow: var(--sgr-shadow);
+  touch-action: none;
+  background: #12070a;
+  cursor: crosshair;
+}
+
+.gly-hint { font-size: 11px; color: var(--sgr-muted); text-align: center; }
