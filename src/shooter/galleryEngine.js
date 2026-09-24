@@ -117,8 +117,11 @@ export const TOTAL_DURATION = STAGES.reduce((sum, s) => sum + s.duration, 0);
 // 全体の経過時間(ms)から、今どのステージの何ms目かを返す。終了していたらnull
 export function getStageAt(elapsedMs) {
   if (elapsedMs >= TOTAL_DURATION) return null;
+  // 経過時間が負(呼び出し側の基準点計算のずれなど)でも、開始前ではなく
+  // 「ステージ1の開始直後」として扱う(nullを返すと「終了」と誤解されるため)
+  const clamped = Math.max(0, elapsedMs);
   for (const stage of STAGES) {
-    const local = elapsedMs - stage.startOffset;
+    const local = clamped - stage.startOffset;
     if (local >= 0 && local < stage.duration) {
       return { stage, localElapsed: local };
     }

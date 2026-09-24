@@ -98,7 +98,12 @@ function drawPopups(ctx, popups, now) {
 export default function GalleryCanvas({ room, code, uid, onFinished }) {
   const canvasRef = useRef(null);
   const roomRef = useRef(room);
-  const startedAtMsRef = useRef(null);
+  // 経過時間は端末のシステム時計(Date.now())をサーバーのタイムスタンプと突き合わせて
+  // 毎フレーム計算するのではなく、ゲーム開始を検知した瞬間に一度だけ基準点(anchor)を
+  // 決め、以後は端末内で単調増加するperformance.now()の差分だけで進める。
+  // こうすることで、端末の時計がずれている(実時刻と合っていない)場合でも、
+  // 「開始した瞬間からの経過時間」自体は正しく計測できる。
+  const anchorRef = useRef(null); // { baseElapsedMs, baseLocalTime }
   const reticleRef = useRef({ x: FIELD_W / 2, y: FIELD_H / 2 });
   const keysRef = useRef({});
   const hitIdsRef = useRef(new Set());
@@ -117,16 +122,28 @@ export default function GalleryCanvas({ room, code, uid, onFinished }) {
   }, [room]);
 
   useEffect(() => {
+    if (anchorRef.current) return; // 基準点は最初の1回だけ決める
+    let baseElapsedMs = 0;
     if (room.startedAt && typeof room.startedAt.toMillis === "function") {
-      startedAtMsRef.current = room.startedAt.toMillis();
+      // 再読み込みなどで既に始まっている試合に戻ってきた場合は、サーバー時刻を
+      // 目安にどこまで進んでいたかを推定する(あくまで初期値。端末時計がずれて
+      // いても、0〜制限時間の範囲にクランプするので暴走はしない)。
+      const guess = Date.now() - room.startedAt.toMillis();
+      if (Number.isFinite(guess)) baseElapsedMs = clamp(guess, 0, TOTAL_DURATION - 1);
     }
+    anchorRef.current = { baseElapsedMs, baseLocalTime: performance.now() };
   }, [room.startedAt]);
 
+  function currentElapsed() {
+    if (!anchorRef.current) return null;
+    return anchorRef.current.baseElapsedMs + (performance.now() - anchorRef.current.baseLocalTime);
+  }
+
   function fireAt(px, py, now) {
-    if (!startedAtMsRef.current) return;
+    const elapsed = currentElapsed();
+    if (elapsed == null) return;
     if (now - lastFireRef.current < FIRE_COOLDOWN_MS) return;
     lastFireRef.current = now;
-    const elapsed = Date.now() - startedAtMsRef.current;
     const info = getStageAt(elapsed);
     if (!info) return;
     const result = tryHit(info.stage, info.localElapsed, hitIdsRef.current, comboRef.current, px, py);
@@ -210,7 +227,8 @@ export default function GalleryCanvas({ room, code, uid, onFinished }) {
         reticleRef.current = { x: clamp(x, 0, FIELD_W), y: clamp(y, 0, FIELD_H) };
       }
 
-      if (!startedAtMsRef.current) {
+      const elapsed = currentElapsed();
+      if (elapsed == null) {
         ctx.fillStyle = "#0a0e13";
         ctx.fillRect(0, 0, FIELD_W, FIELD_H);
         ctx.fillStyle = "#eef1ff";
@@ -221,7 +239,6 @@ export default function GalleryCanvas({ room, code, uid, onFinished }) {
         return;
       }
 
-      const elapsed = Date.now() - startedAtMsRef.current;
       const info = getStageAt(elapsed);
 
       if (!info) {
