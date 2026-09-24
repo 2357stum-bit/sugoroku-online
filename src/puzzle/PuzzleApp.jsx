@@ -41,6 +41,7 @@ function Lobby({ room, uid, onStart, onLeave, busy }) {
   const isHost = room.hostUid === uid;
   const guestReady = !!room.guestUid;
   const levelIdx = LEVELS.findIndex((l) => l.id === room.levelId);
+  const nextLevel = LEVELS[Math.max(levelIdx, 0)] || LEVELS[0];
 
   return (
     <div className="sgr-card">
@@ -61,7 +62,11 @@ function Lobby({ room, uid, onStart, onLeave, busy }) {
           <span className="pzl-slot-tag">ゲスト</span>
         </div>
       </div>
-      <p className="pzl-hint-text">さいしょのステージ: {LEVELS[Math.max(levelIdx, 0)]?.name || LEVELS[0].name}</p>
+      <p className="pzl-hint-text">さいしょのステージ: {nextLevel.name}</p>
+      <div className="pzl-desc">
+        <span className="pzl-desc-icon">💡</span>
+        <span>{nextLevel.hint}</span>
+      </div>
       {isHost ? (
         <button className="sgr-btn" disabled={busy} onClick={onStart}>
           {busy ? "開始中…" : guestReady ? "ゲーム開始" : "ひとりで始める(2キャラを操作)"}

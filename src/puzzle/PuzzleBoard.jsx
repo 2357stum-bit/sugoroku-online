@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useRef, useState } from "react";
 import { parseLevel, isDoorOpen } from "./puzzleEngine.js";
-import { move as moveOnServer } from "./puzzleRoom.js";
+import { move as moveOnServer, resetLevel } from "./puzzleRoom.js";
 
 const KEY_MAP = {
   ArrowUp: "up", KeyW: "up",
@@ -38,6 +38,7 @@ export default function PuzzleBoard({ room, code, uid, myIdx, isSolo, hint }) {
   const level = useMemo(() => parseLevel(game.levelId), [game.levelId]);
   const pendingRef = useRef(false);
   const [activeIdx, setActiveIdx] = useState(0);
+  const [resetting, setResetting] = useState(false);
   const controlledIdx = isSolo ? activeIdx : myIdx;
 
   async function sendMove(dir) {
@@ -49,6 +50,18 @@ export default function PuzzleBoard({ room, code, uid, myIdx, isSolo, hint }) {
       // 通信エラー時は次のキー入力で再試行されるので、ここでは無視する
     } finally {
       pendingRef.current = false;
+    }
+  }
+
+  async function handleReset() {
+    if (resetting) return;
+    setResetting(true);
+    try {
+      await resetLevel(code, uid);
+    } catch {
+      // 失敗しても致命的ではないので、もう一度押してもらえばよい
+    } finally {
+      setResetting(false);
     }
   }
 
@@ -103,13 +116,18 @@ export default function PuzzleBoard({ room, code, uid, myIdx, isSolo, hint }) {
 
   return (
     <div className="pzl-wrap">
+      {hint && (
+        <div className="pzl-desc">
+          <span className="pzl-desc-icon">💡</span>
+          <span>{hint}</span>
+        </div>
+      )}
       <div className="pzl-topbar">
         <span>てかず {game.moves}</span>
       </div>
       <div className="pzl-board" style={{ "--pzl-cols": level.width, "--pzl-rows": level.height }}>
         {rows}
       </div>
-      <p className="pzl-hint">{hint}</p>
       {isSolo && (
         <button className="sgr-btn sgr-secondary pzl-switch-btn" onClick={toggleActive}>
           {activeIdx === 0 ? "🧑" : "🧑‍🦰"} を操作中(タップかTab/Qキーで切り替え)
@@ -121,6 +139,9 @@ export default function PuzzleBoard({ room, code, uid, myIdx, isSolo, hint }) {
         <button className="pzl-dpad-btn pzl-dpad-right" onClick={() => sendMove("right")} aria-label="右へ">▶</button>
         <button className="pzl-dpad-btn pzl-dpad-down" onClick={() => sendMove("down")} aria-label="下へ">▼</button>
       </div>
+      <button className="sgr-btn sgr-secondary pzl-reset-btn" disabled={resetting} onClick={handleReset}>
+        🔄 {resetting ? "リセット中…" : "ステージをやりなおす"}
+      </button>
     </div>
   );
 }

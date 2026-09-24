@@ -117,13 +117,15 @@ export async function move(code, uid, dir, soloIdx) {
   });
 }
 
+// ステージ途中でのリセット(箱を動かせなくなった、など)は、ホスト/ゲストの
+// どちらから呼んでも良いことにする(盤面は共有なので、詰んだ側が直せるように)。
 export async function resetLevel(code, uid) {
   const ref = roomRef(code);
   await runTransaction(db, async (tx) => {
     const snap = await tx.get(ref);
     if (!snap.exists()) throw new Error("ルームが見つかりません");
     const data = snap.data();
-    if (data.hostUid !== uid) throw new Error("ホストのみ操作できます");
+    if (data.hostUid !== uid && data.guestUid !== uid) throw new Error("このルームの参加者のみ操作できます");
     tx.update(ref, {
       status: "playing",
       game: createInitialState(data.levelId || LEVELS[0].id),
