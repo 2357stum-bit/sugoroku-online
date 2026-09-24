@@ -3,7 +3,7 @@ import "../sugoroku.css";
 import "./gallery.css";
 import { authReady } from "../firebase.js";
 import { createRoom, joinRoom, subscribeRoom, startGame, resetToLobby, deleteRoom } from "./galleryRoom.js";
-import { STAGES } from "./galleryEngine.js";
+import { STAGES, RANKS, getRank } from "./galleryEngine.js";
 import GalleryCanvas from "./GalleryCanvas.jsx";
 
 const NAME_KEY = "gly_name";
@@ -74,6 +74,9 @@ function ResultScreen({ myScore, room, uid, onRematch, onLeave, busy }) {
   const otherFinished = otherUid ? !!room.finished?.[otherUid] : true;
   const isWin = otherScore != null && myScore > otherScore;
   const isTie = otherScore != null && myScore === otherScore;
+  const rank = getRank(myScore);
+  const rankIdx = RANKS.indexOf(rank);
+  const nextRank = RANKS[rankIdx + 1];
 
   return (
     <div className="sgr-card gly-result-card">
@@ -87,6 +90,15 @@ function ResultScreen({ myScore, room, uid, onRematch, onLeave, busy }) {
           {otherName || "相手"}のスコア {otherFinished ? otherScore.toLocaleString() : "計測中…"}
         </p>
       )}
+      <div className="gly-rank-badge">
+        <span className="gly-rank-emoji">{rank.emoji}</span>
+        <span className="gly-rank-title">{rank.title}</span>
+      </div>
+      <p className="gly-hint-text">
+        {nextRank
+          ? `次のランク「${nextRank.emoji} ${nextRank.title}」まであと ${(nextRank.min - myScore).toLocaleString()}点`
+          : "全ランク制覇！お見事！"}
+      </p>
       {isHost ? (
         <button className="sgr-btn" disabled={busy} onClick={onRematch}>
           {busy ? "準備中…" : "もう一度あそぶ"}
@@ -358,6 +370,7 @@ export default function GalleryApp() {
             <div>🎪 <b>人数</b>：1人でハイスコア狙いもよし、2人同時プレイでスコアを競うのもよし。</div>
             <div>🏆 <b>目標</b>：全{STAGES.length}ステージ、制限時間内にできるだけ多くの的を撃ち抜いて高得点を狙おう。</div>
             <div>🔥 <b>コンボ</b>：連続ヒットで得点倍率アップ。外すとコンボはリセット。</div>
+            <div>👑 <b>ランク</b>：通算スコアで🎈〜👑の7段階ランクが決まる。最高ランクは「でんせつ」！</div>
           </div>
 
           <a className="gly-back-link" href="/">

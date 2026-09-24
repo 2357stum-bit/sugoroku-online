@@ -62,8 +62,22 @@
 .gly-result-icon { font-size: 44px; margin-bottom: 4px; }
 .gly-result-title { margin: 0 0 6px; font-size: 20px; color: var(--sgr-ink); }
 .gly-result-score { margin: 0 0 4px; font-size: 16px; color: var(--sgr-accent); font-weight: 700; }
-.gly-result-score-sub { font-size: 13px; color: var(--sgr-muted); font-weight: 500; margin-bottom: 16px; }
+.gly-result-score-sub { font-size: 13px; color: var(--sgr-muted); font-weight: 500; margin-bottom: 4px; }
 .gly-result-card .sgr-btn { margin-bottom: 10px; }
+
+.gly-rank-badge {
+  display: inline-flex;
+  align-items: center;
+  gap: 8px;
+  margin: 10px 0 6px;
+  padding: 8px 18px;
+  border-radius: 999px;
+  background: var(--sgr-accent-dim);
+  border: 1px solid var(--sgr-accent);
+}
+.gly-rank-emoji { font-size: 26px; }
+.gly-rank-title { font-size: 16px; font-weight: 700; color: var(--sgr-accent); }
+.gly-result-card .gly-hint-text { margin-bottom: 16px; }
 
 .gly-wrap { display: flex; flex-direction: column; align-items: center; gap: 6px; }
 

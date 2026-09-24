@@ -322,3 +322,24 @@ export function tryHit(stage, localElapsedMs, hitIds, combo, px, py, bonusTrigge
   const gained = Math.round(best.points * mult);
   return { id: best.id, points: best.points, combo: nextCombo, gained, kind: best.kind, triggerBonus: best.kind === "secret" };
 }
+
+// 全5ステージ通算スコアによる7段階ランク。しっかり狙って隠し的/ボーナスも
+// 拾えるくらいの「かなり上手いプレイ」でおよそ14万点前後に達する想定で、
+// そのあたりを上位ランクの目安にしている。
+export const RANKS = [
+  { min: 0, emoji: "🎈", title: "かけだし" },
+  { min: 20000, emoji: "🎯", title: "みならい" },
+  { min: 45000, emoji: "🥈", title: "じょうずさん" },
+  { min: 70000, emoji: "🥇", title: "たつじん" },
+  { min: 95000, emoji: "🏆", title: "チャンピオン" },
+  { min: 120000, emoji: "🌟", title: "スーパースター" },
+  { min: 145000, emoji: "👑", title: "でんせつ" },
+];
+
+export function getRank(totalScore) {
+  let rank = RANKS[0];
+  for (const r of RANKS) {
+    if (totalScore >= r.min) rank = r;
+  }
+  return rank;
+}
