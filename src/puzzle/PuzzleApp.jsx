@@ -47,7 +47,7 @@ function Lobby({ room, uid, onStart, onLeave, busy }) {
       <div className="sgr-field">
         <label>ルームコード</label>
         <div className="pzl-room-code">{room.code}</div>
-        <p className="pzl-hint-text">このコードを相方に伝えて「コードで参加」してもらおう</p>
+        <p className="pzl-hint-text">このコードを相方に伝えて「コードで参加」してもらおう(ひとりでもプレイできます)</p>
       </div>
       <div className="pzl-lobby-slots">
         <div className="pzl-slot pzl-slot-filled">
@@ -63,8 +63,8 @@ function Lobby({ room, uid, onStart, onLeave, busy }) {
       </div>
       <p className="pzl-hint-text">さいしょのステージ: {LEVELS[Math.max(levelIdx, 0)]?.name || LEVELS[0].name}</p>
       {isHost ? (
-        <button className="sgr-btn" disabled={!guestReady || busy} onClick={onStart}>
-          {!guestReady ? "相方の参加を待っています…" : busy ? "開始中…" : "ゲーム開始"}
+        <button className="sgr-btn" disabled={busy} onClick={onStart}>
+          {busy ? "開始中…" : guestReady ? "ゲーム開始" : "ひとりで始める(2キャラを操作)"}
         </button>
       ) : (
         <p className="pzl-hint-text">ホストが開始するのを待っています…</p>
@@ -174,6 +174,23 @@ export default function PuzzleApp() {
     }
   }
 
+  async function handleSoloStart() {
+    if (!canSubmit) return;
+    setBusy(true);
+    setError("");
+    try {
+      const code = await createRoom(uid, trimmedName);
+      await startGame(code, uid);
+      localStorage.setItem(ROOM_KEY, code);
+      setUrlRoom(code);
+      setRoomCode(code);
+    } catch (e) {
+      setError(e.message || "開始に失敗しました");
+    } finally {
+      setBusy(false);
+    }
+  }
+
   async function handleJoin() {
     if (!canSubmit) return;
     const code = joinCode.trim().toUpperCase();
@@ -270,7 +287,14 @@ export default function PuzzleApp() {
             </div>
             {room.status === "lobby" && <Lobby room={room} uid={uid} onStart={handleStart} onLeave={handleLeaveRoom} busy={busy} />}
             {room.status === "playing" && room.game && (
-              <PuzzleBoard room={room} code={room.code} uid={uid} myIdx={myIdx} hint={levelMeta?.hint} />
+              <PuzzleBoard
+                room={room}
+                code={room.code}
+                uid={uid}
+                myIdx={myIdx}
+                isSolo={!room.guestUid}
+                hint={levelMeta?.hint}
+              />
             )}
             {room.status === "cleared" && (
               <ClearScreen room={room} uid={uid} onNext={handleNext} onReplay={handleReplay} onLeave={handleLeaveRoom} busy={busy} />
@@ -314,9 +338,14 @@ export default function PuzzleApp() {
             </div>
 
             {tab === "create" ? (
-              <button className="sgr-btn" disabled={!canSubmit} onClick={handleCreate}>
-                {busy ? "作成中…" : "新しいルームを作る"}
-              </button>
+              <>
+                <button className="sgr-btn" disabled={!canSubmit} onClick={handleCreate}>
+                  {busy ? "作成中…" : "新しいルームを作る"}
+                </button>
+                <button className="sgr-btn sgr-secondary" disabled={!canSubmit} onClick={handleSoloStart}>
+                  ひとりで遊ぶ(2キャラを操作)
+                </button>
+              </>
             ) : (
               <>
                 <div className="sgr-field">
@@ -338,7 +367,7 @@ export default function PuzzleApp() {
 
           <div className="sgr-rules-list">
             <div>🧩 <b>操作</b>：矢印キー/WASD、または画面下の十字ボタンで移動。</div>
-            <div>🤝 <b>人数</b>：2人協力プレイ。同じ盤面を見ながら箱を押し合う。</div>
+            <div>🤝 <b>人数</b>：1人で2キャラを切り替えて操作するもよし、2人協力プレイもよし。</div>
             <div>◆ <b>スイッチ</b>：誰か(箱でも可)が乗っている間だけ、対応する扉が開く。</div>
             <div>📦 <b>目標</b>：すべての箱を目的地(黄色いマス)まで運べばクリア。</div>
           </div>

@@ -32,14 +32,14 @@ function Lobby({ room, uid, myName, onStart, onLeave, busy }) {
   const isHost = room.hostUid === uid;
   const hostReady = !!room.hostUid;
   const guestReady = !!room.guestUid;
-  const canStart = isHost && hostReady && guestReady && !busy;
+  const canStart = isHost && hostReady && !busy;
 
   return (
     <div className="sgr-card">
       <div className="sgr-field">
         <label>ルームコード</label>
         <div className="sgt-room-code">{room.code}</div>
-        <p className="sgt-hint-text">このコードを相方に伝えて「コードで参加」してもらおう</p>
+        <p className="sgt-hint-text">このコードを相方に伝えて「コードで参加」してもらおう(ひとりでもプレイできます)</p>
       </div>
       <div className="sgt-lobby-slots">
         <div className={"sgt-slot" + (hostReady ? " sgt-slot-filled" : "")}>
@@ -55,7 +55,7 @@ function Lobby({ room, uid, myName, onStart, onLeave, busy }) {
       </div>
       {isHost ? (
         <button className="sgr-btn" disabled={!canStart} onClick={onStart}>
-          {!guestReady ? "相方の参加を待っています…" : busy ? "開始中…" : "ゲーム開始"}
+          {busy ? "開始中…" : guestReady ? "ゲーム開始" : "ひとりで始める"}
         </button>
       ) : (
         <p className="sgt-hint-text">ホストが開始するのを待っています…</p>
@@ -152,6 +152,23 @@ export default function ShooterApp() {
       setRoomCode(code);
     } catch (e) {
       setError(e.message || "ルームの作成に失敗しました");
+    } finally {
+      setBusy(false);
+    }
+  }
+
+  async function handleSoloStart() {
+    if (!canSubmit) return;
+    setBusy(true);
+    setError("");
+    try {
+      const code = await createRoom(uid, trimmedName);
+      await startGame(code, uid, createInitialState([uid]));
+      localStorage.setItem(ROOM_KEY, code);
+      setUrlRoom(code);
+      setRoomCode(code);
+    } catch (e) {
+      setError(e.message || "開始に失敗しました");
     } finally {
       setBusy(false);
     }
@@ -301,9 +318,14 @@ export default function ShooterApp() {
             </div>
 
             {tab === "create" ? (
-              <button className="sgr-btn" disabled={!canSubmit} onClick={handleCreate}>
-                {busy ? "作成中…" : "新しいルームを作る"}
-              </button>
+              <>
+                <button className="sgr-btn" disabled={!canSubmit} onClick={handleCreate}>
+                  {busy ? "作成中…" : "新しいルームを作る"}
+                </button>
+                <button className="sgr-btn sgr-secondary" disabled={!canSubmit} onClick={handleSoloStart}>
+                  ひとりで遊ぶ
+                </button>
+              </>
             ) : (
               <>
                 <div className="sgr-field">
@@ -325,7 +347,7 @@ export default function ShooterApp() {
 
           <div className="sgr-rules-list">
             <div>🚀 <b>操作</b>：矢印キー/WASD、またはドラッグで自機を移動。弾は自動発射。</div>
-            <div>🤝 <b>人数</b>：2人協力プレイ。ホストが部屋を作り、ゲストがコードで参加する。</div>
+            <div>🤝 <b>人数</b>：1人でも2人協力プレイでもOK。2人の場合はホストが部屋を作り、ゲストがコードで参加する。</div>
             <div>👹 <b>目標</b>：迫りくる敵をかわし、最後に現れるボスを倒せばクリア。</div>
             <div>❤️ <b>ライフ</b>：3ライフ制。全員のライフが尽きるとゲームオーバー。</div>
           </div>

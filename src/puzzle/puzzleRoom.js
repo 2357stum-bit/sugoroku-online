@@ -82,7 +82,6 @@ export async function startGame(code, uid) {
     const data = snap.data();
     if (data.hostUid !== uid) throw new Error("ホストのみ開始できます");
     if (data.status !== "lobby") throw new Error("すでに開始しています");
-    if (!data.guestUid) throw new Error("相方の参加を待っています");
     tx.update(ref, {
       status: "playing",
       game: createInitialState(data.levelId || LEVELS[0].id),
@@ -93,15 +92,20 @@ export async function startGame(code, uid) {
 }
 
 // 自分がホスト/ゲストどちらか(0 or 1)を判定してから1マス動かす。
+// ひとりプレイ(ゲスト不在)の場合だけ、soloIdxで「今どちらのキャラを動かすか」を
+// クライアント側から指定できる(2人プレイ中は他人のキャラを勝手に動かせないよう無視する)。
 // 盤面の検証はすべて movePlayer(純粋関数)に委ねる。
-export async function move(code, uid, dir) {
+export async function move(code, uid, dir, soloIdx) {
   const ref = roomRef(code);
   await runTransaction(db, async (tx) => {
     const snap = await tx.get(ref);
     if (!snap.exists()) throw new Error("ルームが見つかりません");
     const data = snap.data();
     if (data.status !== "playing" || !data.game) return;
-    const playerIdx = data.hostUid === uid ? 0 : data.guestUid === uid ? 1 : -1;
+    let playerIdx = -1;
+    if (data.hostUid === uid && !data.guestUid) playerIdx = soloIdx === 1 ? 1 : 0;
+    else if (data.hostUid === uid) playerIdx = 0;
+    else if (data.guestUid === uid) playerIdx = 1;
     if (playerIdx < 0) return;
     const level = parseLevel(data.game.levelId);
     const game = JSON.parse(JSON.stringify(data.game));
