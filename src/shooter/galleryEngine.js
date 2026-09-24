@@ -5,6 +5,11 @@
 // 2人が同時にプレイしても全く同じ的の並びで公平に競争できる
 // (2人ともローカルでこのエンジンを実行し、スコアだけをFirestoreに送り合う)。
 //
+// 全5ステージは、穏やかなステージから徐々にタップの頻度が増えていくよう
+// 難易度順に並んでいる(風船→メリーゴーランド→ロボット→アヒル→木馬)。
+// 木馬のポップアップ(もくばのまと)は同時に出現する的の数が最も多く、
+// 全ステージ中もっとも忙しいので、あえて最後(フィナーレ)に置いている。
+//
 // 各ステージには「隠し的(secret)」が1つ紛れており、それを撃ち抜くと
 // ボーナスウェーブ(bonusWave)が発生して高得点の的が連続で湧く。
 // ボーナスウェーブの出現時刻は「隠し的を撃った瞬間からの相対時間(tOffset)」で
@@ -19,45 +24,99 @@ export const FIRE_COOLDOWN_MS = 90;
 
 const STAGE_DURATION = 30000; // 各ステージ30秒
 
-function genStage1() {
-  // もくばのまと: 3x4のマス目にポップアップする木馬の的。5つに1つは横に揺れる
-  const cols = [90, 180, 270];
-  const rows = [150, 260, 370, 480];
+// 隠し的を撃った瞬間からの相対時間(tOffset)で湧く、高得点の的の連続ウェーブ。
+// 位置は決定的な擬似散布(Math.random不使用)。全ステージ共通で使い回す。
+function makeBonusWave() {
+  const wave = [];
+  for (let i = 0; i < 9; i++) {
+    const tOffset = 250 + i * 380;
+    const x = 40 + ((i * 71 + 20) % (FIELD_W - 80));
+    const y = 110 + ((i * 97 + 40) % (FIELD_H - 260));
+    wave.push({ tOffset, x, y, r: 15, points: 400, ttl: 950, kind: "bonusWave" });
+  }
+  return wave;
+}
+
+// ラスト6秒に発生する「フィナーレ」(ビッグターゲット+ボーナスの雨)。もっとも
+// 忙しい最終ステージ(木馬)の締めくくりとして使う。
+function appendFinale(spawns, mainEnd, duration) {
+  spawns.push({ t: mainEnd + 300, x: FIELD_W / 2, y: FIELD_H / 2, r: 46, points: 1500, ttl: 4800, vx: 0, vy: 0, kind: "finale" });
+  let fi = 0;
+  for (let ft = mainEnd + 600; ft < duration - 400; ft += 400) {
+    const x = 40 + ((fi * 53) % (FIELD_W - 80));
+    const y = 120 + ((fi * 77) % (FIELD_H - 240));
+    spawns.push({ t: ft, x, y, r: 12, points: 300, ttl: 1100, vx: 0, vy: 0, kind: "bonus" });
+    fi++;
+  }
+}
+
+function genStageBalloon() {
+  // ① きょうりゅうのふうせん: 下から昇ってくる風船。ゆったりペースの導入ステージ
   const duration = STAGE_DURATION;
-  const interval = 2200;
-  const ttl = 1500;
+  const cols = [60, 130, 200, 270, 330];
   const spawns = [];
-  let idx = 0;
-  let seq = 0;
-  for (const y of rows) {
-    for (const x of cols) {
-      const phase = (idx % 6) * 350;
-      let n = 0;
-      for (let t = phase; t < duration - ttl; t += interval) {
-        const small = (n + idx) % 4 === 0;
-        const wobbly = seq % 5 === 0;
-        spawns.push({
-          t, x, y, r: small ? 12 : 20, points: small ? 280 : 100, ttl, vx: 0, vy: 0, kind: "pop",
-          wobble: wobbly ? { amp: 10, freq: 2.2, axis: "x" } : null,
-        });
-        n++;
-        seq++;
-      }
-      idx++;
-    }
+  let t = 300;
+  let i = 0;
+  while (t < duration - 1500) {
+    const x = cols[i % cols.length];
+    const speed = 90 + (i % 3) * 12; // px/秒(画面に残りすぎて混雑しない程度の速さ)
+    const travelMs = ((FIELD_H + 40) / speed) * 1000;
+    const small = i % 5 === 2;
+    spawns.push({
+      t, x, y: FIELD_H + 20, r: small ? 15 : 21,
+      points: small ? 240 : 110, ttl: travelMs,
+      vx: 0, vy: -(speed / 1000), kind: "balloon",
+      wobble: { amp: 16, freq: 0.5, axis: "x" },
+    });
+    t += 1200;
+    i++;
   }
   spawns.sort((a, b) => a.t - b.t);
   return {
     duration,
     spawns,
-    secret: { t: 18000, x: 180, y: 560, r: 13, ttl: 2400, points: 500 },
+    secret: { t: 15000, x: 200, y: 340, r: 13, ttl: 2400, points: 500 },
     bonusWave: makeBonusWave(),
   };
 }
 
-function genStage2() {
-  // ロボットたいせん: 左右から流れてくる的。だんだん間隔が短くなる。
-  // 7回に1回は上下も動く斜め移動、3回に1回は上下にふわふわ揺れる
+function genStageCarousel() {
+  // ② メリーゴーランド: 2つの円軌道をゆっくり回る的。タイミングを合わせて撃とう
+  const duration = STAGE_DURATION;
+  const centers = [
+    { cx: 110, cy: 260, radius: 65 },
+    { cx: 250, cy: 420, radius: 65 },
+  ];
+  const spawns = [];
+  let t = 400;
+  let i = 0;
+  const interval = 680;
+  const ttl = 2000;
+  while (t < duration - ttl) {
+    const c = centers[i % centers.length];
+    const angSpeed = 1.0 + (i % 2) * 0.25; // rad/秒
+    const phase = (i * 1.7) % (Math.PI * 2);
+    const small = i % 5 === 0;
+    spawns.push({
+      t, x: c.cx, y: c.cy, r: small ? 13 : 18,
+      points: small ? 260 : 120, ttl,
+      vx: 0, vy: 0, kind: "carousel",
+      orbit: { cx: c.cx, cy: c.cy, radius: c.radius, angSpeed, phase },
+    });
+    t += interval;
+    i++;
+  }
+  spawns.sort((a, b) => a.t - b.t);
+  return {
+    duration,
+    spawns,
+    secret: { t: 17000, x: 180, y: 560, r: 13, ttl: 2400, points: 500 },
+    bonusWave: makeBonusWave(),
+  };
+}
+
+function genStageRobot() {
+  // ③ ロボットたいせん: 左右・斜めから流れてくる的。だんだん間隔が短くなる
   const duration = STAGE_DURATION;
   const rows = [180, 280, 380, 480];
   const spawns = [];
@@ -78,7 +137,7 @@ function genStage2() {
       vx: (dir * speed) / 1000, vy: vyPerSec / 1000, kind: isDiagonal ? "diagonal" : "slide",
       wobble: !isDiagonal && i % 3 === 0 ? { amp: 14, freq: 1.5, axis: "y" } : null,
     });
-    t += Math.max(420, 900 - i * 8);
+    t += Math.max(300, 650 - i * 8);
     i++;
   }
   spawns.sort((a, b) => a.t - b.t);
@@ -90,68 +149,90 @@ function genStage2() {
   };
 }
 
-function genStage3() {
-  // きょうりゅうのふうせん: 下から昇ってくる風船(左右にゆらゆら) + ラスト6秒はフィナーレ
+function genStageDuck() {
+  // ④ アヒルのぎょうれつ: テンポの速い、左右・斜めから流れてくるアヒルの的
   const duration = STAGE_DURATION;
-  const cols = [60, 130, 200, 270, 330];
+  const rows = [190, 280, 370, 460];
   const spawns = [];
-  let t = 0;
+  let t = 200;
   let i = 0;
-  const mainEnd = duration - 6000;
-  while (t < mainEnd) {
-    const x = cols[i % cols.length];
-    const speed = 70 + (i % 4) * 15; // px/秒
-    const travelMs = ((FIELD_H + 40) / speed) * 1000;
-    const small = i % 4 === 1;
+  while (t < duration - 1200) {
+    const row = rows[i % rows.length];
+    const dir = i % 2 === 0 ? 1 : -1;
+    const speed = 130 + (i % 6) * 16; // px/秒、速め
+    const startX = dir === 1 ? -20 : FIELD_W + 20;
+    const small = i % 3 === 1;
+    const isDiagonal = i % 8 === 5;
+    const vyPerSec = isDiagonal ? (i % 2 === 0 ? 55 : -55) : 0;
+    const travelMs = ((FIELD_W + 40) / speed) * 1000;
     spawns.push({
-      t, x, y: FIELD_H + 20, r: small ? 14 : 20,
-      points: small ? 260 : 130, ttl: travelMs,
-      vx: 0, vy: -(speed / 1000), kind: "balloon",
-      wobble: { amp: 18, freq: 0.6, axis: "x" },
+      t, x: startX, y: row, r: small ? 12 : 17,
+      points: small ? 260 : 140, ttl: travelMs,
+      vx: (dir * speed) / 1000, vy: vyPerSec / 1000, kind: isDiagonal ? "diagonal" : "duck",
+      wobble: !isDiagonal ? { amp: 11, freq: 1.9, axis: "y" } : null,
     });
-    t += 650;
+    t += Math.max(220, 480 - i * 6);
     i++;
-  }
-  const finaleStart = mainEnd;
-  spawns.push({ t: finaleStart + 300, x: FIELD_W / 2, y: FIELD_H / 2, r: 46, points: 1500, ttl: 4800, vx: 0, vy: 0, kind: "finale" });
-  let fi = 0;
-  for (let ft = finaleStart + 600; ft < duration - 400; ft += 400) {
-    const x = 40 + ((fi * 53) % (FIELD_W - 80));
-    const y = 120 + ((fi * 77) % (FIELD_H - 240));
-    spawns.push({ t: ft, x, y, r: 12, points: 300, ttl: 1100, vx: 0, vy: 0, kind: "bonus" });
-    fi++;
   }
   spawns.sort((a, b) => a.t - b.t);
   return {
     duration,
     spawns,
-    secret: { t: 11000, x: 200, y: 340, r: 13, ttl: 2400, points: 500 },
+    secret: { t: 13000, x: 200, y: 330, r: 13, ttl: 2200, points: 500 },
     bonusWave: makeBonusWave(),
   };
 }
 
-// 隠し的を撃った瞬間からの相対時間(tOffset)で湧く、高得点の的の連続ウェーブ。
-// 位置は決定的な擬似散布(Math.random不使用)。
-function makeBonusWave() {
-  const wave = [];
-  for (let i = 0; i < 9; i++) {
-    const tOffset = 250 + i * 380;
-    const x = 40 + ((i * 71 + 20) % (FIELD_W - 80));
-    const y = 110 + ((i * 97 + 40) % (FIELD_H - 260));
-    wave.push({ tOffset, x, y, r: 15, points: 400, ttl: 950, kind: "bonusWave" });
+function genStageHorse() {
+  // ⑤ もくばのまと: 3x4のマス目にポップアップする木馬の的。全ステージ中もっとも
+  // 同時出現数が多い、いちばん忙しいステージ。ラスト6秒はフィナーレ
+  const cols = [90, 180, 270];
+  const rows = [150, 260, 370, 480];
+  const duration = STAGE_DURATION;
+  const mainEnd = duration - 6000;
+  const interval = 2200;
+  const ttl = 1500;
+  const spawns = [];
+  let idx = 0;
+  let seq = 0;
+  for (const y of rows) {
+    for (const x of cols) {
+      const phase = (idx % 6) * 350;
+      let n = 0;
+      for (let t = phase; t < mainEnd - ttl; t += interval) {
+        const small = (n + idx) % 4 === 0;
+        const wobbly = seq % 5 === 0;
+        spawns.push({
+          t, x, y, r: small ? 12 : 20, points: small ? 280 : 100, ttl, vx: 0, vy: 0, kind: "pop",
+          wobble: wobbly ? { amp: 10, freq: 2.2, axis: "x" } : null,
+        });
+        n++;
+        seq++;
+      }
+      idx++;
+    }
   }
-  return wave;
+  appendFinale(spawns, mainEnd, duration);
+  spawns.sort((a, b) => a.t - b.t);
+  return {
+    duration,
+    spawns,
+    secret: { t: mainEnd - 4000, x: 180, y: 560, r: 13, ttl: 2200, points: 500 },
+    bonusWave: makeBonusWave(),
+  };
 }
 
 const RAW_STAGES = [
-  { id: 1, name: "もくばのまと", hint: "ポップアップする的をどんどん撃とう！光る隠し的を見つけるとボーナスチャンス！", ...genStage1() },
-  { id: 2, name: "ロボットたいせん", hint: "左右・斜めから流れてくる的を狙い撃て！光る隠し的を見つけるとボーナスチャンス！", ...genStage2() },
-  { id: 3, name: "きょうりゅうのふうせん", hint: "ゆらゆら揺れながら上昇する風船を撃て。光る隠し的を見つけるとボーナスチャンス！ラストはフィナーレ！", ...genStage3() },
+  { id: 1, name: "きょうりゅうのふうせん", hint: "やること: ゆっくり昇ってくる風船をねらって、まずは慣らし運転。光る隠し的◯を見つけるとボーナスチャンス！", ...genStageBalloon() },
+  { id: 2, name: "メリーゴーランド", hint: "やること: 円をえがいてまわる的にタイミングを合わせて撃とう。光る隠し的を見つけるとボーナスチャンス！", ...genStageCarousel() },
+  { id: 3, name: "ロボットたいせん", hint: "やること: 左右・斜めから流れてくる的を狙い撃て！光る隠し的を見つけるとボーナスチャンス！", ...genStageRobot() },
+  { id: 4, name: "アヒルのぎょうれつ", hint: "やること: テンポの速いアヒルの行列をどんどん撃ち抜け！光る隠し的を見つけるとボーナスチャンス！", ...genStageDuck() },
+  { id: 5, name: "もくばのまと", hint: "やること: 最大物量、木馬の的が一斉にポップアップ！光る隠し的でボーナスチャンス、ラストはフィナーレ！", ...genStageHorse() },
 ];
 
 // 各的に一意なIDを振っておく。各ステージは「スタート」を押した瞬間から
-// 独立して0msからカウントする(前のステージの時間を引きずらない)ので、
-// 以前のような累積オフセット/全体タイムラインの計算は不要。
+// 独立して0msからカウントする(前のステージの時間は引き継がない)ので、
+// 累積オフセット/全体タイムラインの計算は不要。
 export const STAGES = RAW_STAGES.map((s) => {
   const spawns = s.spawns.map((sp, i) => ({ ...sp, id: `${s.id}-${i}` }));
   const secret = s.secret ? { ...s.secret, id: `${s.id}-secret`, vx: 0, vy: 0, kind: "secret", wobble: null } : null;
@@ -169,6 +250,11 @@ export function getBonusWindow(stage) {
 
 function targetPos(spawn, localElapsedMs) {
   const dt = localElapsedMs - spawn.t;
+  if (spawn.orbit) {
+    const { cx, cy, radius, angSpeed, phase } = spawn.orbit;
+    const ang = phase + (angSpeed * dt) / 1000;
+    return { x: cx + radius * Math.cos(ang), y: cy + radius * Math.sin(ang) };
+  }
   let x = spawn.x + (spawn.vx || 0) * dt;
   let y = spawn.y + (spawn.vy || 0) * dt;
   if (spawn.wobble) {

@@ -8,9 +8,11 @@ const PROJECTILE_MS = 110;
 const GUN_ORIGIN = { x: FIELD_W / 2, y: FIELD_H - 6 };
 
 const STAGE_THEME = {
-  1: { icon: "🐴", small: "🎯", grad: ["#3a2a1a", "#1c130c"] },
-  2: { icon: "🤖", small: "🛸", grad: ["#0c1c2e", "#050b16"] },
-  3: { icon: "🎈", small: "⭐", grad: ["#123", "#0a1024"] },
+  1: { icon: "🎈", small: "⭐", grad: ["#123", "#0a1024"] },
+  2: { icon: "🎠", small: "✨", grad: ["#3a1a3a", "#180c1c"] },
+  3: { icon: "🤖", small: "🛸", grad: ["#0c1c2e", "#050b16"] },
+  4: { icon: "🦆", small: "🎯", grad: ["#123a2a", "#0a1c14"] },
+  5: { icon: "🐴", small: "🎯", grad: ["#3a2a1a", "#1c130c"] },
 };
 const KIND_ICON = { finale: "🦖", bonus: "⭐", bonusWave: "⭐" };
 
