@@ -68,6 +68,26 @@ function Lobby({ room, uid, onStart, onLeave, busy }) {
   );
 }
 
+function RankLadder({ myScore }) {
+  const rank = getRank(myScore);
+  const ranksHighToLow = [...RANKS].reverse();
+  return (
+    <div className="gly-rank-ladder">
+      {ranksHighToLow.map((r) => {
+        const isCurrent = r.title === rank.title;
+        return (
+          <div key={r.title} className={"gly-rank-row" + (isCurrent ? " gly-rank-row-current" : "")}>
+            <span className="gly-rank-row-arrow">{isCurrent ? "▶" : ""}</span>
+            <span className="gly-rank-row-emoji">{r.emoji}</span>
+            <span className="gly-rank-row-title">{r.title}</span>
+            <span className="gly-rank-row-min">{r.min.toLocaleString()}点〜</span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
 function ResultScreen({ myScore, room, uid, onRematch, onLeave, busy }) {
   const isHost = room.hostUid === uid;
   const otherUid = room.hostUid === uid ? room.guestUid : room.hostUid;
@@ -92,10 +112,7 @@ function ResultScreen({ myScore, room, uid, onRematch, onLeave, busy }) {
           {otherName || "相手"}のスコア {otherFinished ? otherScore.toLocaleString() : "計測中…"}
         </p>
       )}
-      <div className="gly-rank-badge">
-        <span className="gly-rank-emoji">{rank.emoji}</span>
-        <span className="gly-rank-title">{rank.title}</span>
-      </div>
+      <RankLadder myScore={myScore} />
       <p className="gly-hint-text">
         {nextRank
           ? `次のランク「${nextRank.emoji} ${nextRank.title}」まであと ${(nextRank.min - myScore).toLocaleString()}点`
