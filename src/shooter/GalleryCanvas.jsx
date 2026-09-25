@@ -1,6 +1,7 @@
 import { useEffect, useRef, useState } from "react";
 import { FIELD_W, FIELD_H, STAGES, getActiveTargets, tryHit, getBonusWindow, FIRE_COOLDOWN_MS } from "./galleryEngine.js";
 import { publishScore, markFinished } from "./galleryRoom.js";
+import { setBgmStage, setBgmMode, sfxHit, sfxMiss, sfxSecretFound, sfxStageClear } from "./galleryAudio.js";
 
 const PUBLISH_MS = 250;
 const RETICLE_KEY_SPEED = 340; // px/秒(キーボード操作時)
@@ -8,7 +9,7 @@ const PROJECTILE_MS = 110;
 const GUN_ORIGIN = { x: FIELD_W / 2, y: FIELD_H - 6 };
 
 const STAGE_THEME = {
-  1: { icon: "🎈", small: "⭐", grad: ["#123", "#0a1024"] },
+  1: { icon: "🎈", small: "⭐", grad: ["#1c2f52", "#ffb37a"] },
   2: { icon: "🎠", small: "✨", grad: ["#3a1a3a", "#180c1c"] },
   3: { icon: "🤖", small: "🛸", grad: ["#0c1c2e", "#050b16"] },
   4: { icon: "🦆", small: "🎯", grad: ["#123a2a", "#0a1c14"] },
@@ -20,21 +21,159 @@ function clamp(v, lo, hi) {
   return Math.max(lo, Math.min(hi, v));
 }
 
-function drawBackground(ctx, stageId, t) {
-  const theme = STAGE_THEME[stageId] || STAGE_THEME[1];
+function fillGradient(ctx, top, bottom) {
   const g = ctx.createLinearGradient(0, 0, 0, FIELD_H);
-  g.addColorStop(0, theme.grad[0]);
-  g.addColorStop(1, theme.grad[1]);
+  g.addColorStop(0, top);
+  g.addColorStop(1, bottom);
   ctx.fillStyle = g;
   ctx.fillRect(0, 0, FIELD_W, FIELD_H);
-  ctx.fillStyle = "rgba(255,255,255,0.5)";
-  for (let i = 0; i < 24; i++) {
-    const x = (i * 61 + 13) % FIELD_W;
-    const y = ((i * 89 + t * 0.02) % (FIELD_H + 20)) - 10;
-    ctx.globalAlpha = 0.08 + (i % 4) * 0.03;
-    ctx.fillRect(x, y, 2, 2);
+}
+
+function drawCloud(ctx, x, y, scale) {
+  ctx.beginPath();
+  ctx.ellipse(x, y, 30 * scale, 11 * scale, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(x + 18 * scale, y - 4 * scale, 18 * scale, 9 * scale, 0, 0, Math.PI * 2);
+  ctx.fill();
+  ctx.beginPath();
+  ctx.ellipse(x - 16 * scale, y + 2 * scale, 16 * scale, 8 * scale, 0, 0, Math.PI * 2);
+  ctx.fill();
+}
+
+// ① きょうりゅうのふうせん: 夕焼け空にゆったり流れる雲
+function drawSkyBackground(ctx, t) {
+  const theme = STAGE_THEME[1];
+  fillGradient(ctx, theme.grad[0], theme.grad[1]);
+  ctx.fillStyle = "rgba(255,255,255,0.22)";
+  for (let i = 0; i < 5; i++) {
+    const y = 70 + i * 95;
+    const speed = 6 + (i % 3) * 3;
+    const x = ((i * 130 + t * speed * 0.001) % (FIELD_W + 160)) - 80;
+    drawCloud(ctx, x, y, 0.8 + (i % 2) * 0.4);
+  }
+}
+
+// ② メリーゴーランド: サーカステントのストライプ + 豆電球
+function drawCarnivalBackground(ctx, t) {
+  const theme = STAGE_THEME[2];
+  fillGradient(ctx, theme.grad[0], theme.grad[1]);
+  ctx.fillStyle = "rgba(255,255,255,0.05)";
+  const stripeW = 40;
+  for (let x = -stripeW; x < FIELD_W + stripeW; x += stripeW * 2) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x + stripeW, 0);
+    ctx.lineTo(x + stripeW - 30, FIELD_H);
+    ctx.lineTo(x - 30, FIELD_H);
+    ctx.closePath();
+    ctx.fill();
+  }
+  ctx.fillStyle = "#ffd166";
+  for (let i = 0; i < 14; i++) {
+    const x = 20 + ((i * 24) % (FIELD_W - 40));
+    const y = 24 + (i % 3) * 200;
+    const blink = 0.5 + 0.5 * Math.sin(t / 260 + i);
+    ctx.globalAlpha = 0.4 + blink * 0.5;
+    ctx.beginPath();
+    ctx.arc(x, y, 3, 0, Math.PI * 2);
+    ctx.fill();
   }
   ctx.globalAlpha = 1;
+}
+
+// ③ ロボットたいせん: 光る回路網(グリッド+発光ノード)
+function drawTechBackground(ctx, t) {
+  const theme = STAGE_THEME[3];
+  fillGradient(ctx, theme.grad[0], theme.grad[1]);
+  ctx.strokeStyle = "rgba(93,195,255,0.12)";
+  ctx.lineWidth = 1;
+  const spacing = 40;
+  const offset = (t * 0.01) % spacing;
+  for (let x = -spacing; x < FIELD_W + spacing; x += spacing) {
+    ctx.beginPath();
+    ctx.moveTo(x + offset, 0);
+    ctx.lineTo(x + offset, FIELD_H);
+    ctx.stroke();
+  }
+  for (let y = 0; y < FIELD_H; y += spacing) {
+    ctx.beginPath();
+    ctx.moveTo(0, y);
+    ctx.lineTo(FIELD_W, y);
+    ctx.stroke();
+  }
+  ctx.fillStyle = "rgba(93,195,255,0.4)";
+  for (let i = 0; i < 8; i++) {
+    const x = (i * 53 + 20) % FIELD_W;
+    const y = (i * 91 + 30) % FIELD_H;
+    ctx.globalAlpha = 0.4 + 0.4 * Math.sin(t / 500 + i);
+    ctx.beginPath();
+    ctx.arc(x, y, 2.4, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+// ④ アヒルのぎょうれつ: 池の水面と葦
+function drawPondBackground(ctx, t) {
+  const theme = STAGE_THEME[4];
+  fillGradient(ctx, theme.grad[0], theme.grad[1]);
+  ctx.strokeStyle = "rgba(255,255,255,0.1)";
+  ctx.lineWidth = 2;
+  for (let i = 0; i < 6; i++) {
+    const y = 90 + i * 95;
+    ctx.beginPath();
+    for (let x = 0; x <= FIELD_W; x += 12) {
+      const yy = y + Math.sin(x / 26 + t / 900 + i) * 5;
+      if (x === 0) ctx.moveTo(x, yy);
+      else ctx.lineTo(x, yy);
+    }
+    ctx.stroke();
+  }
+  ctx.fillStyle = "rgba(0,0,0,0.25)";
+  for (let i = 0; i < 10; i++) {
+    const x = (i * 41 + 10) % FIELD_W;
+    const h = 40 + (i % 3) * 20;
+    ctx.fillRect(x, FIELD_H - h, 3, h);
+  }
+}
+
+// ⑤ もくばのまと: 木の看板+あたたかい電飾(フィナーレらしい賑やかさ)
+function drawWoodBackground(ctx, t) {
+  const theme = STAGE_THEME[5];
+  fillGradient(ctx, theme.grad[0], theme.grad[1]);
+  ctx.strokeStyle = "rgba(0,0,0,0.15)";
+  ctx.lineWidth = 1;
+  for (let x = 30; x < FIELD_W; x += 60) {
+    ctx.beginPath();
+    ctx.moveTo(x, 0);
+    ctx.lineTo(x, FIELD_H);
+    ctx.stroke();
+  }
+  ctx.fillStyle = "#ffd166";
+  for (let i = 0; i < 10; i++) {
+    const x = 20 + (i * 37) % (FIELD_W - 40);
+    const y = 18 + (i % 2) * 8;
+    const blink = 0.5 + 0.5 * Math.sin(t / 300 + i * 1.3);
+    ctx.globalAlpha = 0.35 + blink * 0.5;
+    ctx.beginPath();
+    ctx.arc(x, y, 2.6, 0, Math.PI * 2);
+    ctx.fill();
+  }
+  ctx.globalAlpha = 1;
+}
+
+const BACKGROUND_BY_STAGE = {
+  1: drawSkyBackground,
+  2: drawCarnivalBackground,
+  3: drawTechBackground,
+  4: drawPondBackground,
+  5: drawWoodBackground,
+};
+
+function drawBackground(ctx, stageId, t) {
+  const draw = BACKGROUND_BY_STAGE[stageId] || drawSkyBackground;
+  draw(ctx, t);
 }
 
 function drawTarget(ctx, stageId, target, elapsedForPulse) {
@@ -188,6 +327,14 @@ export default function GalleryCanvas({ room, code, uid, onFinished }) {
     roomRef.current = room;
   }, [room]);
 
+  useEffect(() => {
+    setBgmStage(stage.id);
+  }, [stage.id]);
+
+  useEffect(() => {
+    setBgmMode(phase === "playing" ? "play" : "ambient");
+  }, [phase]);
+
   function currentElapsed() {
     if (!stageStartRef.current) return null;
     return performance.now() - stageStartRef.current;
@@ -225,10 +372,14 @@ export default function GalleryCanvas({ room, code, uid, onFinished }) {
       if (result.triggerBonus) {
         bonusTriggeredAtRef.current = elapsed;
         bonusBannerAtRef.current = now;
+        sfxSecretFound();
+      } else {
+        sfxHit();
       }
     } else {
       comboRef.current = 0;
       fxRef.current.push({ x: px, y: py, bornAt: now, color: "rgba(200,200,200,0.7)", width: 2, r0: 4, grow: 10, durMs: 220 });
+      sfxMiss();
     }
   }
 
@@ -310,6 +461,8 @@ export default function GalleryCanvas({ room, code, uid, onFinished }) {
         if (isLastStage) {
           markFinished(code, uid, scoreRef.current).catch(() => {});
           onFinished(scoreRef.current);
+        } else {
+          sfxStageClear();
         }
         setPhase("cleared");
         return;

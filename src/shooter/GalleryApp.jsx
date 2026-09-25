@@ -4,7 +4,9 @@ import "./gallery.css";
 import { authReady } from "../firebase.js";
 import { createRoom, joinRoom, subscribeRoom, startGame, resetToLobby, deleteRoom } from "./galleryRoom.js";
 import { STAGES, RANKS, getRank } from "./galleryEngine.js";
+import { primeAudio } from "./galleryAudio.js";
 import GalleryCanvas from "./GalleryCanvas.jsx";
+import GallerySoundToggle from "./GallerySoundToggle.jsx";
 
 const NAME_KEY = "gly_name";
 const ROOM_KEY = "gly_room";
@@ -127,6 +129,21 @@ export default function GalleryApp() {
 
   useEffect(() => {
     authReady.then((user) => setUid(user.uid)).catch((e) => setAuthError(e));
+  }, []);
+
+  // ブラウザの自動再生制限のため、最初のユーザー操作でオーディオを起動する
+  useEffect(() => {
+    const handler = () => {
+      primeAudio();
+      window.removeEventListener("pointerdown", handler);
+      window.removeEventListener("keydown", handler);
+    };
+    window.addEventListener("pointerdown", handler, { once: true });
+    window.addEventListener("keydown", handler, { once: true });
+    return () => {
+      window.removeEventListener("pointerdown", handler);
+      window.removeEventListener("keydown", handler);
+    };
   }, []);
 
   useEffect(() => {
@@ -280,6 +297,9 @@ export default function GalleryApp() {
     return (
       <div className="sgr-root" data-theme="gallery">
         <div className="sgr-app">
+          <div style={{ display: "flex", justifyContent: "flex-end", padding: "12px 18px 0" }}>
+            <GallerySoundToggle />
+          </div>
           <div className="sgr-screen">
             <div className="sgr-title-block gly-title-block-compact">
               <span className="sgr-eyebrow">🎪</span>
@@ -309,6 +329,9 @@ export default function GalleryApp() {
   return (
     <div className="sgr-root" data-theme="gallery">
       <div className="sgr-app">
+        <div style={{ display: "flex", justifyContent: "flex-end", padding: "12px 18px 0" }}>
+          <GallerySoundToggle />
+        </div>
         <div className="sgr-screen">
           <div className="sgr-title-block">
             <span className="sgr-eyebrow">🎪</span>
