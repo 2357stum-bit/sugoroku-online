@@ -2,19 +2,34 @@
    カーニバル的なテーマパレットと盤面・HUDのスタイルだけをここで定義する */
 
 .sgr-root[data-theme="gallery"] {
-  --sgr-bg: #12070a;
-  --sgr-board: #241014;
-  --sgr-board-alt: #33161b;
-  --sgr-ink: #fdf1e8;
-  --sgr-muted: #c79f8f;
+  --sgr-bg: #1a0d12;
+  --sgr-board: #2c1319;
+  --sgr-board-alt: #3d1a22;
+  --sgr-ink: #fff6ec;
+  --sgr-muted: #e0ab98;
   --sgr-accent: #ffd166;
-  --sgr-accent-dim: rgba(255, 209, 102, 0.18);
-  --sgr-coral: #ff5470;
+  --sgr-accent-dim: rgba(255, 209, 102, 0.22);
+  --sgr-coral: #ff6b8b;
   --sgr-gold: #ffd166;
   --sgr-purple: #9ee047;
-  --sgr-line: rgba(255, 255, 255, 0.09);
-  --sgr-shadow: 0 8px 22px rgba(0, 0, 0, 0.45);
+  --sgr-line: rgba(255, 255, 255, 0.12);
+  --sgr-shadow: 0 8px 22px rgba(30, 5, 10, 0.45);
+  --sgr-accent-ink: #2b1704;
+  --sgr-glow-1: rgba(255, 209, 102, 0.22);
+  --sgr-glow-2: rgba(255, 107, 139, 0.18);
   --sgr-heading-font: "Zen Kaku Gothic New", sans-serif;
+}
+
+.sgr-root[data-theme="gallery"] .sgr-eyebrow { filter: drop-shadow(0 0 16px rgba(255, 209, 102, 0.6)); }
+.sgr-root[data-theme="gallery"] .sgr-title-block h1 { text-shadow: 0 0 18px rgba(255, 209, 102, 0.25); }
+
+.gly-confetti {
+  display: flex;
+  justify-content: center;
+  gap: 10px;
+  font-size: 15px;
+  margin-bottom: 4px;
+  letter-spacing: 2px;
 }
 
 .gly-title-block-compact h1 { font-size: 16px; }
@@ -138,7 +153,7 @@
   border: 1px solid var(--sgr-line);
   box-shadow: var(--sgr-shadow);
   touch-action: none;
-  background: #12070a;
+  background: #1a0d12;
   cursor: crosshair;
 }
 

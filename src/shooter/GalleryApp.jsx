@@ -350,10 +350,11 @@ export default function GalleryApp() {
           <GallerySoundToggle />
         </div>
         <div className="sgr-screen">
+          <div className="gly-confetti">🎉🎈✨🎊✨🎈🎉</div>
           <div className="sgr-title-block">
             <span className="sgr-eyebrow">🎪</span>
             <h1>おもちゃ箱シューティングギャラリー</h1>
-            <p>全{STAGES.length}ステージのおもちゃの的当てを撃ちまくって、ハイスコアを目指そう。2人で同時プレイしてスコアを競うこともできる。</p>
+            <p>全{STAGES.length}ステージのおもちゃの的当てを撃ちまくって、ハイスコアを目指そう！2人で同時プレイしてスコアを競うのも盛り上がるよ🎯</p>
           </div>
 
           <div className="sgr-card">
