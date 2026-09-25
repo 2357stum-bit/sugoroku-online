@@ -326,7 +326,7 @@ export function tryHit(stage, localElapsedMs, hitIds, combo, px, py, bonusTrigge
 // 全5ステージ通算スコアによる7段階ランク。閾値は「どのくらいの取り組み方で
 // 届くか」を基準にシミュレーションで較正した:
 //   ①②かけだし/みならい: 下手でもクリアできるレベル
-//   ③じょうずさん: 普通にプレイすれば届く
+//   ③一人前: 普通にプレイすれば届く
 //   ④たつじん: コツ(隠し的を積極的に狙う、コンボを維持する)をつかめば届く
 //   ⑤チャンピオン: しっかり頑張れば届く
 //   ⑥スーパースター: 真剣に取り組めば届く
@@ -334,7 +334,7 @@ export function tryHit(stage, localElapsedMs, hitIds, combo, px, py, bonusTrigge
 export const RANKS = [
   { min: 0, emoji: "🎈", title: "かけだし" },
   { min: 14000, emoji: "🎯", title: "みならい" },
-  { min: 42000, emoji: "🥈", title: "じょうずさん" },
+  { min: 42000, emoji: "🥈", title: "一人前" },
   { min: 62000, emoji: "🥇", title: "たつじん" },
   { min: 82000, emoji: "🏆", title: "チャンピオン" },
   { min: 100000, emoji: "🌟", title: "スーパースター" },
