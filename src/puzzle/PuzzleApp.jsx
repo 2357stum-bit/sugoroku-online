@@ -383,6 +383,9 @@ export default function PuzzleApp() {
           <a className="pzl-back-link" href="/shooter">
             🎪 おもちゃ箱シューティングギャラリーもあそべます →
           </a>
+          <a className="pzl-back-link" href="/cards">
+            🎴 カードバトルアリーナもあそべます →
+          </a>
         </div>
       </div>
     </div>

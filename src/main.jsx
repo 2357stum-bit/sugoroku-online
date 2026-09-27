@@ -3,6 +3,7 @@ import ReactDOM from "react-dom/client";
 import SugorokuApp from "./SugorokuApp.jsx";
 import GalleryApp from "./shooter/GalleryApp.jsx";
 import PuzzleApp from "./puzzle/PuzzleApp.jsx";
+import CardApp from "./cards/CardApp.jsx";
 import "./index.css";
 
 const path = window.location.pathname;
@@ -10,6 +11,7 @@ const path = window.location.pathname;
 function pickApp() {
   if (path.startsWith("/shooter")) return <GalleryApp />;
   if (path.startsWith("/puzzle")) return <PuzzleApp />;
+  if (path.startsWith("/cards")) return <CardApp />;
   return <SugorokuApp />;
 }
 

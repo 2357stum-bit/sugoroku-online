@@ -1,15 +1,21 @@
 import { useEffect, useMemo, useState } from "react";
 import "../sugoroku.css";
-import "./gallery.css";
+import "./cards.css";
 import { authReady } from "../firebase.js";
-import { createRoom, joinRoom, subscribeRoom, startGame, resetToLobby, deleteRoom } from "./galleryRoom.js";
-import { STAGES, RANKS, getRank } from "./galleryEngine.js";
-import { primeAudio } from "./galleryAudio.js";
-import GalleryCanvas from "./GalleryCanvas.jsx";
-import GallerySoundToggle from "./GallerySoundToggle.jsx";
+import {
+  createRoom,
+  joinRoom,
+  subscribeRoom,
+  startGame,
+  playCard,
+  aiPlayTurn,
+  rematch,
+  deleteRoom,
+} from "./cardRoom.js";
+import CardBoard from "./CardBoard.jsx";
 
-const NAME_KEY = "gly_name";
-const ROOM_KEY = "gly_room";
+const NAME_KEY = "crd_name";
+const ROOM_KEY = "crd_room";
 
 function readQuery() {
   try {
@@ -30,36 +36,40 @@ function setUrlRoom(code) {
   }
 }
 
+function opponentLabel(room) {
+  if (room.guestUid) return room.guestName || "...";
+  return "🤖 AI";
+}
+
 function Lobby({ room, uid, onStart, onLeave, busy }) {
   const isHost = room.hostUid === uid;
-  const hostReady = !!room.hostUid;
   const guestReady = !!room.guestUid;
 
   return (
     <div className="sgr-card">
       <div className="sgr-field">
         <label>ルームコード</label>
-        <div className="gly-room-code">{room.code}</div>
-        <p className="gly-hint-text">このコードを相方に伝えて「コードで参加」してもらおう(ひとりでもプレイできます)</p>
+        <div className="crd-room-code">{room.code}</div>
+        <p className="crd-hint-text">このコードを相手に伝えて「コードで参加」してもらおう(参加者がいなければAIと対戦)</p>
       </div>
-      <div className="gly-lobby-slots">
-        <div className={"gly-slot" + (hostReady ? " gly-slot-filled" : "")}>
-          <span className="gly-slot-icon">🎪</span>
-          <span className="gly-slot-name">{room.hostName || "..."}</span>
-          <span className="gly-slot-tag">ホスト</span>
+      <div className="crd-lobby-slots">
+        <div className="crd-slot crd-slot-filled">
+          <span className="crd-slot-icon">🧑</span>
+          <span className="crd-slot-name">{room.hostName || "..."}</span>
+          <span className="crd-slot-tag">ホスト</span>
         </div>
-        <div className={"gly-slot" + (guestReady ? " gly-slot-filled" : "")}>
-          <span className="gly-slot-icon">{guestReady ? "🎪" : "⏳"}</span>
-          <span className="gly-slot-name">{room.guestName || "参加待ち…"}</span>
-          <span className="gly-slot-tag">ゲスト</span>
+        <div className={"crd-slot" + (guestReady ? " crd-slot-filled" : "")}>
+          <span className="crd-slot-icon">{guestReady ? "🧑‍🦰" : "⏳"}</span>
+          <span className="crd-slot-name">{guestReady ? room.guestName || "..." : "参加待ち…"}</span>
+          <span className="crd-slot-tag">ゲスト</span>
         </div>
       </div>
       {isHost ? (
         <button className="sgr-btn" disabled={busy} onClick={onStart}>
-          {busy ? "開始中…" : guestReady ? "ゲーム開始(同時スタート)" : "ひとりで始める"}
+          {busy ? "開始中…" : guestReady ? "たいせん開始" : "AIと対戦する"}
         </button>
       ) : (
-        <p className="gly-hint-text">ホストが開始するのを待っています…</p>
+        <p className="crd-hint-text">ホストが開始するのを待っています…</p>
       )}
       <button className="sgr-btn sgr-secondary" onClick={onLeave}>
         退出する
@@ -68,62 +78,24 @@ function Lobby({ room, uid, onStart, onLeave, busy }) {
   );
 }
 
-function RankLadder({ myScore }) {
-  const rank = getRank(myScore);
-  const ranksHighToLow = [...RANKS].reverse();
-  return (
-    <div className="gly-rank-ladder">
-      {ranksHighToLow.map((r) => {
-        const isCurrent = r.title === rank.title;
-        return (
-          <div key={r.title} className={"gly-rank-row" + (isCurrent ? " gly-rank-row-current" : "")}>
-            <span className="gly-rank-row-arrow">{isCurrent ? "▶" : ""}</span>
-            <span className="gly-rank-row-emoji">{r.emoji}</span>
-            <span className="gly-rank-row-title">{r.title}</span>
-            <span className="gly-rank-row-min">{r.min.toLocaleString()}点〜</span>
-          </div>
-        );
-      })}
-    </div>
-  );
-}
-
-function ResultScreen({ myScore, room, uid, onRematch, onLeave, busy }) {
+function ResultScreen({ room, uid, onRematch, onLeave, busy }) {
   const isHost = room.hostUid === uid;
-  const otherUid = room.hostUid === uid ? room.guestUid : room.hostUid;
-  const otherName = room.hostUid === uid ? room.guestName : room.hostName;
-  const otherScore = otherUid ? room.scores?.[otherUid] ?? 0 : null;
-  const otherFinished = otherUid ? !!room.finished?.[otherUid] : true;
-  const isWin = otherScore != null && myScore > otherScore;
-  const isTie = otherScore != null && myScore === otherScore;
-  const rank = getRank(myScore);
-  const rankIdx = RANKS.indexOf(rank);
-  const nextRank = RANKS[rankIdx + 1];
+  const myIdx = isHost ? 0 : 1;
+  const won = room.game.winner === myIdx;
 
   return (
-    <div className="sgr-card gly-result-card">
-      <div className="gly-result-icon">{otherScore == null ? "🎯" : isWin ? "🏆" : isTie ? "🤝" : "🥈"}</div>
-      <h2 className="gly-result-title">
-        {otherScore == null ? "プレイ終了！" : isWin ? "あなたの勝ち！" : isTie ? "引き分け！" : "あと一歩！"}
-      </h2>
-      <p className="gly-result-score">あなたのスコア {myScore.toLocaleString()}</p>
-      {otherUid && (
-        <p className="gly-result-score gly-result-score-sub">
-          {otherName || "相手"}のスコア {otherFinished ? otherScore.toLocaleString() : "計測中…"}
-        </p>
-      )}
-      <RankLadder myScore={myScore} />
-      <p className="gly-hint-text">
-        {nextRank
-          ? `次のランク「${nextRank.emoji} ${nextRank.title}」まであと ${(nextRank.min - myScore).toLocaleString()}点`
-          : "全ランク制覇！お見事！"}
+    <div className="sgr-card crd-result-card">
+      <div className="crd-result-icon">{won ? "🏆" : "😢"}</div>
+      <h2 className="crd-result-title">{won ? "あなたの勝ち！" : "あなたの負け…"}</h2>
+      <p className="crd-result-score">
+        あなたのHP {room.game.hp[myIdx]} / 相手のHP {room.game.hp[1 - myIdx]}
       </p>
       {isHost ? (
         <button className="sgr-btn" disabled={busy} onClick={onRematch}>
           {busy ? "準備中…" : "もう一度あそぶ"}
         </button>
       ) : (
-        <p className="gly-hint-text">ホストが「もう一度あそぶ」を選ぶとロビーに戻ります</p>
+        <p className="crd-hint-text">ホストの操作を待っています…</p>
       )}
       <button className="sgr-btn sgr-secondary" onClick={onLeave}>
         退出する
@@ -132,7 +104,7 @@ function ResultScreen({ myScore, room, uid, onRematch, onLeave, busy }) {
   );
 }
 
-export default function GalleryApp() {
+export default function CardApp() {
   const [uid, setUid] = useState(null);
   const [authError, setAuthError] = useState(null);
   const [name, setName] = useState(() => localStorage.getItem(NAME_KEY) || "");
@@ -142,29 +114,13 @@ export default function GalleryApp() {
   const [room, setRoom] = useState(null);
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
-  const [localScore, setLocalScore] = useState(null);
 
   useEffect(() => {
     authReady.then((user) => setUid(user.uid)).catch((e) => setAuthError(e));
   }, []);
 
-  // ブラウザの自動再生制限のため、最初のユーザー操作でオーディオを起動する
   useEffect(() => {
-    const handler = () => {
-      primeAudio();
-      window.removeEventListener("pointerdown", handler);
-      window.removeEventListener("keydown", handler);
-    };
-    window.addEventListener("pointerdown", handler, { once: true });
-    window.addEventListener("keydown", handler, { once: true });
-    return () => {
-      window.removeEventListener("pointerdown", handler);
-      window.removeEventListener("keydown", handler);
-    };
-  }, []);
-
-  useEffect(() => {
-    document.title = "おもちゃ箱シューティングギャラリー";
+    document.title = "カードバトルアリーナ オンライン";
   }, []);
 
   useEffect(() => {
@@ -193,9 +149,16 @@ export default function GalleryApp() {
     return unsub;
   }, [roomCode]);
 
+  // ひとりで遊ぶ(ゲスト不在)場合、AIの手番になったら少し待ってから自動で1手進める。
   useEffect(() => {
-    if (room?.status === "lobby") setLocalScore(null);
-  }, [room?.status]);
+    if (!room || room.status !== "playing" || room.guestUid || !room.game) return;
+    if (room.game.turn !== 1) return;
+    const code = room.code;
+    const timer = setTimeout(() => {
+      aiPlayTurn(code).catch(() => {});
+    }, 900);
+    return () => clearTimeout(timer);
+  }, [room?.seq, room?.status, room?.guestUid, room?.code]);
 
   const trimmedName = name.trim() || "プレイヤー";
   const canSubmit = useMemo(() => !!uid && !busy, [uid, busy]);
@@ -260,7 +223,6 @@ export default function GalleryApp() {
     setUrlRoom(null);
     setRoomCode("");
     setRoom(null);
-    setLocalScore(null);
   }
 
   async function handleStart() {
@@ -276,27 +238,31 @@ export default function GalleryApp() {
     }
   }
 
+  async function handlePlayCard(cardId) {
+    if (!room) return;
+    try {
+      await playCard(room.code, uid, cardId);
+    } catch (e) {
+      setError(e.message || "そのカードは使えません");
+    }
+  }
+
   async function handleRematch() {
     if (!room) return;
     setBusy(true);
     setError("");
     try {
-      await resetToLobby(room.code, uid);
-      setLocalScore(null);
+      await rematch(room.code, uid);
     } catch (e) {
-      setError(e.message || "リセットに失敗しました");
+      setError(e.message || "再戦に失敗しました");
     } finally {
       setBusy(false);
     }
   }
 
-  function handleFinished(score) {
-    setLocalScore(score);
-  }
-
   if (authError) {
     return (
-      <div className="sgr-root" data-theme="gallery">
+      <div className="sgr-root" data-theme="cards">
         <div className="sgr-app">
           <div className="sgr-screen">
             <div className="sgr-title-block">
@@ -310,31 +276,28 @@ export default function GalleryApp() {
   }
 
   if (roomCode && room) {
-    const showResult = localScore != null;
+    const isHost = room.hostUid === uid;
+    const myIdx = isHost ? 0 : 1;
     return (
-      <div className="sgr-root" data-theme="gallery">
+      <div className="sgr-root" data-theme="cards">
         <div className="sgr-app">
-          <div style={{ display: "flex", justifyContent: "flex-end", padding: "12px 18px 0" }}>
-            <GallerySoundToggle />
-          </div>
           <div className="sgr-screen">
-            <div className="sgr-title-block gly-title-block-compact">
-              <span className="sgr-eyebrow">🎪</span>
-              <h1>おもちゃ箱シューティングギャラリー</h1>
+            <div className="sgr-title-block crd-title-block-compact">
+              <span className="sgr-eyebrow">🎴</span>
+              <h1>カードバトルアリーナ</h1>
             </div>
             {room.status === "lobby" && <Lobby room={room} uid={uid} onStart={handleStart} onLeave={handleLeaveRoom} busy={busy} />}
-            {room.status === "playing" && !showResult && (
-              <GalleryCanvas room={room} code={room.code} uid={uid} onFinished={handleFinished} />
-            )}
-            {showResult && (
-              <ResultScreen
-                myScore={localScore}
+            {room.status === "playing" && room.game && (
+              <CardBoard
                 room={room}
-                uid={uid}
-                onRematch={handleRematch}
-                onLeave={handleLeaveRoom}
-                busy={busy}
+                myIdx={myIdx}
+                opponentName={opponentLabel(room)}
+                isSolo={!room.guestUid}
+                onPlayCard={handlePlayCard}
               />
+            )}
+            {room.status === "finished" && room.game && (
+              <ResultScreen room={room} uid={uid} onRematch={handleRematch} onLeave={handleLeaveRoom} busy={busy} />
             )}
             <div className="sgr-error">{error}</div>
           </div>
@@ -344,17 +307,13 @@ export default function GalleryApp() {
   }
 
   return (
-    <div className="sgr-root" data-theme="gallery">
+    <div className="sgr-root" data-theme="cards">
       <div className="sgr-app">
-        <div style={{ display: "flex", justifyContent: "flex-end", padding: "12px 18px 0" }}>
-          <GallerySoundToggle />
-        </div>
         <div className="sgr-screen">
-          <div className="gly-confetti">🎉🎈✨🎊✨🎈🎉</div>
           <div className="sgr-title-block">
-            <span className="sgr-eyebrow">🎪</span>
-            <h1>おもちゃ箱シューティングギャラリー</h1>
-            <p>全{STAGES.length}ステージのおもちゃの的当てを撃ちまくって、ハイスコアを目指そう！2人で同時プレイしてスコアを競うのも盛り上がるよ🎯</p>
+            <span className="sgr-eyebrow">🎴</span>
+            <h1>カードバトルアリーナ</h1>
+            <p>攻撃・回復・シールドのカードを出し合って、相手のHPを先にゼロにしよう！</p>
           </div>
 
           <div className="sgr-card">
@@ -384,7 +343,7 @@ export default function GalleryApp() {
                   {busy ? "作成中…" : "新しいルームを作る"}
                 </button>
                 <button className="sgr-btn sgr-secondary" disabled={!canSubmit} onClick={handleSoloStart}>
-                  ひとりで遊ぶ
+                  ひとりで遊ぶ(AI対戦)
                 </button>
               </>
             ) : (
@@ -407,21 +366,20 @@ export default function GalleryApp() {
           </div>
 
           <div className="sgr-rules-list">
-            <div>🎯 <b>操作</b>：狙った場所をタップ/クリックで発射(または矢印キー+スペース)。</div>
-            <div>🎪 <b>人数</b>：1人でハイスコア狙いもよし、2人同時プレイでスコアを競うのもよし。</div>
-            <div>🏆 <b>目標</b>：全{STAGES.length}ステージ、制限時間内にできるだけ多くの的を撃ち抜いて高得点を狙おう。</div>
-            <div>🔥 <b>コンボ</b>：連続ヒットで得点倍率アップ。外すとコンボはリセット。</div>
-            <div>👑 <b>ランク</b>：通算スコアで🎈〜👑の7段階ランクが決まる。最高ランクは「でんせつ」！</div>
+            <div>🎴 <b>操作</b>：手札からカードをタップして出す。</div>
+            <div>⚔️ <b>こうげき</b>：相手のHPを減らす。🛡️シールドで軽減できる。</div>
+            <div>💖 <b>かいふく</b>／🛡️<b>シールド</b>：自分のHPを守る。</div>
+            <div>🏆 <b>目標</b>：相手のHPを先にゼロにしよう(HP30スタート)。</div>
           </div>
 
-          <a className="gly-back-link" href="/">
+          <a className="crd-back-link" href="/">
             ← すごろくオンラインへ戻る
           </a>
-          <a className="gly-back-link" href="/puzzle">
-            🧩 きょうどうパズルもあそべます →
+          <a className="crd-back-link" href="/shooter">
+            🎪 おもちゃ箱シューティングギャラリーもあそべます →
           </a>
-          <a className="gly-back-link" href="/cards">
-            🎴 カードバトルアリーナもあそべます →
+          <a className="crd-back-link" href="/puzzle">
+            🧩 きょうどうパズルもあそべます →
           </a>
         </div>
       </div>

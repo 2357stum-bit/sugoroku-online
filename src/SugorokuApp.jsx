@@ -280,6 +280,9 @@ export default function SugorokuApp() {
           <a className="sgr-shooter-link" href="/puzzle">
             🧩 きょうどうパズルもあそべます →
           </a>
+          <a className="sgr-shooter-link" href="/cards">
+            🎴 カードバトルアリーナもあそべます →
+          </a>
         </div>
       </div>
     </div>
