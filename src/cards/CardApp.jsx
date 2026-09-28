@@ -11,11 +11,14 @@ import {
   aiPlayTurn,
   rematch,
   deleteRoom,
+  setDeck,
 } from "./cardRoom.js";
+import { DECK_ARCHETYPES } from "./cardEngine.js";
 import CardBoard from "./CardBoard.jsx";
 
 const NAME_KEY = "crd_name";
 const ROOM_KEY = "crd_room";
+const DECK_KEY = "crd_deck";
 
 function readQuery() {
   try {
@@ -41,9 +44,36 @@ function opponentLabel(room) {
   return "🤖 AI";
 }
 
-function Lobby({ room, uid, onStart, onLeave, busy }) {
+function deckMeta(id) {
+  return DECK_ARCHETYPES.find((d) => d.id === id) || DECK_ARCHETYPES[0];
+}
+
+function DeckPicker({ selectedId, onSelect }) {
+  return (
+    <div className="sgr-map-grid">
+      {DECK_ARCHETYPES.map((d) => (
+        <button
+          key={d.id}
+          type="button"
+          className={"sgr-map-card" + (selectedId === d.id ? " sgr-map-card-active" : "")}
+          onClick={() => onSelect(d.id)}
+        >
+          {selectedId === d.id && <span className="sgr-map-card-check">✓</span>}
+          <span className="sgr-map-card-icon">{d.icon}</span>
+          <span className="sgr-map-card-name">{d.name}</span>
+          <span className="sgr-map-card-desc">{d.desc}</span>
+        </button>
+      ))}
+    </div>
+  );
+}
+
+function Lobby({ room, uid, onStart, onLeave, busy, onPickDeck }) {
   const isHost = room.hostUid === uid;
   const guestReady = !!room.guestUid;
+  const myDeckId = isHost ? room.hostDeckId || "balance" : room.guestDeckId || "balance";
+  const hostDeck = deckMeta(room.hostDeckId);
+  const guestDeck = deckMeta(room.guestDeckId);
 
   return (
     <div className="sgr-card">
@@ -56,14 +86,16 @@ function Lobby({ room, uid, onStart, onLeave, busy }) {
         <div className="crd-slot crd-slot-filled">
           <span className="crd-slot-icon">🧑</span>
           <span className="crd-slot-name">{room.hostName || "..."}</span>
-          <span className="crd-slot-tag">ホスト</span>
+          <span className="crd-slot-tag">{hostDeck.icon} {hostDeck.name}</span>
         </div>
         <div className={"crd-slot" + (guestReady ? " crd-slot-filled" : "")}>
           <span className="crd-slot-icon">{guestReady ? "🧑‍🦰" : "⏳"}</span>
           <span className="crd-slot-name">{guestReady ? room.guestName || "..." : "参加待ち…"}</span>
-          <span className="crd-slot-tag">ゲスト</span>
+          <span className="crd-slot-tag">{guestReady ? `${guestDeck.icon} ${guestDeck.name}` : "🤖 AI"}</span>
         </div>
       </div>
+      <div className="crd-deck-picker-label">あなたのデッキ</div>
+      <DeckPicker selectedId={myDeckId} onSelect={onPickDeck} />
       {isHost ? (
         <button className="sgr-btn" disabled={busy} onClick={onStart}>
           {busy ? "開始中…" : guestReady ? "たいせん開始" : "AIと対戦する"}
@@ -108,6 +140,7 @@ export default function CardApp() {
   const [uid, setUid] = useState(null);
   const [authError, setAuthError] = useState(null);
   const [name, setName] = useState(() => localStorage.getItem(NAME_KEY) || "");
+  const [deckId, setDeckId] = useState(() => localStorage.getItem(DECK_KEY) || "balance");
   const [tab, setTab] = useState("create");
   const [joinCode, setJoinCode] = useState(() => readQuery().get("room") || "");
   const [roomCode, setRoomCode] = useState(() => readQuery().get("room") || localStorage.getItem(ROOM_KEY) || "");
@@ -126,6 +159,10 @@ export default function CardApp() {
   useEffect(() => {
     localStorage.setItem(NAME_KEY, name);
   }, [name]);
+
+  useEffect(() => {
+    localStorage.setItem(DECK_KEY, deckId);
+  }, [deckId]);
 
   useEffect(() => {
     if (!roomCode) {
@@ -168,7 +205,7 @@ export default function CardApp() {
     setBusy(true);
     setError("");
     try {
-      const code = await createRoom(uid, trimmedName);
+      const code = await createRoom(uid, trimmedName, deckId);
       localStorage.setItem(ROOM_KEY, code);
       setUrlRoom(code);
       setRoomCode(code);
@@ -184,7 +221,7 @@ export default function CardApp() {
     setBusy(true);
     setError("");
     try {
-      const code = await createRoom(uid, trimmedName);
+      const code = await createRoom(uid, trimmedName, deckId);
       await startGame(code, uid);
       localStorage.setItem(ROOM_KEY, code);
       setUrlRoom(code);
@@ -206,7 +243,7 @@ export default function CardApp() {
     setBusy(true);
     setError("");
     try {
-      await joinRoom(code, uid, trimmedName);
+      await joinRoom(code, uid, trimmedName, deckId);
       localStorage.setItem(ROOM_KEY, code);
       setUrlRoom(code);
       setRoomCode(code);
@@ -236,6 +273,11 @@ export default function CardApp() {
     } finally {
       setBusy(false);
     }
+  }
+
+  function handlePickDeck(id) {
+    setDeckId(id);
+    if (room && room.status === "lobby") setDeck(room.code, uid, id).catch(() => {});
   }
 
   async function handlePlayCard(cardId) {
@@ -286,7 +328,9 @@ export default function CardApp() {
               <span className="sgr-eyebrow">🎴</span>
               <h1>カードバトルアリーナ</h1>
             </div>
-            {room.status === "lobby" && <Lobby room={room} uid={uid} onStart={handleStart} onLeave={handleLeaveRoom} busy={busy} />}
+            {room.status === "lobby" && (
+              <Lobby room={room} uid={uid} onStart={handleStart} onLeave={handleLeaveRoom} busy={busy} onPickDeck={handlePickDeck} />
+            )}
             {room.status === "playing" && room.game && (
               <CardBoard
                 room={room}
@@ -328,6 +372,9 @@ export default function CardApp() {
               />
             </div>
 
+            <div className="crd-deck-picker-label">デッキを選ぶ</div>
+            <DeckPicker selectedId={deckId} onSelect={setDeckId} />
+
             <div className="sgr-tabs">
               <button className={"sgr-tab" + (tab === "create" ? " sgr-active" : "")} onClick={() => setTab("create")}>
                 ルームを作る
@@ -366,9 +413,10 @@ export default function CardApp() {
           </div>
 
           <div className="sgr-rules-list">
-            <div>🎴 <b>操作</b>：手札からカードをタップして出す。</div>
+            <div>🎴 <b>操作</b>：手札からカードをタップして出す。自分の番が来るたびに山札から1枚自動で引く。</div>
             <div>⚔️ <b>こうげき</b>：相手のHPを減らす。🛡️シールドで軽減できる。</div>
             <div>💖 <b>かいふく</b>／🛡️<b>シールド</b>：自分のHPを守る。</div>
+            <div>🎯 <b>デッキ</b>：4種類のデッキから戦い方を選べる(こうげき型・ぼうぎょ型など)。</div>
             <div>🏆 <b>目標</b>：相手のHPを先にゼロにしよう(HP30スタート)。</div>
           </div>
 

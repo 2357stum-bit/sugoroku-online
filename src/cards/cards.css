@@ -43,6 +43,8 @@
   padding: 10px 0;
 }
 
+.crd-deck-picker-label { font-size: 12px; font-weight: 700; color: var(--sgr-muted); margin: 4px 0 6px; }
+
 .crd-lobby-slots { display: flex; gap: 10px; margin-bottom: 14px; }
 .crd-slot {
   flex: 1;
@@ -177,3 +179,67 @@
 .crd-card-heal { border-color: rgba(111, 220, 140, 0.5); box-shadow: inset 0 0 0 1px rgba(111, 220, 140, 0.15); }
 .crd-card-shield { border-color: rgba(155, 107, 255, 0.5); box-shadow: inset 0 0 0 1px rgba(155, 107, 255, 0.15); }
 .crd-card-draw { border-color: rgba(255, 209, 102, 0.5); box-shadow: inset 0 0 0 1px rgba(255, 209, 102, 0.15); }
+
+/* カードを出す瞬間のモーション: 押した本人の手元でだけ、送り出すような動きを見せる */
+.crd-card-launching {
+  animation: crdLaunch 0.5s cubic-bezier(0.2, 0.7, 0.3, 1) forwards;
+  z-index: 5;
+}
+@keyframes crdLaunch {
+  0% { transform: translateY(0) scale(1); opacity: 1; }
+  35% { transform: translateY(-10px) scale(1.08); opacity: 1; box-shadow: 0 10px 20px rgba(0, 0, 0, 0.4); }
+  100% { transform: translateY(-64px) scale(0.7); opacity: 0; }
+}
+.crd-hand-sending .crd-card:not(.crd-card-launching) { opacity: 0.4; pointer-events: none; transition: opacity 0.15s; }
+
+.crd-player-row { position: relative; }
+
+/* 相手/自分の行に一瞬だけ乗る演出クラス: ダメージは赤フラッシュ+シェイク、回復/シールドは光る */
+.crd-fx-attack .crd-hp-track { animation: crdShake 0.4s ease; }
+.crd-fx-attack .crd-hp-fill { filter: brightness(1.6) saturate(1.3); }
+@keyframes crdShake {
+  0%, 100% { transform: translateX(0); }
+  20% { transform: translateX(-4px); }
+  40% { transform: translateX(4px); }
+  60% { transform: translateX(-3px); }
+  80% { transform: translateX(2px); }
+}
+.crd-fx-heal .crd-hp-track { box-shadow: 0 0 0 2px rgba(111, 220, 140, 0.7); }
+.crd-fx-shield .crd-hp-track { box-shadow: 0 0 0 2px rgba(155, 107, 255, 0.7); }
+
+.crd-floater {
+  position: absolute;
+  right: 6px;
+  top: -6px;
+  font-size: 15px;
+  font-weight: 800;
+  pointer-events: none;
+  animation: crdFloat 0.9s ease-out forwards;
+  text-shadow: 0 2px 4px rgba(0, 0, 0, 0.6);
+  z-index: 6;
+}
+.crd-floater-attack { color: #ff6b7a; }
+.crd-floater-heal { color: #6fdc8c; }
+.crd-floater-shield { color: #b48cff; }
+.crd-floater-draw { color: var(--sgr-gold); }
+@keyframes crdFloat {
+  0% { transform: translateY(0); opacity: 0; }
+  15% { opacity: 1; }
+  100% { transform: translateY(-30px); opacity: 0; }
+}
+
+.crd-impact-emoji {
+  position: absolute;
+  left: 50%;
+  top: -10px;
+  transform: translateX(-50%) scale(0.6);
+  font-size: 26px;
+  pointer-events: none;
+  animation: crdImpact 0.6s ease-out forwards;
+  z-index: 6;
+}
+@keyframes crdImpact {
+  0% { transform: translateX(-50%) scale(0.4); opacity: 0; }
+  30% { transform: translateX(-50%) scale(1.3); opacity: 1; }
+  100% { transform: translateX(-50%) scale(1); opacity: 0; }
+}

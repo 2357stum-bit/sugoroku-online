@@ -45,7 +45,7 @@ function fromFirestoreGame(game) {
   return out;
 }
 
-export async function createRoom(uid, name) {
+export async function createRoom(uid, name, deckId = "balance") {
   return withRetry(async () => {
     let code = randomCode();
     for (let attempt = 0; attempt < 5; attempt++) {
@@ -57,8 +57,10 @@ export async function createRoom(uid, name) {
       code,
       hostUid: uid,
       hostName: name,
+      hostDeckId: deckId,
       guestUid: null,
       guestName: null,
+      guestDeckId: "balance",
       status: "lobby", // lobby -> playing -> finished
       game: null,
       createdAt: serverTimestamp(),
@@ -70,7 +72,7 @@ export async function createRoom(uid, name) {
   });
 }
 
-export async function joinRoom(code, uid, name) {
+export async function joinRoom(code, uid, name, deckId = "balance") {
   return withRetry(async () => {
     const ref = roomRef(code);
     await runTransaction(db, async (tx) => {
@@ -80,9 +82,31 @@ export async function joinRoom(code, uid, name) {
       if (data.hostUid === uid || data.guestUid === uid) return; // 再参加はそのまま許可
       if (data.status !== "lobby") throw new Error("すでにゲームが始まっています");
       if (data.guestUid) throw new Error("満員です（最大2人）");
-      tx.update(ref, { guestUid: uid, guestName: name, seq: (data.seq || 0) + 1, updatedAt: serverTimestamp() });
+      tx.update(ref, {
+        guestUid: uid,
+        guestName: name,
+        guestDeckId: deckId,
+        seq: (data.seq || 0) + 1,
+        updatedAt: serverTimestamp(),
+      });
     });
     return code;
+  });
+}
+
+// ロビー中に自分のデッキタイプを選び直す(ホスト/ゲストどちらも自分の分だけ変更可能)。
+export async function setDeck(code, uid, deckId) {
+  return withRetry(async () => {
+    const ref = roomRef(code);
+    await runTransaction(db, async (tx) => {
+      const snap = await tx.get(ref);
+      if (!snap.exists()) throw new Error("ルームが見つかりません");
+      const data = snap.data();
+      if (data.status !== "lobby") return; // 開始後は変更不可(黙って無視)
+      const field = data.hostUid === uid ? "hostDeckId" : data.guestUid === uid ? "guestDeckId" : null;
+      if (!field) return;
+      tx.update(ref, { [field]: deckId, seq: (data.seq || 0) + 1, updatedAt: serverTimestamp() });
+    });
   });
 }
 
@@ -105,7 +129,7 @@ export async function startGame(code, uid) {
       if (data.status !== "lobby") throw new Error("すでに開始しています");
       tx.update(ref, {
         status: "playing",
-        game: toFirestoreGame(createInitialState()),
+        game: toFirestoreGame(createInitialState(data.hostDeckId || "balance", data.guestDeckId || "balance")),
         seq: (data.seq || 0) + 1,
         updatedAt: serverTimestamp(),
       });
@@ -171,7 +195,7 @@ export async function rematch(code, uid) {
       if (data.hostUid !== uid) throw new Error("ホストのみ操作できます");
       tx.update(ref, {
         status: "playing",
-        game: toFirestoreGame(createInitialState()),
+        game: toFirestoreGame(createInitialState(data.hostDeckId || "balance", data.guestDeckId || "balance")),
         seq: (data.seq || 0) + 1,
         updatedAt: serverTimestamp(),
       });
