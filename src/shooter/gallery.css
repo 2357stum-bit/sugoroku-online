@@ -109,6 +109,33 @@
 .gly-rank-row-min { font-size: 11px; color: var(--sgr-muted); }
 .gly-result-card .gly-hint-text { margin-bottom: 16px; }
 
+.gly-leaderboard-block { margin: 4px 0 14px; text-align: left; }
+.gly-leaderboard-title { margin: 0 0 8px; font-size: 13px; color: var(--sgr-ink); text-align: center; }
+
+.gly-leaderboard { display: flex; flex-direction: column; gap: 3px; }
+.gly-lb-row {
+  display: grid;
+  grid-template-columns: 20px 1fr auto auto auto;
+  align-items: center;
+  gap: 8px;
+  padding: 5px 8px;
+  border-radius: 8px;
+  font-size: 11px;
+  color: var(--sgr-muted);
+}
+.gly-lb-row-1 { background: rgba(255, 209, 102, 0.16); }
+.gly-lb-row-2 { background: rgba(255, 255, 255, 0.08); }
+.gly-lb-row-3 { background: rgba(255, 138, 92, 0.12); }
+.gly-lb-pos { font-weight: 700; color: var(--sgr-ink); text-align: center; }
+.gly-lb-row-1 .gly-lb-pos::before { content: "🥇"; }
+.gly-lb-row-2 .gly-lb-pos::before { content: "🥈"; }
+.gly-lb-row-3 .gly-lb-pos::before { content: "🥉"; }
+.gly-lb-row-1 .gly-lb-pos, .gly-lb-row-2 .gly-lb-pos, .gly-lb-row-3 .gly-lb-pos { font-size: 0; }
+.gly-lb-name { font-weight: 700; color: var(--sgr-ink); overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.gly-lb-date { font-size: 10px; }
+.gly-lb-score { font-weight: 700; color: var(--sgr-accent); white-space: nowrap; }
+.gly-lb-rank { white-space: nowrap; }
+
 .gly-wrap { display: flex; flex-direction: column; align-items: center; gap: 6px; }
 
 .gly-hud {

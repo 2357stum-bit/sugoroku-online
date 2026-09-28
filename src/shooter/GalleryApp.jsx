@@ -5,6 +5,7 @@ import { authReady } from "../firebase.js";
 import { createRoom, joinRoom, subscribeRoom, startGame, resetToLobby, deleteRoom } from "./galleryRoom.js";
 import { STAGES, RANKS, getRank } from "./galleryEngine.js";
 import { primeAudio } from "./galleryAudio.js";
+import { submitScore, subscribeTopScores } from "./leaderboard.js";
 import GalleryCanvas from "./GalleryCanvas.jsx";
 import GallerySoundToggle from "./GallerySoundToggle.jsx";
 
@@ -88,7 +89,36 @@ function RankLadder({ myScore }) {
   );
 }
 
-function ResultScreen({ myScore, room, uid, onRematch, onLeave, busy }) {
+function formatLbDate(ts) {
+  if (!ts?.toDate) return "-";
+  return ts.toDate().toLocaleDateString("ja-JP", { month: "numeric", day: "numeric" });
+}
+
+function Leaderboard({ entries }) {
+  if (!entries.length) {
+    return <p className="gly-hint-text">まだ記録がありません。最初の挑戦者になろう！</p>;
+  }
+  return (
+    <div className="gly-leaderboard">
+      {entries.map((e, i) => {
+        const rank = getRank(e.score || 0);
+        return (
+          <div key={e.id} className={"gly-lb-row" + (i < 3 ? ` gly-lb-row-${i + 1}` : "")}>
+            <span className="gly-lb-pos">{i + 1}</span>
+            <span className="gly-lb-name">{e.name || "プレイヤー"}</span>
+            <span className="gly-lb-date">{formatLbDate(e.date)}</span>
+            <span className="gly-lb-score">{(e.score || 0).toLocaleString()}</span>
+            <span className="gly-lb-rank">
+              {rank.emoji} {rank.title}
+            </span>
+          </div>
+        );
+      })}
+    </div>
+  );
+}
+
+function ResultScreen({ myScore, room, uid, onRematch, onLeave, busy, leaderboard }) {
   const isHost = room.hostUid === uid;
   const otherUid = room.hostUid === uid ? room.guestUid : room.hostUid;
   const otherName = room.hostUid === uid ? room.guestName : room.hostName;
@@ -118,6 +148,10 @@ function ResultScreen({ myScore, room, uid, onRematch, onLeave, busy }) {
           ? `次のランク「${nextRank.emoji} ${nextRank.title}」まであと ${(nextRank.min - myScore).toLocaleString()}点`
           : "全ランク制覇！お見事！"}
       </p>
+      <div className="gly-leaderboard-block">
+        <h3 className="gly-leaderboard-title">🏆 歴代ランキング TOP10</h3>
+        <Leaderboard entries={leaderboard} />
+      </div>
       {isHost ? (
         <button className="sgr-btn" disabled={busy} onClick={onRematch}>
           {busy ? "準備中…" : "もう一度あそぶ"}
@@ -143,6 +177,7 @@ export default function GalleryApp() {
   const [error, setError] = useState("");
   const [busy, setBusy] = useState(false);
   const [localScore, setLocalScore] = useState(null);
+  const [leaderboard, setLeaderboard] = useState([]);
 
   useEffect(() => {
     authReady.then((user) => setUid(user.uid)).catch((e) => setAuthError(e));
@@ -196,6 +231,11 @@ export default function GalleryApp() {
   useEffect(() => {
     if (room?.status === "lobby") setLocalScore(null);
   }, [room?.status]);
+
+  useEffect(() => {
+    const unsub = subscribeTopScores(setLeaderboard, () => {});
+    return unsub;
+  }, []);
 
   const trimmedName = name.trim() || "プレイヤー";
   const canSubmit = useMemo(() => !!uid && !busy, [uid, busy]);
@@ -292,6 +332,7 @@ export default function GalleryApp() {
 
   function handleFinished(score) {
     setLocalScore(score);
+    submitScore(trimmedName, score).catch(() => {});
   }
 
   if (authError) {
@@ -334,6 +375,7 @@ export default function GalleryApp() {
                 onRematch={handleRematch}
                 onLeave={handleLeaveRoom}
                 busy={busy}
+                leaderboard={leaderboard}
               />
             )}
             <div className="sgr-error">{error}</div>
@@ -412,6 +454,11 @@ export default function GalleryApp() {
             <div>🏆 <b>目標</b>：全{STAGES.length}ステージ、制限時間内にできるだけ多くの的を撃ち抜いて高得点を狙おう。</div>
             <div>🔥 <b>コンボ</b>：連続ヒットで得点倍率アップ。外すとコンボはリセット。</div>
             <div>👑 <b>ランク</b>：通算スコアで🎈〜👑の7段階ランクが決まる。最高ランクは「でんせつ」！</div>
+          </div>
+
+          <div className="sgr-card gly-leaderboard-block">
+            <h3 className="gly-leaderboard-title">🏆 歴代ランキング TOP10</h3>
+            <Leaderboard entries={leaderboard} />
           </div>
 
           <a className="gly-back-link" href="/">
