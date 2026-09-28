@@ -28,6 +28,23 @@ function roomRef(code) {
   return doc(db, COLLECTION, code.toUpperCase());
 }
 
+// Firestoreは配列を直接ネストした配列(配列の配列)を書き込めないため、
+// hand/deck/discard(プレイヤーごとの2要素配列)は {0:..., 1:...} という
+// オブジェクトに変換してから書き込み、読み込み時に配列へ戻す。
+const PER_PLAYER_FIELDS = ["hand", "deck", "discard"];
+
+function toFirestoreGame(game) {
+  const out = { ...game };
+  for (const key of PER_PLAYER_FIELDS) out[key] = { ...game[key] };
+  return out;
+}
+
+function fromFirestoreGame(game) {
+  const out = { ...game };
+  for (const key of PER_PLAYER_FIELDS) out[key] = [game[key][0], game[key][1]];
+  return out;
+}
+
 export async function createRoom(uid, name) {
   return withRetry(async () => {
     let code = randomCode();
@@ -88,7 +105,7 @@ export async function startGame(code, uid) {
       if (data.status !== "lobby") throw new Error("すでに開始しています");
       tx.update(ref, {
         status: "playing",
-        game: createInitialState(),
+        game: toFirestoreGame(createInitialState()),
         seq: (data.seq || 0) + 1,
         updatedAt: serverTimestamp(),
       });
@@ -110,10 +127,10 @@ export async function playCard(code, uid, cardId) {
       if (data.hostUid === uid) playerIdx = 0;
       else if (data.guestUid === uid) playerIdx = 1;
       if (playerIdx < 0) return;
-      const game = JSON.parse(JSON.stringify(data.game));
+      const game = fromFirestoreGame(JSON.parse(JSON.stringify(data.game)));
       const result = glPlayCard(game, playerIdx, cardId);
       if (!result) return; // 手番違い/手札に無いカード等は黙って無視(冪等)
-      const update = { game, seq: (data.seq || 0) + 1, updatedAt: serverTimestamp() };
+      const update = { game: toFirestoreGame(game), seq: (data.seq || 0) + 1, updatedAt: serverTimestamp() };
       if (game.status === "finished") update.status = "finished";
       tx.update(ref, update);
     });
@@ -132,12 +149,12 @@ export async function aiPlayTurn(code) {
       if (data.status !== "playing" || !data.game) return;
       if (data.guestUid) return; // 対人戦になっていたらAIは何もしない
       if (data.game.turn !== 1) return;
-      const game = JSON.parse(JSON.stringify(data.game));
+      const game = fromFirestoreGame(JSON.parse(JSON.stringify(data.game)));
       const cardId = aiChooseCardId(game, 1);
       if (!cardId) return;
       const result = glPlayCard(game, 1, cardId);
       if (!result) return;
-      const update = { game, seq: (data.seq || 0) + 1, updatedAt: serverTimestamp() };
+      const update = { game: toFirestoreGame(game), seq: (data.seq || 0) + 1, updatedAt: serverTimestamp() };
       if (game.status === "finished") update.status = "finished";
       tx.update(ref, update);
     });
@@ -154,7 +171,7 @@ export async function rematch(code, uid) {
       if (data.hostUid !== uid) throw new Error("ホストのみ操作できます");
       tx.update(ref, {
         status: "playing",
-        game: createInitialState(),
+        game: toFirestoreGame(createInitialState()),
         seq: (data.seq || 0) + 1,
         updatedAt: serverTimestamp(),
       });
